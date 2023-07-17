@@ -1,9 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend.Data {
-	public class DataContext : DbContext {
+	public class DataContext : IdentityDbContext {
 		public DataContext(DbContextOptions<DataContext> options) : base(options) {
 		}
 
@@ -28,6 +29,8 @@ namespace DocumentsQA_Backend.Data {
 
 				
 			}
+
+			base.OnModelCreating(modelBuilder);
 		}
 
 		//--------------------------------------------------------------------------

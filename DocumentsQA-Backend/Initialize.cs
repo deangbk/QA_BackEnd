@@ -6,6 +6,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 
 using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.Helpers;
@@ -16,6 +18,7 @@ namespace DocumentsQA_Backend {
 		private bool useAuthorization;
 
 		public static bool IsDevelopment { get; set; } = true;
+		public static string JwtKey { get; set; } = string.Empty;
 
 		public Initialize(IConfiguration configuration) {
 			_configuration = configuration;
@@ -34,22 +37,44 @@ namespace DocumentsQA_Backend {
 
 			{
 				services.AddDbContext<DataContext>(options =>
-					options.UseSqlServer(_configuration.GetConnectionString("DocumentsDB")));
+					//options.UseSqlServer(_configuration.GetConnectionString("DocumentsDB")));
+					options.UseSqlServer(_configuration.GetConnectionString("TempLocalDB")));
+
+				services.AddIdentity<IdentityUser, IdentityRole>()
+					.AddEntityFrameworkStores<DataContext>()
+					.AddDefaultTokenProviders();
+
+				services.Configure<IdentityOptions>(options => {
+					// Password settings
+
+					options.Password.RequiredLength = 6;
+					options.Password.RequiredUniqueChars = 2;
+
+					options.Password.RequireNonAlphanumeric = false;
+					options.Password.RequireLowercase = true;
+					options.Password.RequireUppercase = false;
+					options.Password.RequireDigit = true;
+
+					// Lockout settings
+
+					options.Lockout.MaxFailedAccessAttempts = 10;
+				});
 			}
 
 			services.AddCors();
 
 			if (useAuthorization) {
+				JwtKey = _configuration.GetSection("AppSettings:Token").Value!;
+
 				services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 					.AddJwtBearer(options => {
 						options.TokenValidationParameters = new TokenValidationParameters {
 							ValidateIssuerSigningKey = true,
 							ValidateIssuer = false,
 							ValidateAudience = false,
-							ValidateLifetime = false,
+							ValidateLifetime = true,
 							// Use JWT key HS384 when testing
-							IssuerSigningKey = new SymmetricSecurityKey(
-								Encoding.ASCII.GetBytes(_configuration.GetSection("AppSettings:Token").Value!)),
+							IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(JwtKey)),
 							ClockSkew = TimeSpan.Zero,
 						};
 					});
@@ -59,7 +84,7 @@ namespace DocumentsQA_Backend {
 			}
 
 			services.AddEndpointsApiExplorer();
-			services.AddSwaggerGen();
+			//services.AddSwaggerGen();
 		}
 
 		// Called by runtime
