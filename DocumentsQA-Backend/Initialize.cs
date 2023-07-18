@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.Helpers;
+using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend {
 	public class Initialize {
@@ -40,7 +41,7 @@ namespace DocumentsQA_Backend {
 					//options.UseSqlServer(_configuration.GetConnectionString("DocumentsDB")));
 					options.UseSqlServer(_configuration.GetConnectionString("TempLocalDB")));
 
-				services.AddIdentity<IdentityUser, IdentityRole>()
+				services.AddIdentity<EDUser, IdentityRole>()
 					.AddEntityFrameworkStores<DataContext>()
 					.AddDefaultTokenProviders();
 

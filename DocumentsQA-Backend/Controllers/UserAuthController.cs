@@ -29,12 +29,12 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly DataContext _dataContext;
 		private readonly ILogger<UserAuthController> _logger;
 
-		private readonly UserManager<IdentityUser> _userManager;
-		private readonly SignInManager<IdentityUser> _signinManager;
+		private readonly UserManager<EDUser> _userManager;
+		private readonly SignInManager<EDUser> _signinManager;
 		private readonly IConfiguration _config;
 
 		public UserAuthController(DataContext dataContext, ILogger<UserAuthController> logger,
-			UserManager<IdentityUser> userManager, SignInManager<IdentityUser> signinManager,
+			UserManager<EDUser> userManager, SignInManager<EDUser> signinManager,
 			IConfiguration config) {
 
 			_dataContext = dataContext;
@@ -49,7 +49,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		[HttpPost("create")]
 		public async Task<IActionResult> CreateUser([FromForm] UserCredentials uc) {
-			var user = new IdentityUser() {
+			var user = new EDUser() {
 				UserName = uc.Email,
 				Email = uc.Email,
 			};
