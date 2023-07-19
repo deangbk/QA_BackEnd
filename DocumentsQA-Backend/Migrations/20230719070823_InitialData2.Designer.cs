@@ -4,6 +4,7 @@ using DocumentsQA_Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DocumentsQA_Backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230719070823_InitialData2")]
+    partial class InitialData2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,10 +72,6 @@ namespace DocumentsQA_Backend.Migrations
 
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -153,10 +152,6 @@ namespace DocumentsQA_Backend.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FileType")
@@ -458,14 +453,14 @@ namespace DocumentsQA_Backend.Migrations
             modelBuilder.Entity("DocumentsQA_Backend.Models.Document", b =>
                 {
                     b.HasOne("DocumentsQA_Backend.Models.Question", "AssocQuestion")
-                        .WithMany("Attachments")
+                        .WithMany()
                         .HasForeignKey("AssocQuestionId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("DocumentsQA_Backend.Models.AppUser", "AssocUser")
-                        .WithMany("Documents")
+                        .WithMany()
                         .HasForeignKey("AssocUserId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("DocumentsQA_Backend.Models.AppUser", "UploadedBy")
                         .WithMany()
@@ -611,21 +606,11 @@ namespace DocumentsQA_Backend.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("DocumentsQA_Backend.Models.AppUser", b =>
-                {
-                    b.Navigation("Documents");
-                });
-
             modelBuilder.Entity("DocumentsQA_Backend.Models.Project", b =>
                 {
                     b.Navigation("Questions");
 
                     b.Navigation("Tranches");
-                });
-
-            modelBuilder.Entity("DocumentsQA_Backend.Models.Question", b =>
-                {
-                    b.Navigation("Attachments");
                 });
 #pragma warning restore 612, 618
         }

@@ -21,14 +21,16 @@ namespace DocumentsQA_Backend.Models {
 		public string? LogoUrl { get; set; }
 		public string? BannerUrl { get; set; }
 
-		public List<Tranche> Tranches { get; set; } = null!;
-
 		public DateTime ProjectStartDate { get; set; }
 		public DateTime ProjectEndDate { get; set; }
 
-		public List<AppUser> UserAccesses { get; set; } = new();     // Reference navigation for many-to-many FK
+		public List<Tranche> Tranches { get; set; } = null!;			// One-to-many with Tranche
+		public List<Question> Questions { get; set; } = null!;			// One-to-many with Tranche
+
+		public List<AppUser> UserAccesses { get; set; } = new();
 	}
 
+	// Entity join class for Project <-> User
 	[Keyless]
 	public class ProjectUserAccess {
 		public int ProjectId { get; set; }		// FK to Project

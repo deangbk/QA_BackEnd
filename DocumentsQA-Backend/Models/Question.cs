@@ -12,7 +12,11 @@ namespace DocumentsQA_Backend.Models {
 		public int QuestionNum { get; set; }
 		public int Type { get; set; }
 
-		public string Tranche { get; set; } = null!;
+		public int ProjectId { get; set; }					// FK to Project
+		public Project Project { get; set; } = null!;		// Reference navigation to FK
+
+		public int TrancheId { get; set; }					// FK to Tranche
+		public Tranche Tranche { get; set; } = null!;		// Reference navigation to FK
 
 		public DateTime DatePosted { get; set; }
 
@@ -31,11 +35,13 @@ namespace DocumentsQA_Backend.Models {
 
 		public DateTime? DateQuestionApproved { get; set; }
 		public DateTime? DateAnswerApproved { get; set; }
-		
+
 		public int LastEditorId { get; set; }				// FK to User
 		public AppUser LastEditor { get; set; } = null!;	// Reference navigation to FK
 		public DateTime DateLastEdited { get; set; }
 
 		public bool DailyEmailSent { get; set; } = false;
+
+		public List<Document> Attachments { get; set; } = new();
 	}
 }

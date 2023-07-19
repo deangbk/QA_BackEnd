@@ -14,7 +14,10 @@ namespace DocumentsQA_Backend.Models {
 		public int? FavouriteProjectId { get; set; }		// User's "favourite" proj, aka the proj the user gets directed to when logging in
 		public Project? FavouriteProject { get; set; }		// Reference navigation to FK
 
+		public string DisplayName { get; set; } = null!;
 		public DateTime DateCreated { get; set; }
+
+		public List<Document> Documents { get; set; } = new();
 	}
 
 	// -----------------------------------------------------

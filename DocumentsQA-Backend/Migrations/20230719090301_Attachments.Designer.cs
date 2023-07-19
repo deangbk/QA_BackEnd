@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DocumentsQA_Backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20230718101155_InitialData")]
-    partial class InitialData
+    [Migration("20230719090301_Attachments")]
+    partial class Attachments
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,7 +25,7 @@ namespace DocumentsQA_Backend.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("DocumentsQA_Backend.Models.Document", b =>
+            modelBuilder.Entity("DocumentsQA_Backend.Models.AppRole", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -33,53 +33,35 @@ namespace DocumentsQA_Backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("AllowPrint")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("AssocQuestionId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AssocUserId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<DateTime>("DateUploaded")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FileType")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<string>("Name")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
-                    b.Property<string>("FileUrl")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("Hidden")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
-
-                    b.Property<string>("UploadedById")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<string>("NormalizedName")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssocQuestionId");
+                    b.HasIndex("NormalizedName")
+                        .IsUnique()
+                        .HasDatabaseName("RoleNameIndex")
+                        .HasFilter("[NormalizedName] IS NOT NULL");
 
-                    b.HasIndex("AssocUserId");
-
-                    b.HasIndex("UploadedById");
-
-                    b.ToTable("Documents");
+                    b.ToTable("AspNetRoles", (string)null);
                 });
 
-            modelBuilder.Entity("DocumentsQA_Backend.Models.EDUser", b =>
+            modelBuilder.Entity("DocumentsQA_Backend.Models.AppUser", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
@@ -90,6 +72,10 @@ namespace DocumentsQA_Backend.Migrations
 
                     b.Property<DateTime>("DateCreated")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -149,6 +135,60 @@ namespace DocumentsQA_Backend.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("DocumentsQA_Backend.Models.Document", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("AllowPrint")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("AssocQuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AssocUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("DateUploaded")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileType")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("Hidden")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UploadedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssocQuestionId");
+
+                    b.HasIndex("AssocUserId");
+
+                    b.HasIndex("UploadedById");
+
+                    b.ToTable("Documents");
+                });
+
             modelBuilder.Entity("DocumentsQA_Backend.Models.Project", b =>
                 {
                     b.Property<int>("Id")
@@ -193,13 +233,11 @@ namespace DocumentsQA_Backend.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
-                    b.Property<string>("UserAccessesId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("UserAccessesId")
+                        .HasColumnType("int");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasIndex("ProjectId");
 
@@ -216,19 +254,16 @@ namespace DocumentsQA_Backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<bool>("AnswerApproved")
-                        .HasColumnType("bit");
+                    b.Property<int?>("AnswerApprovedById")
+                        .HasColumnType("int");
 
-                    b.Property<string>("AnswerApprovedById")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("AnsweredById")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int?>("AnsweredById")
+                        .HasColumnType("int");
 
                     b.Property<bool>("DailyEmailSent")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("DateAnswerApproved")
+                    b.Property<DateTime?>("DateAnswerApproved")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("DateLastEdited")
@@ -237,25 +272,23 @@ namespace DocumentsQA_Backend.Migrations
                     b.Property<DateTime>("DatePosted")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("DateQuestionApproved")
+                    b.Property<DateTime?>("DateQuestionApproved")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("LastEditorId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("LastEditorId")
+                        .HasColumnType("int");
 
-                    b.Property<string>("PostedById")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("PostedById")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("int");
 
                     b.Property<string>("QuestionAnswer")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("QuestionApproved")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("QuestionApprovedById")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int?>("QuestionApprovedById")
+                        .HasColumnType("int");
 
                     b.Property<int>("QuestionNum")
                         .HasColumnType("int");
@@ -264,9 +297,8 @@ namespace DocumentsQA_Backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Tranche")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("TrancheId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Type")
                         .HasColumnType("int");
@@ -281,7 +313,11 @@ namespace DocumentsQA_Backend.Migrations
 
                     b.HasIndex("PostedById");
 
+                    b.HasIndex("ProjectId");
+
                     b.HasIndex("QuestionApprovedById");
+
+                    b.HasIndex("TrancheId");
 
                     b.ToTable("Questions");
                 });
@@ -309,34 +345,7 @@ namespace DocumentsQA_Backend.Migrations
                     b.ToTable("Tranches");
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedName")
-                        .IsUnique()
-                        .HasDatabaseName("RoleNameIndex")
-                        .HasFilter("[NormalizedName] IS NOT NULL");
-
-                    b.ToTable("AspNetRoles", (string)null);
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -350,9 +359,8 @@ namespace DocumentsQA_Backend.Migrations
                     b.Property<string>("ClaimValue")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("RoleId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -361,7 +369,7 @@ namespace DocumentsQA_Backend.Migrations
                     b.ToTable("AspNetRoleClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -375,9 +383,8 @@ namespace DocumentsQA_Backend.Migrations
                     b.Property<string>("ClaimValue")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -386,7 +393,7 @@ namespace DocumentsQA_Backend.Migrations
                     b.ToTable("AspNetUserClaims", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
                 {
                     b.Property<string>("LoginProvider")
                         .HasColumnType("nvarchar(450)");
@@ -397,9 +404,8 @@ namespace DocumentsQA_Backend.Migrations
                     b.Property<string>("ProviderDisplayName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("LoginProvider", "ProviderKey");
 
@@ -408,13 +414,13 @@ namespace DocumentsQA_Backend.Migrations
                     b.ToTable("AspNetUserLogins", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
                 {
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
-                    b.Property<string>("RoleId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
 
                     b.HasKey("UserId", "RoleId");
 
@@ -423,10 +429,10 @@ namespace DocumentsQA_Backend.Migrations
                     b.ToTable("AspNetUserRoles", (string)null);
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
                 {
-                    b.Property<string>("UserId")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.Property<string>("LoginProvider")
                         .HasColumnType("nvarchar(450)");
@@ -442,19 +448,29 @@ namespace DocumentsQA_Backend.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("DocumentsQA_Backend.Models.AppUser", b =>
+                {
+                    b.HasOne("DocumentsQA_Backend.Models.Project", "FavouriteProject")
+                        .WithMany()
+                        .HasForeignKey("FavouriteProjectId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("FavouriteProject");
+                });
+
             modelBuilder.Entity("DocumentsQA_Backend.Models.Document", b =>
                 {
                     b.HasOne("DocumentsQA_Backend.Models.Question", "AssocQuestion")
-                        .WithMany()
+                        .WithMany("Attachments")
                         .HasForeignKey("AssocQuestionId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", "AssocUser")
-                        .WithMany()
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "AssocUser")
+                        .WithMany("Documents")
                         .HasForeignKey("AssocUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", "UploadedBy")
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "UploadedBy")
                         .WithMany()
                         .HasForeignKey("UploadedById")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -467,15 +483,6 @@ namespace DocumentsQA_Backend.Migrations
                     b.Navigation("UploadedBy");
                 });
 
-            modelBuilder.Entity("DocumentsQA_Backend.Models.EDUser", b =>
-                {
-                    b.HasOne("DocumentsQA_Backend.Models.Project", "FavouriteProject")
-                        .WithMany()
-                        .HasForeignKey("FavouriteProjectId");
-
-                    b.Navigation("FavouriteProject");
-                });
-
             modelBuilder.Entity("DocumentsQA_Backend.Models.ProjectUserAccess", b =>
                 {
                     b.HasOne("DocumentsQA_Backend.Models.Project", null)
@@ -484,7 +491,7 @@ namespace DocumentsQA_Backend.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", null)
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserAccessesId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -493,32 +500,44 @@ namespace DocumentsQA_Backend.Migrations
 
             modelBuilder.Entity("DocumentsQA_Backend.Models.Question", b =>
                 {
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", "AnswerApprovedBy")
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "AnswerApprovedBy")
                         .WithMany()
                         .HasForeignKey("AnswerApprovedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", "AnsweredBy")
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "AnsweredBy")
                         .WithMany()
                         .HasForeignKey("AnsweredById")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", "LastEditor")
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "LastEditor")
                         .WithMany()
                         .HasForeignKey("LastEditorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", "PostedBy")
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "PostedBy")
                         .WithMany()
                         .HasForeignKey("PostedById")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", "QuestionApprovedBy")
+                    b.HasOne("DocumentsQA_Backend.Models.Project", "Project")
+                        .WithMany("Questions")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "QuestionApprovedBy")
                         .WithMany()
                         .HasForeignKey("QuestionApprovedById")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("DocumentsQA_Backend.Models.Tranche", "Tranche")
+                        .WithMany()
+                        .HasForeignKey("TrancheId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("AnswerApprovedBy");
 
@@ -528,7 +547,11 @@ namespace DocumentsQA_Backend.Migrations
 
                     b.Navigation("PostedBy");
 
+                    b.Navigation("Project");
+
                     b.Navigation("QuestionApprovedBy");
+
+                    b.Navigation("Tranche");
                 });
 
             modelBuilder.Entity("DocumentsQA_Backend.Models.Tranche", b =>
@@ -536,64 +559,76 @@ namespace DocumentsQA_Backend.Migrations
                     b.HasOne("DocumentsQA_Backend.Models.Project", null)
                         .WithMany("Tranches")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                    b.HasOne("DocumentsQA_Backend.Models.AppRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<int>", b =>
                 {
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", null)
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<int>", b =>
                 {
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", null)
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<int>", b =>
                 {
-                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
+                    b.HasOne("DocumentsQA_Backend.Models.AppRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", null)
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
+            modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<int>", b =>
                 {
-                    b.HasOne("DocumentsQA_Backend.Models.EDUser", null)
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("DocumentsQA_Backend.Models.AppUser", b =>
+                {
+                    b.Navigation("Documents");
                 });
 
             modelBuilder.Entity("DocumentsQA_Backend.Models.Project", b =>
                 {
+                    b.Navigation("Questions");
+
                     b.Navigation("Tranches");
+                });
+
+            modelBuilder.Entity("DocumentsQA_Backend.Models.Question", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 #pragma warning restore 612, 618
         }
