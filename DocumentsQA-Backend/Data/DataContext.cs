@@ -4,13 +4,9 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend.Data {
-	public class DataContext : IdentityDbContext<EDUser> {
+	public class DataContext : IdentityDbContext<AppUser, AppRole, int> {
 		public DataContext(DbContextOptions<DataContext> options) : base(options) {
 		}
-
-
-
-		//--------------------------------------------------------------------------
 
 		public DbSet<Project> Projects { get; set; }
 		public DbSet<Question> Questions { get; set; }
@@ -18,6 +14,10 @@ namespace DocumentsQA_Backend.Data {
 
 		public DbSet<Tranche> Tranches { get; set; }
 		public DbSet<ProjectUserAccess> ProjectUserAccesses { get; set; }
+
+		//--------------------------------------------------------------------------
+
+
 
 		//--------------------------------------------------------------------------
 

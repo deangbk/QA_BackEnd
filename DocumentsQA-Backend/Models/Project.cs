@@ -26,13 +26,13 @@ namespace DocumentsQA_Backend.Models {
 		public DateTime ProjectStartDate { get; set; }
 		public DateTime ProjectEndDate { get; set; }
 
-		public List<EDUser> UserAccesses { get; set; } = new();		// Reference navigation for many-to-many FK
+		public List<AppUser> UserAccesses { get; set; } = new();     // Reference navigation for many-to-many FK
 	}
 
 	[Keyless]
 	public class ProjectUserAccess {
-		public int ProjectId { get; set; }
-		public string UserId { get; set; } = null!;
+		public int ProjectId { get; set; }		// FK to Project
+		public int UserId { get; set; }			// FK to User
 	}
 
 	[PrimaryKey(nameof(Id))]
@@ -40,7 +40,7 @@ namespace DocumentsQA_Backend.Models {
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
 		public int Id { get; set; }
 
-		public int ProjectId { get; set; }
+		public int ProjectId { get; set; }		// FK to Project
 
 		[MaxLength(16)]
 		public string Name { get; set; } = null!;

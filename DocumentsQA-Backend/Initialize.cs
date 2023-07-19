@@ -41,7 +41,7 @@ namespace DocumentsQA_Backend {
 					//options.UseSqlServer(_configuration.GetConnectionString("DocumentsDB")));
 					options.UseSqlServer(_configuration.GetConnectionString("TempLocalDB")));
 
-				services.AddIdentity<EDUser, IdentityRole>()
+				services.AddIdentity<AppUser, AppRole>()
 					.AddEntityFrameworkStores<DataContext>()
 					.AddDefaultTokenProviders();
 

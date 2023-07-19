@@ -19,23 +19,21 @@ namespace DocumentsQA_Backend.Models {
 		public string QuestionText { get; set; } = null!;
 		public string? QuestionAnswer { get; set; }
 
-		public bool QuestionApproved { get; set; } = false;
-		public bool AnswerApproved { get; set; } = false;
-		public DateTime DateQuestionApproved { get; set; }
-		public DateTime DateAnswerApproved { get; set; }
+		public int PostedById { get; set; }					// FK to User
+		public AppUser PostedBy { get; set; } = null!;		// Reference navigation to FK
+		public int? AnsweredById { get; set; }				// FK to User
+		public AppUser? AnsweredBy { get; set; }			// Reference navigation to FK
 
-		public string PostedById { get; set; } = null!;
-		public EDUser PostedBy { get; set; } = null!;			// Reference navigation to FK
-		public string? AnsweredById { get; set; }
-		public EDUser? AnsweredBy { get; set; } = null!;		// Reference navigation to FK
+		public int? QuestionApprovedById { get; set; }		// FK to User
+		public AppUser? QuestionApprovedBy { get; set; }	// Reference navigation to FK
+		public int? AnswerApprovedById { get; set; }		// FK to User
+		public AppUser? AnswerApprovedBy { get; set; }		// Reference navigation to FK
 
-		public string? QuestionApprovedById { get; set; }
-		public EDUser? QuestionApprovedBy { get; set; } = null!;		// Reference navigation to FK
-		public string? AnswerApprovedById { get; set; }
-		public EDUser? AnswerApprovedBy { get; set; } = null!;			// Reference navigation to FK
+		public DateTime? DateQuestionApproved { get; set; }
+		public DateTime? DateAnswerApproved { get; set; }
 		
-		public string LastEditorId { get; set; } = null!;
-		public EDUser LastEditor { get; set; } = null!;			// Reference navigation to FK
+		public int LastEditorId { get; set; }				// FK to User
+		public AppUser LastEditor { get; set; } = null!;	// Reference navigation to FK
 		public DateTime DateLastEdited { get; set; }
 
 		public bool DailyEmailSent { get; set; } = false;
