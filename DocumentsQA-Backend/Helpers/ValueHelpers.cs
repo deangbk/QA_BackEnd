@@ -22,5 +22,14 @@ namespace DocumentsQA_Backend.Helpers {
 			return str.Split(',')
 				.Select(x => int.Parse(x.Trim()));
 		}
+
+		public static int AddRange<TKey, TValue>(this Dictionary<TKey, TValue> dict, params (TKey, TValue)[] values)
+			where TKey : notnull {
+
+			foreach (var (k, v) in values) {
+				dict.Add(k, v);
+			}
+			return dict.Count;
+		}
 	}
 }
