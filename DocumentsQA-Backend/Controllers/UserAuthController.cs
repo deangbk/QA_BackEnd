@@ -51,25 +51,44 @@ namespace DocumentsQA_Backend.Controllers {
 			var user = new AppUser() {
 				UserName = uc.Email,
 				Email = uc.Email,
+				DisplayName = uc.DisplayName,
+				DateCreated = DateTime.Now,
 			};
+			if (uc.DisplayName.Length == 0)
+				return BadRequest("DisplayName must not be empty");
 
 			var result = await _userManager.CreateAsync(user, uc.Password);
 
 			if (result.Succeeded) {
-				return Ok(_CreateUserToken(uc));
+				var token = await _CreateUserToken(uc, true);
+				return Ok(token);
 			}
 			else {
 				return BadRequest(result.Errors);
 			}
 		}
 
-		private AuthResponse _CreateUserToken(UserCredentials uc) {
-			var claims = new Claim[] {
+		private async Task<AuthResponse> _CreateUserToken(UserCredentials uc, bool bCreating = false) {
+			var claims = new List<Claim> {
 				new Claim("email", uc.Email),
 			};
 
+			if (!bCreating) {
+				var user = await _userManager.FindByEmailAsync(uc.Email);
+				if (user != null) {
+					claims.Add(new Claim("id", user.Id.ToString()));
+					claims.Add(new Claim("name", user.DisplayName));
+
+					// Add role claims for the user
+					{
+						var userClaims = await _userManager.GetClaimsAsync(user);
+						claims.AddRange(userClaims.Where(x => x.Type == "role"));
+					}
+				}
+			}
+
 			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Initialize.JwtKey));
-			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
 
 			var tokenDescriptor = new JwtSecurityToken(
 				issuer: null, audience: null,
@@ -89,7 +108,8 @@ namespace DocumentsQA_Backend.Controllers {
 			var result = await _signinManager.PasswordSignInAsync(uc.Email, uc.Password, false, false);
 
 			if (result.Succeeded) {
-				return Ok(_CreateUserToken(uc));
+				var token = await _CreateUserToken(uc);
+				return Ok(token);
 			}
 			else if (result.IsLockedOut) {
 				return BadRequest("User currently locked out.");
