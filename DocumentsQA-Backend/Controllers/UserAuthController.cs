@@ -31,10 +31,10 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly UserManager<AppUser> _userManager;
 		private readonly SignInManager<AppUser> _signinManager;
-		private readonly RoleManager<AppUser> _roleManager;
+		private readonly RoleManager<AppRole> _roleManager;
 
 		public UserAuthController(DataContext dataContext, ILogger<UserAuthController> logger,
-			UserManager<AppUser> userManager, SignInManager<AppUser> signinManager, RoleManager<AppUser> roleManager) {
+			UserManager<AppUser> userManager, SignInManager<AppUser> signinManager, RoleManager<AppRole> roleManager) {
 
 			_dataContext = dataContext;
 			_logger = logger;

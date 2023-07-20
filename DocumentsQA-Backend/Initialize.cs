@@ -43,7 +43,12 @@ namespace DocumentsQA_Backend {
 
 				services.AddIdentity<AppUser, AppRole>()
 					.AddEntityFrameworkStores<DataContext>()
+					.AddSignInManager<SignInManager<AppUser>>()
 					.AddDefaultTokenProviders();
+
+				services.AddIdentityCore<AppUser>()
+					.AddRoles<AppRole>()
+					.AddEntityFrameworkStores<DataContext>();
 
 				services.Configure<IdentityOptions>(options => {
 					// Password settings
