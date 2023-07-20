@@ -12,7 +12,9 @@ namespace DocumentsQA_Backend.Models {
 		public string FileName { get; set; } = null!;
 		public string? Description { get; set; }
 
+		[Url]
 		public string FileUrl { get; set; } = null!;
+		[MaxLength(64)]
 		public string? FileType { get; set; }
 
 		public int UploadedById { get; set; }						// FK to User

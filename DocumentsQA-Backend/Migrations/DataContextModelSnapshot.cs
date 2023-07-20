@@ -72,7 +72,8 @@ namespace DocumentsQA_Backend.Migrations
 
                     b.Property<string>("DisplayName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("Email")
                         .HasMaxLength(256)
@@ -132,6 +133,39 @@ namespace DocumentsQA_Backend.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("DocumentsQA_Backend.Models.Comment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CommentNum")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CommentText")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DatePosted")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PostedById")
+                        .HasColumnType("int");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PostedById");
+
+                    b.HasIndex("QuestionId");
+
+                    b.ToTable("Comments");
+                });
+
             modelBuilder.Entity("DocumentsQA_Backend.Models.Document", b =>
                 {
                     b.Property<int>("Id")
@@ -160,7 +194,8 @@ namespace DocumentsQA_Backend.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("FileType")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("FileUrl")
                         .IsRequired()
@@ -181,8 +216,6 @@ namespace DocumentsQA_Backend.Migrations
 
                     b.HasIndex("AssocUserId");
 
-                    b.HasIndex("UploadedById");
-
                     b.ToTable("Documents");
                 });
 
@@ -199,13 +232,15 @@ namespace DocumentsQA_Backend.Migrations
 
                     b.Property<string>("CompanyName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("DisplayName")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
 
                     b.Property<string>("LogoUrl")
                         .HasColumnType("nvarchar(max)");
@@ -455,8 +490,33 @@ namespace DocumentsQA_Backend.Migrations
                     b.Navigation("FavouriteProject");
                 });
 
+            modelBuilder.Entity("DocumentsQA_Backend.Models.Comment", b =>
+                {
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "PostedBy")
+                        .WithMany()
+                        .HasForeignKey("PostedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DocumentsQA_Backend.Models.Question", "Question")
+                        .WithMany("Comments")
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PostedBy");
+
+                    b.Navigation("Question");
+                });
+
             modelBuilder.Entity("DocumentsQA_Backend.Models.Document", b =>
                 {
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "UploadedBy")
+                        .WithMany()
+                        .HasForeignKey("AssocQuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("DocumentsQA_Backend.Models.Question", "AssocQuestion")
                         .WithMany("Attachments")
                         .HasForeignKey("AssocQuestionId")
@@ -464,14 +524,7 @@ namespace DocumentsQA_Backend.Migrations
 
                     b.HasOne("DocumentsQA_Backend.Models.AppUser", "AssocUser")
                         .WithMany("Documents")
-                        .HasForeignKey("AssocUserId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "UploadedBy")
-                        .WithMany()
-                        .HasForeignKey("UploadedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .HasForeignKey("AssocUserId");
 
                     b.Navigation("AssocQuestion");
 
@@ -553,11 +606,13 @@ namespace DocumentsQA_Backend.Migrations
 
             modelBuilder.Entity("DocumentsQA_Backend.Models.Tranche", b =>
                 {
-                    b.HasOne("DocumentsQA_Backend.Models.Project", null)
+                    b.HasOne("DocumentsQA_Backend.Models.Project", "Project")
                         .WithMany("Tranches")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -626,6 +681,8 @@ namespace DocumentsQA_Backend.Migrations
             modelBuilder.Entity("DocumentsQA_Backend.Models.Question", b =>
                 {
                     b.Navigation("Attachments");
+
+                    b.Navigation("Comments");
                 });
 #pragma warning restore 612, 618
         }

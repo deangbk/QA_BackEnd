@@ -12,13 +12,17 @@ namespace DocumentsQA_Backend.Models {
 		public int Id { get; set; }
 
 		public string Name { get; set; } = null!;
+		[MaxLength(256)]
 		public string? DisplayName { get; set; }
 
+		[MaxLength(256)]
 		public string CompanyName { get; set; } = null!;
 
 		public string? Description { get; set; }
 
+		[Url]
 		public string? LogoUrl { get; set; }
+		[Url]
 		public string? BannerUrl { get; set; }
 
 		public DateTime ProjectStartDate { get; set; }
@@ -42,7 +46,8 @@ namespace DocumentsQA_Backend.Models {
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
 		public int Id { get; set; }
 
-		public int ProjectId { get; set; }		// FK to Project
+		public int ProjectId { get; set; }					// FK to Project
+		public Project Project { get; set; } = null!;		// Reference navigation to FK
 
 		[MaxLength(16)]
 		public string Name { get; set; } = null!;

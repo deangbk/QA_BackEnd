@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace DocumentsQA_Backend.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialData2 : Migration
+    public partial class Comments : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -33,8 +33,8 @@ namespace DocumentsQA_Backend.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    DisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CompanyName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DisplayName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    CompanyName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     LogoUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BannerUrl = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -74,6 +74,7 @@ namespace DocumentsQA_Backend.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     FavouriteProjectId = table.Column<int>(type: "int", nullable: true),
+                    DisplayName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -301,14 +302,44 @@ namespace DocumentsQA_Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Comments",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CommentNum = table.Column<int>(type: "int", nullable: false),
+                    CommentText = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DatePosted = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    QuestionId = table.Column<int>(type: "int", nullable: false),
+                    PostedById = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Comments", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Comments_AspNetUsers_PostedById",
+                        column: x => x.PostedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Comments_Questions_QuestionId",
+                        column: x => x.QuestionId,
+                        principalTable: "Questions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Documents",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
+                    FileName = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     FileUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FileType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    FileType = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
                     UploadedById = table.Column<int>(type: "int", nullable: false),
                     DateUploaded = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
@@ -321,23 +352,22 @@ namespace DocumentsQA_Backend.Migrations
                 {
                     table.PrimaryKey("PK_Documents", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Documents_AspNetUsers_AssocUserId",
-                        column: x => x.AssocUserId,
+                        name: "FK_Documents_AspNetUsers_AssocQuestionId",
+                        column: x => x.AssocQuestionId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Documents_AspNetUsers_UploadedById",
-                        column: x => x.UploadedById,
+                        name: "FK_Documents_AspNetUsers_AssocUserId",
+                        column: x => x.AssocUserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Documents_Questions_AssocQuestionId",
                         column: x => x.AssocQuestionId,
                         principalTable: "Questions",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -385,6 +415,16 @@ namespace DocumentsQA_Backend.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Comments_PostedById",
+                table: "Comments",
+                column: "PostedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Comments_QuestionId",
+                table: "Comments",
+                column: "QuestionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Documents_AssocQuestionId",
                 table: "Documents",
                 column: "AssocQuestionId");
@@ -393,11 +433,6 @@ namespace DocumentsQA_Backend.Migrations
                 name: "IX_Documents_AssocUserId",
                 table: "Documents",
                 column: "AssocUserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Documents_UploadedById",
-                table: "Documents",
-                column: "UploadedById");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProjectUserAccesses_ProjectId",
@@ -467,6 +502,9 @@ namespace DocumentsQA_Backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "Comments");
 
             migrationBuilder.DropTable(
                 name: "Documents");
