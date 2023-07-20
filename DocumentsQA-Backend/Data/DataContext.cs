@@ -11,6 +11,7 @@ namespace DocumentsQA_Backend.Data {
 		public DbSet<Project> Projects { get; set; }
 		public DbSet<Question> Questions { get; set; }
 		public DbSet<Document> Documents { get; set; }
+		public DbSet<Comment> Comments { get; set; }
 
 		public DbSet<Tranche> Tranches { get; set; }
 		public DbSet<ProjectUserAccess> ProjectUserAccesses { get; set; }

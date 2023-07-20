@@ -43,5 +43,6 @@ namespace DocumentsQA_Backend.Models {
 		public bool DailyEmailSent { get; set; } = false;
 
 		public List<Document> Attachments { get; set; } = new();
+		public List<Comment> Comments { get; set; } = new();
 	}
 }
