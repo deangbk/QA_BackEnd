@@ -14,6 +14,43 @@ namespace DocumentsQA_Backend.Data {
 	using JsonTable = Dictionary<string, object>;
 
 	public static class Mapper {
+		public static JsonTable FromProject(Project obj, int detailsLevel = 0) {
+			var table = new JsonTable() {
+				["id"] = obj.Id,
+				["name"] = obj.Name,
+				["display_name"] = obj.DisplayName ?? obj.Name,
+				["date_start"] = obj.ProjectStartDate,
+				["date_end"] = obj.ProjectEndDate,
+			};
+
+			if (detailsLevel >= 1) {
+				table["description"] = obj.Description ?? "";
+				table["company"] = obj.CompanyName;
+
+				table["url_logo"] = obj.LogoUrl!;
+				table["url_banner"] = obj.BannerUrl!;
+			}
+			if (detailsLevel >= 2) {
+				table["tranches"] = obj.Tranches.Select(x => x.Name).ToList();
+			}
+
+			return table;
+		}
+
+		public static JsonTable FromUser(AppUser obj, int detailsLevel = 0) {
+			var table = new JsonTable() {
+				["id"] = obj.Id,
+				["display_name"] = obj.DisplayName,
+			};
+
+			if (detailsLevel >= 1) {
+				table["user_name"] = obj.UserName;
+				table["date_created"] = obj.DateCreated;
+			}
+
+			return table;
+		}
+
 		public static JsonTable FromPost(Question obj, int detailsLevel = 0) {
 			var table = new JsonTable() {
 				["q_num"] = obj.QuestionNum,
@@ -23,8 +60,7 @@ namespace DocumentsQA_Backend.Data {
 				["q_text"] = obj.QuestionText,
 				["a_text"] = obj.QuestionAnswer!,
 
-				["post_by_id"] = obj.PostedById,
-				["post_by"] = obj.PostedBy.DisplayName,
+				["post_by"] = FromUser(obj.PostedBy),
 
 				["date_post"] = obj.DatePosted,
 				["date_edit"] = obj.DateLastEdited,
@@ -75,6 +111,21 @@ namespace DocumentsQA_Backend.Data {
 			if (detailsLevel >= 2) {
 				table["assoc_post"] = obj.AssocQuestionId!;
 				table["assoc_user"] = obj.AssocUserId!;
+			}
+
+			return table;
+		}
+
+		public static JsonTable FromComment(Comment obj, int detailsLevel = 0) {
+			var table = new JsonTable() {
+				["num"] = obj.CommentNum,
+				["text"] = obj.CommentText,
+				["date_post"] = obj.DatePosted,
+			};
+
+			if (detailsLevel >= 1) {
+				table["post_by_id"] = obj.PostedById;
+				table["post_by"] = obj.PostedBy != null ? obj.PostedBy.DisplayName : null!;
 			}
 
 			return table;
