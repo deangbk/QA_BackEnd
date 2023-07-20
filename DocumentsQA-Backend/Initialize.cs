@@ -79,11 +79,14 @@ namespace DocumentsQA_Backend {
 							ValidateIssuer = false,
 							ValidateAudience = false,
 							ValidateLifetime = true,
-							// Use JWT key HS384 when testing
 							IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(JwtKey)),
 							ClockSkew = TimeSpan.Zero,
 						};
 					});
+
+				services.AddAuthorization(options => {
+					options.AddPolicy("IsAdmin", policy => policy.RequireClaim("role", "admin"));
+				});
 			}
 			else {
 				services.AddSingleton<IAuthorizationHandler, AuthorizationAllowAnonymous>();

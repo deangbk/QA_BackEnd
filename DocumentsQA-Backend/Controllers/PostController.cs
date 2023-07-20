@@ -7,8 +7,6 @@ using System.Text;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Data;
@@ -82,6 +80,21 @@ namespace DocumentsQA_Backend.Controllers {
 				["count_total"] = countTotal,
 				["posts"] = listPostTables,
 			});
+		}
+
+		[HttpGet("get_comments/{id}")]
+		public async Task<IActionResult> GetPostComments(int id) {
+			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
+			if (question == null)
+				return BadRequest("Question not found");
+
+			var listComments = await _dataContext.Comments
+				.Where(x => x.QuestionId == id)
+				.OrderBy(x => x.CommentNum)
+				.ToListAsync();
+			var listCommentTables = listComments.Select(x => Mapper.FromComment(x));
+
+			return Ok(listCommentTables);
 		}
 	}
 }
