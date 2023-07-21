@@ -60,7 +60,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var result = await _userManager.CreateAsync(user, uc.Password);
 
 			if (result.Succeeded) {
-				var token = await _CreateUserToken(uc, true);
+				var token = await _CreateUserToken(uc);
 				return Ok(token);
 			}
 			else {
@@ -68,12 +68,12 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 		}
 
-		private async Task<AuthResponse> _CreateUserToken(UserCredentials uc, bool bCreating = false) {
+		private async Task<AuthResponse> _CreateUserToken(UserCredentials uc) {
 			var claims = new List<Claim> {
-				new Claim("email", uc.Email),
+				//new Claim("email", uc.Email),
 			};
 
-			if (!bCreating) {
+			{
 				var user = await _userManager.FindByEmailAsync(uc.Email);
 				if (user != null) {
 					claims.Add(new Claim("id", user.Id.ToString()));
