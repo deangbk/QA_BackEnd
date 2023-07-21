@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.DependencyInjection;
 
 using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.Helpers;
@@ -82,7 +81,26 @@ namespace DocumentsQA_Backend {
 							IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(JwtKey)),
 							ClockSkew = TimeSpan.Zero,
 						};
+					})
+					.AddCookie(options => {
+						// Prevent login redirection on unauthorized
+						options.Events.OnRedirectToAccessDenied =
+						options.Events.OnRedirectToLogin = c => {
+							c.Response.StatusCode = StatusCodes.Status401Unauthorized;
+							return Task.CompletedTask;
+						};
 					});
+
+				services.ConfigureApplicationCookie(options => {
+					// Prevent login redirection on unauthorized
+					options.Cookie.HttpOnly = true;
+					options.LoginPath = "";
+					options.AccessDeniedPath = "";
+					options.Events.OnRedirectToLogin = context => {
+						context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+						return Task.CompletedTask;
+					};
+				});
 
 				services.AddAuthorization(options => {
 					options.AddPolicy("IsAdmin", policy => policy.RequireClaim("role", "admin"));
