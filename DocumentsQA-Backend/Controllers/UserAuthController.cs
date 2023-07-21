@@ -105,7 +105,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 		[HttpPost("login")]
 		public async Task<IActionResult> LogIn([FromForm] UserCredentials uc) {
-			var result = await _signinManager.PasswordSignInAsync(uc.Email, uc.Password, false, false);
+			var user = await _userManager.FindByNameAsync(uc.Email);
+			var result = await _signinManager.CheckPasswordSignInAsync(user, uc.Password, false);
 
 			if (result.Succeeded) {
 				var token = await _CreateUserToken(uc);

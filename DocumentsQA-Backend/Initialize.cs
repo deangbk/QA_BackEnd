@@ -71,7 +71,11 @@ namespace DocumentsQA_Backend {
 			if (useAuthorization) {
 				JwtKey = _configuration.GetSection("AppSettings:Token").Value!;
 
-				services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+				services.AddAuthentication(options => {
+					options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+					options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+					options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+				})
 					.AddJwtBearer(options => {
 						options.TokenValidationParameters = new TokenValidationParameters {
 							ValidateIssuerSigningKey = true,
@@ -79,18 +83,11 @@ namespace DocumentsQA_Backend {
 							ValidateAudience = false,
 							ValidateLifetime = true,
 							IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(JwtKey)),
-							ClockSkew = TimeSpan.Zero,
-						};
-					})
-					.AddCookie(options => {
-						// Prevent login redirection on unauthorized
-						options.Events.OnRedirectToAccessDenied =
-						options.Events.OnRedirectToLogin = c => {
-							c.Response.StatusCode = StatusCodes.Status401Unauthorized;
-							return Task.CompletedTask;
+							ClockSkew = TokenValidationParameters.DefaultClockSkew,
 						};
 					});
 
+				/*
 				services.ConfigureApplicationCookie(options => {
 					// Prevent login redirection on unauthorized
 					options.Cookie.HttpOnly = true;
@@ -101,6 +98,7 @@ namespace DocumentsQA_Backend {
 						return Task.CompletedTask;
 					};
 				});
+				*/
 
 				services.AddAuthorization(options => {
 					options.AddPolicy("IsAdmin", policy => policy.RequireClaim("role", "admin"));
