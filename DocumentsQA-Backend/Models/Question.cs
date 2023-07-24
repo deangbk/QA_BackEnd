@@ -15,13 +15,13 @@ namespace DocumentsQA_Backend.Models {
 		public int ProjectId { get; set; }					// FK to Project
 		public Project Project { get; set; } = null!;		// Reference navigation to FK
 
-		public int TrancheId { get; set; }					// FK to Tranche
-		public Tranche Tranche { get; set; } = null!;		// Reference navigation to FK
-
 		public DateTime DatePosted { get; set; }
 
 		public string QuestionText { get; set; } = null!;
 		public string? QuestionAnswer { get; set; }
+
+		public int AccountId { get; set; }					// FK to Account
+		public Account Account { get; set; } = null!;		// Reference navigation to FK
 
 		public int PostedById { get; set; }					// FK to User
 		public AppUser PostedBy { get; set; } = null!;		// Reference navigation to FK

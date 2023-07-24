@@ -32,13 +32,7 @@ namespace DocumentsQA_Backend.Models {
 		public List<Question> Questions { get; set; } = null!;			// One-to-many with Tranche
 
 		public List<AppUser> UserAccesses { get; set; } = new();
-	}
-
-	// Entity join class for Project <-> User
-	[Keyless]
-	public class ProjectUserAccess {
-		public int ProjectId { get; set; }		// FK to Project
-		public int UserId { get; set; }			// FK to User
+		public List<AppUser> UserManagers { get; set; } = new();
 	}
 
 	[PrimaryKey(nameof(Id))]
@@ -51,5 +45,40 @@ namespace DocumentsQA_Backend.Models {
 
 		[MaxLength(16)]
 		public string Name { get; set; } = null!;
+
+		public List<AppUser> UserAccesses { get; set; } = new();
+	}
+
+	// Entity join class for Project <-> User
+	[Keyless]
+	[Table("UserProjectAccesses")]
+	public class ProjectUserAccess {
+		public int ProjectId { get; set; }		// FK to Project
+		public int UserId { get; set; }			// FK to User
+
+		public Project Project { get; set; } = null!;		// Reference navigation to FK
+		public AppUser User { get; set; } = null!;			// Reference navigation to FK
+	}
+
+	// Entity join class for Project <-> User
+	[Keyless]
+	[Table("UserTrancheAccesses")]
+	public class TrancheUserAccess {
+		public int TrancheId { get; set; }		// FK to Tranche
+		public int UserId { get; set; }			// FK to User
+
+		public Tranche Tranche { get; set; } = null!;		// Reference navigation to FK
+		public AppUser User { get; set; } = null!;			// Reference navigation to FK
+	}
+
+	// Entity join class for Project <-> User
+	[Keyless]
+	[Table("UserProjectManages")]
+	public class ProjectUserManages {
+		public int ProjectId { get; set; }		// FK to Project
+		public int UserId { get; set; }			// FK to User
+
+		public Project Project { get; set; } = null!;		// Reference navigation to FK
+		public AppUser User { get; set; } = null!;			// Reference navigation to FK
 	}
 }

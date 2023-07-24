@@ -9,12 +9,15 @@ namespace DocumentsQA_Backend.Data {
 		}
 
 		public DbSet<Project> Projects { get; set; }
+		public DbSet<Tranche> Tranches { get; set; }
+		public DbSet<Account> Accounts { get; set; }
 		public DbSet<Question> Questions { get; set; }
 		public DbSet<Document> Documents { get; set; }
 		public DbSet<Comment> Comments { get; set; }
 
-		public DbSet<Tranche> Tranches { get; set; }
 		public DbSet<ProjectUserAccess> ProjectUserAccesses { get; set; }
+		public DbSet<TrancheUserAccess> TrancheUserAccesses { get; set; }
+		public DbSet<ProjectUserManages> ProjectUserManages { get; set; }
 
 		//--------------------------------------------------------------------------
 
@@ -50,6 +53,12 @@ namespace DocumentsQA_Backend.Data {
 					.HasMany(e => e.UserAccesses)
 					.WithMany(e => e.ProjectAccesses)
 					.UsingEntity<ProjectUserAccess>();
+
+				// Map Project:User as N:M using join entity
+				modelBuilder.Entity<Project>()
+					.HasMany(e => e.UserManagers)
+					.WithMany()
+					.UsingEntity<ProjectUserManages>();
 			}
 
 			// Model: Tranche
@@ -80,6 +89,23 @@ namespace DocumentsQA_Backend.Data {
 					.HasForeignKey(e => e.FavouriteProjectId)
 					.OnDelete(DeleteBehavior.SetNull)
 					.IsRequired(false);
+
+				// Map User:Tranche as N:M using join entity
+				modelBuilder.Entity<AppUser>()
+					.HasMany(e => e.TrancheAccesses)
+					.WithMany(e => e.UserAccesses)
+					.UsingEntity<TrancheUserAccess>();
+			}
+
+			// Model: Account
+			{
+				// Map Account:Tranche as N:1
+				modelBuilder.Entity<Account>()
+					.HasOne(e => e.Tranche)
+					.WithMany()
+					.HasForeignKey(e => e.TrancheId)
+					.OnDelete(DeleteBehavior.Restrict)
+					.IsRequired();
 			}
 
 			// Model: Question
@@ -92,11 +118,11 @@ namespace DocumentsQA_Backend.Data {
 					.OnDelete(DeleteBehavior.Cascade)
 					.IsRequired();
 
-				// Map Question:Tranche as N:1
+				// Map Question:Account as N:1
 				modelBuilder.Entity<Question>()
-					.HasOne(e => e.Tranche)
+					.HasOne(e => e.Account)
 					.WithMany()
-					.HasForeignKey(e => e.TrancheId)
+					.HasForeignKey(e => e.AccountId)
 					.OnDelete(DeleteBehavior.Restrict)
 					.IsRequired();
 
