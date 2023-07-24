@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Models;
+using DocumentsQA_Backend.Services;
 
 namespace DocumentsQA_Backend {
 	public class Initialize {
@@ -103,9 +104,12 @@ namespace DocumentsQA_Backend {
 				services.AddAuthorization(options => {
 					options.AddPolicy("IsAdmin", policy => policy.RequireClaim("role", "admin"));
 				});
+
+				services.AddScoped<IAccessService, AccessService>();
 			}
 			else {
 				services.AddSingleton<IAuthorizationHandler, AuthorizationAllowAnonymous>();
+				services.AddSingleton<IAccessService, AccessAllowAll>();
 			}
 
 			services.AddEndpointsApiExplorer();
@@ -153,5 +157,9 @@ namespace DocumentsQA_Backend {
 				context.Succeed(requirement);
 			return Task.CompletedTask;
 		}
+	}
+	public class AccessAllowAll : IAccessService {
+		public bool AllowToProject(HttpContext ctx, Project project) => true;
+		public bool AllowToTranche(HttpContext ctx, Tranche tranche) => true;
 	}
 }
