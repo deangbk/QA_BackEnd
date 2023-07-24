@@ -11,6 +11,7 @@ namespace DocumentsQA_Backend.Models {
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
 		public int Id { get; set; }
 
+		[MaxLength(256)]
 		public string Name { get; set; } = null!;
 		[MaxLength(256)]
 		public string? DisplayName { get; set; }
@@ -21,8 +22,10 @@ namespace DocumentsQA_Backend.Models {
 		public string? Description { get; set; }
 
 		[Url]
+		[MaxLength(256)]
 		public string? LogoUrl { get; set; }
 		[Url]
+		[MaxLength(256)]
 		public string? BannerUrl { get; set; }
 
 		public DateTime ProjectStartDate { get; set; }

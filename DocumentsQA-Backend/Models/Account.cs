@@ -13,6 +13,7 @@ namespace DocumentsQA_Backend.Models {
 		public Tranche Tranche { get; set; } = null!;		// Reference navigation to FK
 
 		public int AccountNo { get; set; }
+		[MaxLength(256)]
 		public string? AccountName { get; set; }
 	}
 }

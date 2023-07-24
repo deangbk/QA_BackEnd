@@ -9,10 +9,12 @@ namespace DocumentsQA_Backend.Models {
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
 		public int Id { get; set; }
 
+		[MaxLength(256)]
 		public string FileName { get; set; } = null!;
 		public string? Description { get; set; }
 
 		[Url]
+		[MaxLength(256)]
 		public string FileUrl { get; set; } = null!;
 		[MaxLength(64)]
 		public string? FileType { get; set; }

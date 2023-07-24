@@ -49,6 +49,53 @@ namespace DocumentsQA_Backend.Migrations
                 table: "UserProjectAccesses",
                 newName: "IX_UserProjectAccesses_ProjectId");
 
+            migrationBuilder.AlterColumn<string>(
+                name: "Name",
+                table: "Projects",
+                type: "nvarchar(256)",
+                maxLength: 256,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "LogoUrl",
+                table: "Projects",
+                type: "nvarchar(256)",
+                maxLength: 256,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "BannerUrl",
+                table: "Projects",
+                type: "nvarchar(256)",
+                maxLength: 256,
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)",
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "FileUrl",
+                table: "Documents",
+                type: "nvarchar(256)",
+                maxLength: 256,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "FileName",
+                table: "Documents",
+                type: "nvarchar(256)",
+                maxLength: 256,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(max)");
+
             migrationBuilder.AddColumn<string>(
                 name: "Company",
                 table: "AspNetUsers",
@@ -65,7 +112,7 @@ namespace DocumentsQA_Backend.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     TrancheId = table.Column<int>(type: "int", nullable: false),
                     AccountNo = table.Column<int>(type: "int", nullable: false),
-                    AccountName = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    AccountName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -229,6 +276,53 @@ namespace DocumentsQA_Backend.Migrations
                 name: "IX_UserProjectAccesses_ProjectId",
                 table: "ProjectUserAccesses",
                 newName: "IX_ProjectUserAccesses_ProjectId");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Name",
+                table: "Projects",
+                type: "nvarchar(max)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(256)",
+                oldMaxLength: 256);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "LogoUrl",
+                table: "Projects",
+                type: "nvarchar(max)",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(256)",
+                oldMaxLength: 256,
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "BannerUrl",
+                table: "Projects",
+                type: "nvarchar(max)",
+                nullable: true,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(256)",
+                oldMaxLength: 256,
+                oldNullable: true);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "FileUrl",
+                table: "Documents",
+                type: "nvarchar(max)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(256)",
+                oldMaxLength: 256);
+
+            migrationBuilder.AlterColumn<string>(
+                name: "FileName",
+                table: "Documents",
+                type: "nvarchar(max)",
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "nvarchar(256)",
+                oldMaxLength: 256);
 
             migrationBuilder.AddColumn<int>(
                 name: "UserAccessesId",
