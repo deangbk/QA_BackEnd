@@ -31,7 +31,9 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		[HttpGet("get_page/{pid}")]
-		public async Task<IActionResult> GetPostsPage(int pid, [FromQuery] PostGetFilter filter, [FromQuery] PostGet get) {
+		public async Task<IActionResult> GetPostsPage(int pid, 
+			[FromQuery] PostGetFilterDTO filter, [FromQuery] PostGetDTO get) {
+
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");

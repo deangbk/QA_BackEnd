@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace DocumentsQA_Backend.DTO {
-	public class PostGet {
+	public class PostGetDTO {
 		[BindProperty(Name = "cnt.page")]
 		public int PostsPerPage { get; set; } = 16;
 
@@ -14,7 +14,7 @@ namespace DocumentsQA_Backend.DTO {
 		public int DetailsLevel { get; set; } = 0;
 	}
 
-	public class PostGetFilter {
+	public class PostGetFilterDTO {
 		[BindProperty(Name = "search")]
 		public string? SearchTerm { get; set; }
 
