@@ -102,7 +102,9 @@ namespace DocumentsQA_Backend {
 				*/
 
 				services.AddAuthorization(options => {
-					options.AddPolicy("IsAdmin", policy => policy.RequireClaim("role", "admin"));
+					options.AddPolicy("IsAdmin", policy => policy.RequireClaim("role", AppRole.Admin));
+					options.AddPolicy("IsManager", policy => policy.RequireClaim("role", AppRole.Manager));
+					options.AddPolicy("IsStaff", policy => policy.RequireClaim("role", AppRole.Admin, AppRole.Manager));
 				});
 
 				services.AddScoped<IAccessService, AccessService>();
