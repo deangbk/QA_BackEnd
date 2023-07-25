@@ -11,43 +11,25 @@ namespace DocumentsQA_Backend.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_ProjectUserAccesses_AspNetUsers_UserAccessesId",
-                table: "ProjectUserAccesses");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_ProjectUserAccesses_Projects_ProjectId",
-                table: "ProjectUserAccesses");
-
-            migrationBuilder.DropForeignKey(
                 name: "FK_Questions_Tranches_TrancheId",
                 table: "Questions");
 
+            migrationBuilder.DropTable(
+                name: "ProjectUserAccesses");
+
             migrationBuilder.DropIndex(
-                name: "IX_ProjectUserAccesses_UserAccessesId",
-                table: "ProjectUserAccesses");
+                name: "IX_Questions_TrancheId",
+                table: "Questions");
 
             migrationBuilder.DropColumn(
-                name: "UserAccessesId",
-                table: "ProjectUserAccesses");
-
-            migrationBuilder.RenameTable(
-                name: "ProjectUserAccesses",
-                newName: "UserProjectAccesses");
-
-            migrationBuilder.RenameColumn(
                 name: "TrancheId",
-                table: "Questions",
-                newName: "AccountId");
+                table: "Questions");
 
-            migrationBuilder.RenameIndex(
-                name: "IX_Questions_TrancheId",
+            migrationBuilder.AddColumn<int>(
+                name: "AccountId",
                 table: "Questions",
-                newName: "IX_Questions_AccountId");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_ProjectUserAccesses_ProjectId",
-                table: "UserProjectAccesses",
-                newName: "IX_UserProjectAccesses_ProjectId");
+                type: "int",
+                nullable: true);
 
             migrationBuilder.AlterColumn<string>(
                 name: "Name",
@@ -126,55 +108,81 @@ namespace DocumentsQA_Backend.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserProjectManages",
+                name: "ProjectUserAccess",
                 columns: table => new
                 {
-                    ProjectId = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: false)
+                    Id1 = table.Column<int>(type: "int", nullable: false),
+                    Id2 = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
+                    table.PrimaryKey("PK_ProjectUserAccess", x => new { x.Id1, x.Id2 });
                     table.ForeignKey(
-                        name: "FK_UserProjectManages_AspNetUsers_UserId",
-                        column: x => x.UserId,
+                        name: "FK_ProjectUserAccess_AspNetUsers_Id1",
+                        column: x => x.Id1,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_UserProjectManages_Projects_ProjectId",
-                        column: x => x.ProjectId,
+                        name: "FK_ProjectUserAccess_Projects_Id2",
+                        column: x => x.Id2,
                         principalTable: "Projects",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "UserTrancheAccesses",
+                name: "ProjectUserManage",
                 columns: table => new
                 {
-                    TrancheId = table.Column<int>(type: "int", nullable: false),
-                    UserId = table.Column<int>(type: "int", nullable: false)
+                    Id1 = table.Column<int>(type: "int", nullable: false),
+                    Id2 = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
+                    table.PrimaryKey("PK_ProjectUserManage", x => new { x.Id1, x.Id2 });
                     table.ForeignKey(
-                        name: "FK_UserTrancheAccesses_AspNetUsers_UserId",
-                        column: x => x.UserId,
+                        name: "FK_ProjectUserManage_AspNetUsers_Id1",
+                        column: x => x.Id1,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_UserTrancheAccesses_Tranches_TrancheId",
-                        column: x => x.TrancheId,
+                        name: "FK_ProjectUserManage_Projects_Id2",
+                        column: x => x.Id2,
+                        principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TrancheUserAccess",
+                columns: table => new
+                {
+                    Id1 = table.Column<int>(type: "int", nullable: false),
+                    Id2 = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TrancheUserAccess", x => new { x.Id1, x.Id2 });
+                    table.ForeignKey(
+                        name: "FK_TrancheUserAccess_AspNetUsers_Id2",
+                        column: x => x.Id2,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TrancheUserAccess_Tranches_Id1",
+                        column: x => x.Id1,
                         principalTable: "Tranches",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserProjectAccesses_UserId",
-                table: "UserProjectAccesses",
-                column: "UserId");
+                name: "IX_Questions_AccountId",
+                table: "Questions",
+                column: "AccountId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Accounts_TrancheId",
@@ -182,24 +190,19 @@ namespace DocumentsQA_Backend.Migrations
                 column: "TrancheId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserProjectManages_ProjectId",
-                table: "UserProjectManages",
-                column: "ProjectId");
+                name: "IX_ProjectUserAccess_Id2",
+                table: "ProjectUserAccess",
+                column: "Id2");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserProjectManages_UserId",
-                table: "UserProjectManages",
-                column: "UserId");
+                name: "IX_ProjectUserManage_Id2",
+                table: "ProjectUserManage",
+                column: "Id2");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserTrancheAccesses_TrancheId",
-                table: "UserTrancheAccesses",
-                column: "TrancheId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_UserTrancheAccesses_UserId",
-                table: "UserTrancheAccesses",
-                column: "UserId");
+                name: "IX_TrancheUserAccess_Id2",
+                table: "TrancheUserAccess",
+                column: "Id2");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Questions_Accounts_AccountId",
@@ -208,22 +211,6 @@ namespace DocumentsQA_Backend.Migrations
                 principalTable: "Accounts",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Restrict);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_UserProjectAccesses_AspNetUsers_UserId",
-                table: "UserProjectAccesses",
-                column: "UserId",
-                principalTable: "AspNetUsers",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_UserProjectAccesses_Projects_ProjectId",
-                table: "UserProjectAccesses",
-                column: "ProjectId",
-                principalTable: "Projects",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />
@@ -233,49 +220,36 @@ namespace DocumentsQA_Backend.Migrations
                 name: "FK_Questions_Accounts_AccountId",
                 table: "Questions");
 
-            migrationBuilder.DropForeignKey(
-                name: "FK_UserProjectAccesses_AspNetUsers_UserId",
-                table: "UserProjectAccesses");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_UserProjectAccesses_Projects_ProjectId",
-                table: "UserProjectAccesses");
-
             migrationBuilder.DropTable(
                 name: "Accounts");
 
             migrationBuilder.DropTable(
-                name: "UserProjectManages");
+                name: "ProjectUserAccess");
 
             migrationBuilder.DropTable(
-                name: "UserTrancheAccesses");
+                name: "ProjectUserManage");
+
+            migrationBuilder.DropTable(
+                name: "TrancheUserAccess");
 
             migrationBuilder.DropIndex(
-                name: "IX_UserProjectAccesses_UserId",
-                table: "UserProjectAccesses");
+                name: "IX_Questions_AccountId",
+                table: "Questions");
+
+            migrationBuilder.DropColumn(
+                name: "AccountId",
+                table: "Questions");
 
             migrationBuilder.DropColumn(
                 name: "Company",
                 table: "AspNetUsers");
 
-            migrationBuilder.RenameTable(
-                name: "UserProjectAccesses",
-                newName: "ProjectUserAccesses");
-
-            migrationBuilder.RenameColumn(
-                name: "AccountId",
+            migrationBuilder.AddColumn<int>(
+                name: "TrancheId",
                 table: "Questions",
-                newName: "TrancheId");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_Questions_AccountId",
-                table: "Questions",
-                newName: "IX_Questions_TrancheId");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_UserProjectAccesses_ProjectId",
-                table: "ProjectUserAccesses",
-                newName: "IX_ProjectUserAccesses_ProjectId");
+                type: "int",
+                nullable: false,
+                defaultValue: 0);
 
             migrationBuilder.AlterColumn<string>(
                 name: "Name",
@@ -324,33 +298,44 @@ namespace DocumentsQA_Backend.Migrations
                 oldType: "nvarchar(256)",
                 oldMaxLength: 256);
 
-            migrationBuilder.AddColumn<int>(
-                name: "UserAccessesId",
+            migrationBuilder.CreateTable(
+                name: "ProjectUserAccesses",
+                columns: table => new
+                {
+                    ProjectId = table.Column<int>(type: "int", nullable: false),
+                    UserAccessesId = table.Column<int>(type: "int", nullable: false),
+                    UserId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.ForeignKey(
+                        name: "FK_ProjectUserAccesses_AspNetUsers_UserAccessesId",
+                        column: x => x.UserAccessesId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProjectUserAccesses_Projects_ProjectId",
+                        column: x => x.ProjectId,
+                        principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Questions_TrancheId",
+                table: "Questions",
+                column: "TrancheId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProjectUserAccesses_ProjectId",
                 table: "ProjectUserAccesses",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
+                column: "ProjectId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ProjectUserAccesses_UserAccessesId",
                 table: "ProjectUserAccesses",
                 column: "UserAccessesId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ProjectUserAccesses_AspNetUsers_UserAccessesId",
-                table: "ProjectUserAccesses",
-                column: "UserAccessesId",
-                principalTable: "AspNetUsers",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ProjectUserAccesses_Projects_ProjectId",
-                table: "ProjectUserAccesses",
-                column: "ProjectId",
-                principalTable: "Projects",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
 
             migrationBuilder.AddForeignKey(
                 name: "FK_Questions_Tranches_TrancheId",

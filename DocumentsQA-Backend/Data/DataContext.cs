@@ -129,7 +129,7 @@ namespace DocumentsQA_Backend.Data {
 					.WithMany()
 					.HasForeignKey(e => e.AccountId)
 					.OnDelete(DeleteBehavior.Restrict)
-					.IsRequired();
+					.IsRequired(false);
 
 				// Map Question:User as N:1
 				modelBuilder.Entity<Question>()

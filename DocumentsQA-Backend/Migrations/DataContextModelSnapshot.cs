@@ -306,7 +306,7 @@ namespace DocumentsQA_Backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AccountId")
+                    b.Property<int?>("AccountId")
                         .HasColumnType("int");
 
                     b.Property<int?>("AnswerApprovedById")
@@ -614,8 +614,7 @@ namespace DocumentsQA_Backend.Migrations
                     b.HasOne("DocumentsQA_Backend.Models.Account", "Account")
                         .WithMany()
                         .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("DocumentsQA_Backend.Models.AppUser", "AnswerApprovedBy")
                         .WithMany()

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DocumentsQA_Backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20230724094724_Account")]
+    [Migration("20230725103146_Account")]
     partial class Account
     {
         /// <inheritdoc />
@@ -21,6 +21,9 @@ namespace DocumentsQA_Backend.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "7.0.9")
+                .HasAnnotation("Proxies:ChangeTracking", false)
+                .HasAnnotation("Proxies:CheckEquality", false)
+                .HasAnnotation("Proxies:LazyLoading", true)
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -298,36 +301,6 @@ namespace DocumentsQA_Backend.Migrations
                     b.ToTable("Projects");
                 });
 
-            modelBuilder.Entity("DocumentsQA_Backend.Models.ProjectUserAccess", b =>
-                {
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasIndex("ProjectId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserProjectAccesses");
-                });
-
-            modelBuilder.Entity("DocumentsQA_Backend.Models.ProjectUserManages", b =>
-                {
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasIndex("ProjectId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserProjectManages");
-                });
-
             modelBuilder.Entity("DocumentsQA_Backend.Models.Question", b =>
                 {
                     b.Property<int>("Id")
@@ -336,7 +309,7 @@ namespace DocumentsQA_Backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AccountId")
+                    b.Property<int?>("AccountId")
                         .HasColumnType("int");
 
                     b.Property<int?>("AnswerApprovedById")
@@ -425,21 +398,6 @@ namespace DocumentsQA_Backend.Migrations
                     b.HasIndex("ProjectId");
 
                     b.ToTable("Tranches");
-                });
-
-            modelBuilder.Entity("DocumentsQA_Backend.Models.TrancheUserAccess", b =>
-                {
-                    b.Property<int>("TrancheId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasIndex("TrancheId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserTrancheAccesses");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -545,6 +503,51 @@ namespace DocumentsQA_Backend.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ProjectUserAccess", b =>
+                {
+                    b.Property<int>("Id1")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Id2")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id1", "Id2");
+
+                    b.HasIndex("Id2");
+
+                    b.ToTable("ProjectUserAccess");
+                });
+
+            modelBuilder.Entity("ProjectUserManage", b =>
+                {
+                    b.Property<int>("Id1")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Id2")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id1", "Id2");
+
+                    b.HasIndex("Id2");
+
+                    b.ToTable("ProjectUserManage");
+                });
+
+            modelBuilder.Entity("TrancheUserAccess", b =>
+                {
+                    b.Property<int>("Id1")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Id2")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id1", "Id2");
+
+                    b.HasIndex("Id2");
+
+                    b.ToTable("TrancheUserAccess");
+                });
+
             modelBuilder.Entity("DocumentsQA_Backend.Models.Account", b =>
                 {
                     b.HasOne("DocumentsQA_Backend.Models.Tranche", "Tranche")
@@ -609,51 +612,12 @@ namespace DocumentsQA_Backend.Migrations
                     b.Navigation("UploadedBy");
                 });
 
-            modelBuilder.Entity("DocumentsQA_Backend.Models.ProjectUserAccess", b =>
-                {
-                    b.HasOne("DocumentsQA_Backend.Models.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Project");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("DocumentsQA_Backend.Models.ProjectUserManages", b =>
-                {
-                    b.HasOne("DocumentsQA_Backend.Models.Project", "Project")
-                        .WithMany()
-                        .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Project");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("DocumentsQA_Backend.Models.Question", b =>
                 {
                     b.HasOne("DocumentsQA_Backend.Models.Account", "Account")
                         .WithMany()
                         .HasForeignKey("AccountId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("DocumentsQA_Backend.Models.AppUser", "AnswerApprovedBy")
                         .WithMany()
@@ -714,25 +678,6 @@ namespace DocumentsQA_Backend.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("DocumentsQA_Backend.Models.TrancheUserAccess", b =>
-                {
-                    b.HasOne("DocumentsQA_Backend.Models.Tranche", "Tranche")
-                        .WithMany()
-                        .HasForeignKey("TrancheId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DocumentsQA_Backend.Models.AppUser", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Tranche");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.HasOne("DocumentsQA_Backend.Models.AppRole", null)
@@ -780,6 +725,51 @@ namespace DocumentsQA_Backend.Migrations
                     b.HasOne("DocumentsQA_Backend.Models.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ProjectUserAccess", b =>
+                {
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("Id1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DocumentsQA_Backend.Models.Project", null)
+                        .WithMany()
+                        .HasForeignKey("Id2")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ProjectUserManage", b =>
+                {
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("Id1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DocumentsQA_Backend.Models.Project", null)
+                        .WithMany()
+                        .HasForeignKey("Id2")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TrancheUserAccess", b =>
+                {
+                    b.HasOne("DocumentsQA_Backend.Models.Tranche", null)
+                        .WithMany()
+                        .HasForeignKey("Id1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DocumentsQA_Backend.Models.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("Id2")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
