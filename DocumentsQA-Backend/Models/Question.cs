@@ -13,7 +13,7 @@ namespace DocumentsQA_Backend.Models {
 		public int Type { get; set; }
 
 		public int ProjectId { get; set; }					// FK to Project
-		public Project Project { get; set; } = null!;		// Reference navigation to FK
+		public virtual Project Project { get; set; } = null!;
 
 		public DateTime DatePosted { get; set; }
 
@@ -21,28 +21,28 @@ namespace DocumentsQA_Backend.Models {
 		public string? QuestionAnswer { get; set; }
 
 		public int AccountId { get; set; }					// FK to Account
-		public Account Account { get; set; } = null!;		// Reference navigation to FK
+		public virtual Account Account { get; set; } = null!;
 
 		public int PostedById { get; set; }					// FK to User
-		public AppUser PostedBy { get; set; } = null!;		// Reference navigation to FK
+		public virtual AppUser PostedBy { get; set; } = null!;
 		public int? AnsweredById { get; set; }				// FK to User
-		public AppUser? AnsweredBy { get; set; }			// Reference navigation to FK
+		public virtual AppUser? AnsweredBy { get; set; }
 
 		public int? QuestionApprovedById { get; set; }		// FK to User
-		public AppUser? QuestionApprovedBy { get; set; }	// Reference navigation to FK
+		public virtual AppUser? QuestionApprovedBy { get; set; }
 		public int? AnswerApprovedById { get; set; }		// FK to User
-		public AppUser? AnswerApprovedBy { get; set; }		// Reference navigation to FK
+		public virtual AppUser? AnswerApprovedBy { get; set; }
 
 		public DateTime? DateQuestionApproved { get; set; }
 		public DateTime? DateAnswerApproved { get; set; }
 
 		public int LastEditorId { get; set; }				// FK to User
-		public AppUser LastEditor { get; set; } = null!;	// Reference navigation to FK
+		public virtual AppUser LastEditor { get; set; } = null!;
 		public DateTime DateLastEdited { get; set; }
 
 		public bool DailyEmailSent { get; set; } = false;
 
-		public List<Document> Attachments { get; set; } = new();
-		public List<Comment> Comments { get; set; } = new();
+		public virtual List<Document> Attachments { get; set; } = new();	// One-to-many with Document
+		public virtual List<Comment> Comments { get; set; } = new();		// One-to-many with Comment
 	}
 }

@@ -37,9 +37,11 @@ namespace DocumentsQA_Backend {
 			services.AddControllers();
 
 			{
-				services.AddDbContext<DataContext>(options =>
+				services.AddDbContext<DataContext>(options => {
 					//options.UseSqlServer(_configuration.GetConnectionString("DocumentsDB")));
-					options.UseSqlServer(_configuration.GetConnectionString("TempLocalDB")));
+					options.UseLazyLoadingProxies();
+					options.UseSqlServer(_configuration.GetConnectionString("TempLocalDB"));
+				});
 
 				services.AddIdentity<AppUser, AppRole>()
 					.AddEntityFrameworkStores<DataContext>()

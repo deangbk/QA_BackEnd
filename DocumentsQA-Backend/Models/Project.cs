@@ -31,11 +31,11 @@ namespace DocumentsQA_Backend.Models {
 		public DateTime ProjectStartDate { get; set; }
 		public DateTime ProjectEndDate { get; set; }
 
-		public List<Tranche> Tranches { get; set; } = null!;			// One-to-many with Tranche
-		public List<Question> Questions { get; set; } = null!;			// One-to-many with Tranche
+		public virtual List<Tranche> Tranches { get; set; } = new();			// One-to-many with Tranche
+		public virtual List<Question> Questions { get; set; } = new();			// One-to-many with Question
 
-		public List<AppUser> UserAccesses { get; set; } = new();
-		public List<AppUser> UserManagers { get; set; } = new();
+		public virtual List<AppUser> UserAccesses { get; set; } = new();
+		public virtual List<AppUser> UserManagers { get; set; } = new();
 	}
 
 	[PrimaryKey(nameof(Id))]
@@ -43,13 +43,13 @@ namespace DocumentsQA_Backend.Models {
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
 		public int Id { get; set; }
 
-		public int ProjectId { get; set; }					// FK to Project
-		public Project Project { get; set; } = null!;		// Reference navigation to FK
+		public int ProjectId { get; set; }		// FK to Project
+		public virtual Project Project { get; set; } = null!;
 
 		[MaxLength(16)]
 		public string Name { get; set; } = null!;
 
-		public List<AppUser> UserAccesses { get; set; } = new();
+		public virtual List<AppUser> UserAccesses { get; set; } = new();
 	}
 
 	// Entity join class for Project <-> User
@@ -59,8 +59,8 @@ namespace DocumentsQA_Backend.Models {
 		public int ProjectId { get; set; }		// FK to Project
 		public int UserId { get; set; }			// FK to User
 
-		public Project Project { get; set; } = null!;		// Reference navigation to FK
-		public AppUser User { get; set; } = null!;			// Reference navigation to FK
+		public virtual Project Project { get; set; } = null!;
+		public virtual AppUser User { get; set; } = null!;
 	}
 
 	// Entity join class for Project <-> User
@@ -70,8 +70,8 @@ namespace DocumentsQA_Backend.Models {
 		public int TrancheId { get; set; }		// FK to Tranche
 		public int UserId { get; set; }			// FK to User
 
-		public Tranche Tranche { get; set; } = null!;		// Reference navigation to FK
-		public AppUser User { get; set; } = null!;			// Reference navigation to FK
+		public virtual Tranche Tranche { get; set; } = null!;
+		public virtual AppUser User { get; set; } = null!;
 	}
 
 	// Entity join class for Project <-> User
@@ -81,7 +81,7 @@ namespace DocumentsQA_Backend.Models {
 		public int ProjectId { get; set; }		// FK to Project
 		public int UserId { get; set; }			// FK to User
 
-		public Project Project { get; set; } = null!;		// Reference navigation to FK
-		public AppUser User { get; set; } = null!;			// Reference navigation to FK
+		public virtual Project Project { get; set; } = null!;
+		public virtual AppUser User { get; set; } = null!;
 	}
 }

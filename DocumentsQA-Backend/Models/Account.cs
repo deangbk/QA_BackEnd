@@ -9,8 +9,8 @@ namespace DocumentsQA_Backend.Models {
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
 		public int Id { get; set; }
 
-		public int TrancheId { get; set; }					// FK to Tranche
-		public Tranche Tranche { get; set; } = null!;		// Reference navigation to FK
+		public int TrancheId { get; set; }			// FK to Tranche
+		public virtual Tranche Tranche { get; set; } = null!;
 
 		public int AccountNo { get; set; }
 		[MaxLength(256)]

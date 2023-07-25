@@ -9,11 +9,11 @@ using DocumentsQA_Backend.Data;
 namespace DocumentsQA_Backend.Models {
 	// Extends the AspNetUsers table, also changes the ID to be an int
 	public class AppUser : IdentityUser<int> {
-		public List<Project> ProjectAccesses { get; set; } = new();     // Reference navigation for many-to-many FK
-		public List<Tranche> TrancheAccesses { get; set; } = new();		// Reference navigation for many-to-many FK
+		public virtual List<Project> ProjectAccesses { get; set; } = new();		// Reference navigation for many-to-many FK
+		public virtual List<Tranche> TrancheAccesses { get; set; } = new();		// Reference navigation for many-to-many FK
 		
 		public int? FavouriteProjectId { get; set; }		// User's "favourite" proj, aka the proj the user gets directed to when logging in
-		public Project? FavouriteProject { get; set; }      // Reference navigation to FK
+		public virtual Project? FavouriteProject { get; set; }
 
 		[MaxLength(256)]
 		public string Company { get; set; } = null!;
@@ -22,7 +22,7 @@ namespace DocumentsQA_Backend.Models {
 		public string DisplayName { get; set; } = null!;
 		public DateTime DateCreated { get; set; }
 
-		public List<Document> Documents { get; set; } = new();
+		public virtual List<Document> Documents { get; set; } = new();			// One-to-many with Document
 	}
 
 	// -----------------------------------------------------

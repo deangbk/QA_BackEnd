@@ -13,10 +13,10 @@ namespace DocumentsQA_Backend.Models {
 		public string CommentText { get; set; } = null!;
 		public DateTime DatePosted { get; set; }
 
-		public int QuestionId { get; set; }					// FK to Question
-		public Question Question { get; set; } = null!;		// Reference navigation to FK
+		public int QuestionId { get; set; }			// FK to Question
+		public virtual Question Question { get; set; } = null!;
 
-		public int PostedById { get; set; }					// FK to User
-		public AppUser PostedBy { get; set; } = null!;		// Reference navigation to FK
+		public int PostedById { get; set; }			// FK to User
+		public virtual AppUser PostedBy { get; set; } = null!;
 	}
 }
