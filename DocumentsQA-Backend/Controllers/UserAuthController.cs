@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Net;
+using System.Data;
 using System.Text;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
@@ -60,6 +61,13 @@ namespace DocumentsQA_Backend.Controllers {
 			var result = await _userManager.CreateAsync(user, uc.Password);
 
 			if (result.Succeeded) {
+				// Set user role
+				{
+					string role = AppRole.User;
+					await _userManager.AddClaimAsync(user, new Claim("role", role));
+					await _userManager.AddToRoleAsync(user, role);
+				}
+
 				var token = await _CreateUserToken(uc);
 				return Ok(token);
 			}
