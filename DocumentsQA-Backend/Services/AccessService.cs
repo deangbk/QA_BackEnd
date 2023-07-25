@@ -8,10 +8,13 @@ using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
+using DocumentsQA_Backend.Controllers;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Data;
+
 
 namespace DocumentsQA_Backend.Services {
 	public interface IAccessService {
@@ -20,10 +23,16 @@ namespace DocumentsQA_Backend.Services {
 	}
 
 	public class AccessService : IAccessService {
+		private readonly DataContext _dataContext;
 		private readonly ILogger<AccessService> _logger;
+		private readonly SignInManager<AppUser> _signinManager;
 
-		public AccessService(ILogger<AccessService> logger) {
+		public AccessService(DataContext dataContext, ILogger<AccessService> logger,
+			SignInManager<AppUser> signinManager) {
+
+			_dataContext = dataContext;
 			_logger = logger;
+			_signinManager = signinManager;
 		}
 
 		// -----------------------------------------------------
