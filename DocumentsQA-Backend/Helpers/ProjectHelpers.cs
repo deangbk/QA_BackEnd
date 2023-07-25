@@ -13,9 +13,7 @@ using DocumentsQA_Backend.Data;
 
 namespace DocumentsQA_Backend.Helpers {
 	public static class ProjectHelpers {
-		public static List<Tranche> GetUserTrancheAccessesInProject(DataContext dataContext, 
-			AppUser user, int pid) {
-
+		public static List<Tranche> GetUserTrancheAccessesInProject(AppUser user, int pid) {
 			return user.TrancheAccesses
 				.Where(x => x.ProjectId == pid)
 				.ToList();
