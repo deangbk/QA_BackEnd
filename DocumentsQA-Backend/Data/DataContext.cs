@@ -15,10 +15,6 @@ namespace DocumentsQA_Backend.Data {
 		public DbSet<Document> Documents { get; set; }
 		public DbSet<Comment> Comments { get; set; }
 
-		public DbSet<ProjectUserAccess> ProjectUserAccesses { get; set; }
-		public DbSet<TrancheUserAccess> TrancheUserAccesses { get; set; }
-		public DbSet<ProjectUserManages> ProjectUserManages { get; set; }
-
 		//--------------------------------------------------------------------------
 
 
@@ -52,13 +48,19 @@ namespace DocumentsQA_Backend.Data {
 				modelBuilder.Entity<Project>()
 					.HasMany(e => e.UserAccesses)
 					.WithMany(e => e.ProjectAccesses)
-					.UsingEntity<ProjectUserAccess>();
+					.UsingEntity<EJoinClass>(
+						"ProjectUserAccess",
+						l => l.HasOne<AppUser>().WithMany().HasForeignKey(e => e.Id1),
+						r => r.HasOne<Project>().WithMany().HasForeignKey(e => e.Id2));
 
 				// Map Project:User as N:M using join entity
 				modelBuilder.Entity<Project>()
 					.HasMany(e => e.UserManagers)
-					.WithMany()
-					.UsingEntity<ProjectUserManages>();
+					.WithMany(e => e.ProjectManages)
+					.UsingEntity<EJoinClass>(
+						"ProjectUserManage",
+						l => l.HasOne<AppUser>().WithMany().HasForeignKey(e => e.Id1),
+						r => r.HasOne<Project>().WithMany().HasForeignKey(e => e.Id2));
 			}
 
 			// Model: Tranche
@@ -94,7 +96,10 @@ namespace DocumentsQA_Backend.Data {
 				modelBuilder.Entity<AppUser>()
 					.HasMany(e => e.TrancheAccesses)
 					.WithMany(e => e.UserAccesses)
-					.UsingEntity<TrancheUserAccess>();
+					.UsingEntity<EJoinClass>(
+						"TrancheUserAccess",
+						l => l.HasOne<Tranche>().WithMany().HasForeignKey(e => e.Id1),
+						r => r.HasOne<AppUser>().WithMany().HasForeignKey(e => e.Id2));
 			}
 
 			// Model: Account

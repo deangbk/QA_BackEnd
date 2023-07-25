@@ -34,8 +34,8 @@ namespace DocumentsQA_Backend.Models {
 		public virtual List<Tranche> Tranches { get; set; } = new();			// One-to-many with Tranche
 		public virtual List<Question> Questions { get; set; } = new();			// One-to-many with Question
 
-		public virtual List<AppUser> UserAccesses { get; set; } = new();
-		public virtual List<AppUser> UserManagers { get; set; } = new();
+		public virtual List<AppUser> UserAccesses { get; set; } = new();		// Reference navigation for many-to-many FK
+		public virtual List<AppUser> UserManagers { get; set; } = new();		// Reference navigation for many-to-many FK
 	}
 
 	[PrimaryKey(nameof(Id))]
@@ -49,39 +49,12 @@ namespace DocumentsQA_Backend.Models {
 		[MaxLength(16)]
 		public string Name { get; set; } = null!;
 
-		public virtual List<AppUser> UserAccesses { get; set; } = new();
+		public virtual List<AppUser> UserAccesses { get; set; } = new();		// Reference navigation for many-to-many FK
 	}
 
-	// Entity join class for Project <-> User
-	[Keyless]
-	[Table("UserProjectAccesses")]
-	public class ProjectUserAccess {
-		public int ProjectId { get; set; }		// FK to Project
-		public int UserId { get; set; }			// FK to User
-
-		public virtual Project Project { get; set; } = null!;
-		public virtual AppUser User { get; set; } = null!;
-	}
-
-	// Entity join class for Project <-> User
-	[Keyless]
-	[Table("UserTrancheAccesses")]
-	public class TrancheUserAccess {
-		public int TrancheId { get; set; }		// FK to Tranche
-		public int UserId { get; set; }			// FK to User
-
-		public virtual Tranche Tranche { get; set; } = null!;
-		public virtual AppUser User { get; set; } = null!;
-	}
-
-	// Entity join class for Project <-> User
-	[Keyless]
-	[Table("UserProjectManages")]
-	public class ProjectUserManages {
-		public int ProjectId { get; set; }		// FK to Project
-		public int UserId { get; set; }			// FK to User
-
-		public virtual Project Project { get; set; } = null!;
-		public virtual AppUser User { get; set; } = null!;
+	// Multipurpose entity join class
+	public class EJoinClass {
+		public int Id1 { get; set; }
+		public int Id2 { get; set; }
 	}
 }

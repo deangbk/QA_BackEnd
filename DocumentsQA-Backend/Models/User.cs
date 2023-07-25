@@ -10,6 +10,7 @@ namespace DocumentsQA_Backend.Models {
 	// Extends the AspNetUsers table, also changes the ID to be an int
 	public class AppUser : IdentityUser<int> {
 		public virtual List<Project> ProjectAccesses { get; set; } = new();		// Reference navigation for many-to-many FK
+		public virtual List<Project> ProjectManages { get; set; } = new();		// Reference navigation for many-to-many FK
 		public virtual List<Tranche> TrancheAccesses { get; set; } = new();		// Reference navigation for many-to-many FK
 		
 		public int? FavouriteProjectId { get; set; }		// User's "favourite" proj, aka the proj the user gets directed to when logging in
