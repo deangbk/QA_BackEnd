@@ -34,7 +34,6 @@ namespace DocumentsQA_Backend.Models {
 		public virtual List<Tranche> Tranches { get; set; } = new();			// One-to-many with Tranche
 		public virtual List<Question> Questions { get; set; } = new();			// One-to-many with Question
 
-		public virtual List<AppUser> UserAccesses { get; set; } = new();		// Reference navigation for many-to-many FK
 		public virtual List<AppUser> UserManagers { get; set; } = new();		// Reference navigation for many-to-many FK
 	}
 
@@ -56,5 +55,8 @@ namespace DocumentsQA_Backend.Models {
 	public class EJoinClass {
 		public int Id1 { get; set; }
 		public int Id2 { get; set; }
+
+		public static EJoinClass ProjectUser(int projectID, int userId) => new() { Id1 = userId, Id2 = projectID };
+		public static EJoinClass TrancheUser(int trancheID, int userId) => new() { Id1 = trancheID, Id2 = userId };
 	}
 }

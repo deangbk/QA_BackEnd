@@ -15,6 +15,15 @@ namespace DocumentsQA_Backend.Data {
 		public DbSet<Document> Documents { get; set; }
 		public DbSet<Comment> Comments { get; set; }
 
+		/// <summary>
+		/// (UserId, ProjectId)
+		/// </summary>
+		public DbSet<EJoinClass> ProjectUserManage { get; set; }
+		/// <summary>
+		/// (TrancheId, UserId)
+		/// </summary>
+		public DbSet<EJoinClass> TrancheUserAccess { get; set; }
+
 		//--------------------------------------------------------------------------
 
 
@@ -44,15 +53,6 @@ namespace DocumentsQA_Backend.Data {
 		private void ConfigureRelationships(ModelBuilder modelBuilder) {
 			// Model: Project
 			{
-				// Map Project:User as N:M using join entity
-				modelBuilder.Entity<Project>()
-					.HasMany(e => e.UserAccesses)
-					.WithMany(e => e.ProjectAccesses)
-					.UsingEntity<EJoinClass>(
-						"ProjectUserAccess",
-						l => l.HasOne<AppUser>().WithMany().HasForeignKey(e => e.Id1),
-						r => r.HasOne<Project>().WithMany().HasForeignKey(e => e.Id2));
-
 				// Map Project:User as N:M using join entity
 				modelBuilder.Entity<Project>()
 					.HasMany(e => e.UserManagers)
