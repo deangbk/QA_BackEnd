@@ -54,7 +54,11 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!await _access.AllowToProject(HttpContext, project))
 				return Unauthorized();
 
-			var listUserIds = project.UserAccesses.Select(x => x.Id).ToList();
+			var listUserIds = project.Tranches
+				.SelectMany(x => x.UserAccesses)
+				.Select(x => x.Id)
+				.Distinct()
+				.ToList();
 
 			return Ok(listUserIds);
 		}
