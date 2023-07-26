@@ -5,16 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DocumentsQA_Backend.DTO {
 	public class CreateProjectDTO {
-		[BindProperty(Name = "name")]
 		public string Name { get; set; } = null!;
 
-		[BindProperty(Name = "company")]
 		public string Company { get; set; } = null!;
 
-		[BindProperty(Name = "d.start")]
+		[BindProperty(Name = "DateStart")]
 		public DateTime DateStart { get; set; }
 
-		[BindProperty(Name = "d.end")]
+		[BindProperty(Name = "DateEnd")]
 		public DateTime DateEnd { get; set; }
 	}
 }
