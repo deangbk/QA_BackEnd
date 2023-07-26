@@ -14,12 +14,12 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using DocumentsQA_Backend.Controllers;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Data;
-
+using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Services {
 	public interface IAccessService {
-		public bool AllowToProject(HttpContext ctx, Project project);
-		public bool AllowToTranche(HttpContext ctx, Tranche tranche);
+		public Task<bool> AllowToProject(HttpContext ctx, Project project);
+		public Task<bool> AllowToTranche(HttpContext ctx, Tranche tranche);
 	}
 
 	public class AccessService : IAccessService {
@@ -46,7 +46,7 @@ namespace DocumentsQA_Backend.Services {
 			}
 		}
 
-		public bool AllowToProject(HttpContext ctx, Project project) {
+		public Task<bool> AllowToProject(HttpContext ctx, Project project) {
 			var claimsPrincipal = ctx.User;
 
 			var userIdClaim = claimsPrincipal.FindFirst("id")?.Value;
@@ -54,15 +54,15 @@ namespace DocumentsQA_Backend.Services {
 
 			// Admins can access everything
 			if (userRoleClaim == AppRole.Admin)
-				return true;
+				return Task.FromResult(true);
 
 			int userId = _ParseUserID(userIdClaim);
 
 			bool allowProject = project.UserAccesses.Any(x => x.Id == userId);
-			return allowProject;
+			return Task.FromResult(allowProject);
 		}
 
-		public bool AllowToTranche(HttpContext ctx, Tranche tranche) {
+		public Task<bool> AllowToTranche(HttpContext ctx, Tranche tranche) {
 			var claimsPrincipal = ctx.User;
 
 			var userIdClaim = claimsPrincipal.FindFirst("id")?.Value;
@@ -70,7 +70,7 @@ namespace DocumentsQA_Backend.Services {
 
 			// Admins can access everything
 			if (userRoleClaim == AppRole.Admin)
-				return true;
+				return Task.FromResult(true);
 
 			int userId = _ParseUserID(userIdClaim);
 
@@ -78,11 +78,12 @@ namespace DocumentsQA_Backend.Services {
 			if (userRoleClaim == AppRole.Manager) {
 				bool allowManager = tranche.Project.UserManagers.Any(x => x.Id == userId);
 				if (allowManager)
-					return true;
+					return Task.FromResult(true);
 			}
 
+			// Allow normal users with access
 			bool allowProject = tranche.Project.UserAccesses.Any(x => x.Id == userId);
-			return allowProject;
+			return Task.FromResult(allowProject);
 		}
 	}
 }

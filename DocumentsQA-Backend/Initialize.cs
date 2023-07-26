@@ -163,7 +163,7 @@ namespace DocumentsQA_Backend {
 		}
 	}
 	public class AccessAllowAll : IAccessService {
-		public bool AllowToProject(HttpContext ctx, Project project) => true;
-		public bool AllowToTranche(HttpContext ctx, Tranche tranche) => true;
+		public Task<bool> AllowToProject(HttpContext ctx, Project project) => Task.FromResult(true);
+		public Task<bool> AllowToTranche(HttpContext ctx, Tranche tranche) => Task.FromResult(true);
 	}
 }
