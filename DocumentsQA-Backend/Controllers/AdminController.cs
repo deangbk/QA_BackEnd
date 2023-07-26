@@ -22,7 +22,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 	[Route("api/admin")]
 	[ApiController]
-	[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "IsAdmin")]
+	//[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "IsAdmin")]
 	public class AdminController : Controller {
 		private readonly DataContext _dataContext;
 		private readonly ILogger<PostController> _logger;
