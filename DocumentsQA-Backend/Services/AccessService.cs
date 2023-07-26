@@ -58,7 +58,15 @@ namespace DocumentsQA_Backend.Services {
 
 			int userId = _ParseUserID(userIdClaim);
 
-			bool allowProject = project.UserAccesses.Any(x => x.Id == userId);
+			// Allow project managers
+			if (userRoleClaim == AppRole.Manager) {
+				bool allowManager = project.UserManagers.Any(x => x.Id == userId);
+				if (allowManager)
+					return Task.FromResult(true);
+			}
+
+			// Allow normal users with access
+			bool allowProject = ProjectHelpers.CanUserAccessProject(project, userId);
 			return Task.FromResult(allowProject);
 		}
 
@@ -82,7 +90,7 @@ namespace DocumentsQA_Backend.Services {
 			}
 
 			// Allow normal users with access
-			bool allowProject = tranche.Project.UserAccesses.Any(x => x.Id == userId);
+			bool allowProject = tranche.UserAccesses.Any(x => x.Id == userId);
 			return Task.FromResult(allowProject);
 		}
 	}

@@ -9,6 +9,10 @@ namespace DocumentsQA_Backend.Data {
 			var res = await dataContext.Projects.FindAsync(id);
 			return res;
 		}
+		public static async Task<Tranche?> GetTrancheFromId(DataContext dataContext, int id) {
+			var res = await dataContext.Tranches.FindAsync(id);
+			return res;
+		}
 		public static async Task<Question?> GetQuestionFromId(DataContext dataContext, int id) {
 			var res = await dataContext.Questions.FindAsync(id);
 			return res;

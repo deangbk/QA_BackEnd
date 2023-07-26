@@ -42,7 +42,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!_access.AllowToProject(HttpContext, project))
+			if (!await _access.AllowToProject(HttpContext, project))
 				return Unauthorized();
 
 			var query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);
