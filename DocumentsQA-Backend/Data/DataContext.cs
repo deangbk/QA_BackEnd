@@ -15,6 +15,7 @@ namespace DocumentsQA_Backend.Data {
 		public DbSet<Document> Documents { get; set; }
 		public DbSet<Comment> Comments { get; set; }
 
+		/*
 		/// <summary>
 		/// (UserId, ProjectId)
 		/// </summary>
@@ -23,6 +24,7 @@ namespace DocumentsQA_Backend.Data {
 		/// (TrancheId, UserId)
 		/// </summary>
 		public DbSet<EJoinClass> TrancheUserAccess { get; set; }
+		*/
 
 		//--------------------------------------------------------------------------
 
