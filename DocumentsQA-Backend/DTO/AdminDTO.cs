@@ -9,10 +9,11 @@ namespace DocumentsQA_Backend.DTO {
 
 		public string Company { get; set; } = null!;
 
-		[BindProperty(Name = "DateStart")]
 		public DateTime DateStart { get; set; }
 
-		[BindProperty(Name = "DateEnd")]
 		public DateTime DateEnd { get; set; }
+
+		[BindProperty(Name = "Tranches")]
+		public string InitialTranches { get; set; } = null!;
 	}
 }

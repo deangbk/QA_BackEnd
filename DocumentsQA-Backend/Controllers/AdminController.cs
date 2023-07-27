@@ -125,36 +125,88 @@ namespace DocumentsQA_Backend.Controllers {
 				ProjectStartDate = dto.DateStart,
 				ProjectEndDate = dto.DateEnd,
 			};
-			_dataContext.Projects.Add(project);
 
-			await _dataContext.SaveChangesAsync();
+			List<string> tranches;
+			try {
+				tranches = dto.InitialTranches
+					.Split(",")
+					.Select(x => x.Trim().Truncate(16))
+					.Where(x => x.Length > 0)
+					.ToList();
+			}
+			catch (Exception) {
+				return BadRequest("Tranches: incorrect input format");
+			}
+
+			using (var transaction = _dataContext.Database.BeginTransaction()) {
+				_dataContext.Projects.Add(project);
+				await _dataContext.SaveChangesAsync();
+
+				project.Tranches = tranches.Select(x => new Tranche {
+					ProjectId = project.Id,
+					Name = x,
+				}).ToList();
+				await _dataContext.SaveChangesAsync();
+
+				await transaction.CommitAsync();
+			}
 
 			return Ok(project.Id);
 		}
 
-		[HttpPut("grant_access/{pid}/{uid}")]
-		public async Task<IActionResult> GrantProjectAccess(int pid, int uid) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
+		private IEnumerable<EJoinClass> _ExcludeAccess_Tranche(Tranche tranche, IEnumerable<int> userIds) {
+			// Remove all IDs that already have access to the tranche
+			return userIds
+				.Except(tranche.UserAccesses.Select(x => x.Id))
+				.Select(x => EJoinClass.TrancheUser(tranche.Id, x));
+		}
+		private IEnumerable<EJoinClass> _ExcludeAccess_Project(Project project, IEnumerable<int> userIds) {
+			// Remove all IDs that already have access to the project
+			return userIds
+				.Except(project.UserManagers.Select(x => x.Id))
+				.Select(x => EJoinClass.ProjectUser(project.Id, x));
+		}
+
+		[HttpPut("grant_access/{tid}/{uid}")]
+		public async Task<IActionResult> GrantTrancheAccess(int tid, int uid, [FromRoute] bool elevated) {
+			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
+			if (tranche == null)
+				return BadRequest("Tranche not found");
+			Project project = tranche.Project;
 
 			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());	// Horrific
 			if (user == null)
 				return BadRequest("User not found");
 
-			if (project.UserAccesses.Find(x => x.Id == uid) == null)
-				project.UserAccesses.Add(user);
+			if (!elevated) {
+				_dataContext.TrancheUserAccess.AddRange(
+					_ExcludeAccess_Tranche(tranche, new int[] { uid }));
+			}
+			else {
+				// Add access for each tranche in project
+				foreach (var i in project.Tranches) {
+					_dataContext.TrancheUserAccess.AddRange(
+						_ExcludeAccess_Tranche(i, new int[] { uid }));
+				}
 
-			return Ok();
+				// Add to project manager
+				_dataContext.ProjectUserManage.AddRange(
+					_ExcludeAccess_Project(project, new int[] { uid }));
+			}
+
+			var rows = await _dataContext.SaveChangesAsync();
+			return Ok(rows);
 		}
-		[HttpPut("grant_access_withfile/{pid}/{uid}")]
+		[HttpPut("grant_access_withfile/{tid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]	// 4MB
-		public async Task<IActionResult> GrantProjectAccessFromFile(int pid, [FromForm] IFormFile file) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
+		public async Task<IActionResult> GrantTrancheAccessFromFile(int tid, 
+			[FromRoute] bool elevated, [FromForm] IFormFile file) {
 
-			/*
+			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
+			if (tranche == null)
+				return BadRequest("Tranche not found");
+			Project project = tranche.Project;
+
 			List<int> userIdsGrant = new();
 
 			try {
@@ -169,10 +221,8 @@ namespace DocumentsQA_Backend.Controllers {
 					}
 
 					foreach (var line in lines) {
-						var data = line.Split(' ').Select(x => x.Trim()).ToArray();
-						var trancheId = int.Parse(data[0]);
-						var userId = int.Parse(data[1]);
-						userIdsGrant.AddRange(userId);
+						var data = line.Split(',').Select(x => int.Parse(x.Trim()));
+						userIdsGrant.AddRange(data);
 					}
 				}
 			}
@@ -180,19 +230,24 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("File parse error: " + e.Message);
 			}
 
-			var existingAccesses = project.UserAccesses.Select(x => x.Id).ToList();
+			if (!elevated) {
+				// Remove all users who already have access to the tranche
+				_dataContext.TrancheUserAccess.AddRange(
+					_ExcludeAccess_Tranche(tranche, userIdsGrant));
+			}
+			else {
+				// Add access for each tranche in project
+				foreach (var i in project.Tranches) {
+					_dataContext.TrancheUserAccess.AddRange(
+						_ExcludeAccess_Tranche(i, userIdsGrant));
+				}
 
-			// Remove all users who already have access to the project
-			var newAccesses = userIdsGrant.Except(existingAccesses);
+				// Add to project manager
+				_dataContext.ProjectUserManage.AddRange(
+					_ExcludeAccess_Project(project, userIdsGrant));
+			}
 
-			var accessesObj = newAccesses.Select(x => new ProjectUserAccess() {
-				ProjectId = pid,
-				UserId = x,
-			});
-			_dataContext.ProjectUserAccesses.AddRange(accessesObj);
-			*/
 			var rows = await _dataContext.SaveChangesAsync();
-
 			return Ok(rows);
 		}
 	}
