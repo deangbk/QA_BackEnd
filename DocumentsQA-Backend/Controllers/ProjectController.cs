@@ -19,6 +19,7 @@ using DocumentsQA_Backend.Helpers;
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
+
 	[Route("api/project")]
 	[Authorize]
 	public class ProjectController : Controller {
@@ -37,7 +38,7 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		// -----------------------------------------------------
-
+		/// get specific project
 		[HttpGet("get/{pid}")]
 		public async Task<IActionResult> GetProjectInfo(int pid) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
@@ -48,7 +49,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok(Mapper.FromProject(project, 2));
 		}
-
+		/// gets list of all users who can view the project
 		[HttpGet("users/{pid}")]
 		public async Task<IActionResult> GetProjectUsers(int pid) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
@@ -72,7 +73,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok(listUserIds);
 		}
-
+		/// gets only list of managers who can acess the project
 		[HttpGet("managers/{pid}")]
 		public async Task<IActionResult> GetProjectManagers(int pid) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);

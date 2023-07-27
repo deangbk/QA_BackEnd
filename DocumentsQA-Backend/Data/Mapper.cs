@@ -12,7 +12,7 @@ using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend.Data {
 	using JsonTable = Dictionary<string, object>;
-
+//// adds the filters to what is returned based on detials of the user an drequest. And maps the data to the json table
 	public static class Mapper {
 		public static JsonTable FromProject(Project obj, int detailsLevel = 0) {
 			var table = new JsonTable() {

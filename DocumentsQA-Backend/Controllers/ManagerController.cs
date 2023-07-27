@@ -39,7 +39,12 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		// -----------------------------------------------------
-
+		/// <summary>
+		/// sets tranche access for a user on a project, not managers
+		/// </summary>
+		/// <param name="tid"></param>
+		/// <param name="uid"></param>
+		/// <returns></returns>
 		[HttpPut("grant_access/{tid}/{uid}")]
 		public async Task<IActionResult> GrantTrancheAccess(int tid, int uid) {
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);

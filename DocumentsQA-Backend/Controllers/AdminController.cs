@@ -58,6 +58,8 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok();
 		}
 
+
+		/// Create different access roles for users (Admin)
 		[HttpPut("create_role/{role}")]
 		public async Task<IActionResult> CreateRole(string role) {
 			var roleExists = await _roleManager.RoleExistsAsync(role);
@@ -70,7 +72,7 @@ namespace DocumentsQA_Backend.Controllers {
 			else
 				return BadRequest(result.Errors);
 		}
-
+		/// grants a user a role - each users can have many roles
 		[HttpPut("grant_role/{uid}/{role}")]
 		public async Task<IActionResult> GrantUserRole(int uid, string role) {
 			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());	// Horrific
@@ -93,6 +95,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok();
 		}
+
+		/// removes a role from a user
 		[HttpDelete("remove_role/{uid}/{role}")]
 		public async Task<IActionResult> RemoveUserRole(int uid, string role) {
 			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());	// Horrific
@@ -115,7 +119,7 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		// -----------------------------------------------------
-
+		/// recives project data from frontend to create a new project including tranches as comma delemitered string
 		[HttpPost("create_project")]
 		public async Task<IActionResult> CreateProject([FromForm] CreateProjectDTO dto) {
 			Project project = new Project {
@@ -168,7 +172,7 @@ namespace DocumentsQA_Backend.Controllers {
 				.Except(project.UserManagers.Select(x => x.Id))
 				.Select(x => EJoinClass.ProjectUser(project.Id, x));
 		}
-
+		/// admin granting access to a manager for a project
 		[HttpPut("grant_manage/{tid}/{uid}")]
 		public async Task<IActionResult> GrantProjectManagement(int tid, int uid) {
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
@@ -194,6 +198,8 @@ namespace DocumentsQA_Backend.Controllers {
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
+
+		///grants access to multiple users at once from a file
 		[HttpPut("grant_manage_withfile/{tid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]	// 4MB
 		public async Task<IActionResult> GrantProjectManagementFromFile(int tid, [FromForm] IFormFile file) {

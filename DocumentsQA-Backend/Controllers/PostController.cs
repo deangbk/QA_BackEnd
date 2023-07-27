@@ -34,7 +34,7 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		// -----------------------------------------------------
-
+		//// gets questions based on pageId 
 		[HttpGet("get_page/{pid}")]
 		public async Task<IActionResult> GetPostsPage(int pid, 
 			[FromQuery] PostGetFilterDTO filter, [FromQuery] PostGetDTO get) {
