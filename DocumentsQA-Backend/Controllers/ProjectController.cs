@@ -54,10 +54,32 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!await _access.AllowToProject(HttpContext, project))
 				return Unauthorized();
 
+			var listManagerIds = project.UserManagers
+				.Select(x => x.Id)
+				.ToList();
 			var listUserIds = project.Tranches
 				.SelectMany(x => x.UserAccesses)
 				.Select(x => x.Id)
 				.Distinct()
+				.ToList();
+
+			var listAccessIds = listManagerIds
+				.Union(listUserIds)
+				.ToList();
+
+			return Ok(listUserIds);
+		}
+
+		[HttpGet("managers/{pid}")]
+		public async Task<IActionResult> GetProjectManagers(int pid) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+			if (!await _access.AllowToProject(HttpContext, project))
+				return Unauthorized();
+
+			var listUserIds = project.UserManagers
+				.Select(x => x.Id)
 				.ToList();
 
 			return Ok(listUserIds);
