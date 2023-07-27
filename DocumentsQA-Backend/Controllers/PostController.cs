@@ -54,7 +54,7 @@ namespace DocumentsQA_Backend.Controllers {
 				query = query.Where(x => x.PostedById == filter.PosterID);
 			}
 			if (filter.Tranche != null) {
-				query = query.Where(x => x.Account.Tranche.Name == filter.Tranche);
+				query = query.Where(x => x.Account == null || x.Account.Tranche.Name == filter.Tranche);
 			}
 			if (filter.PostedFrom is not null && filter.PostedTo is not null) {
 				query = query.Where(x => x.DatePosted >= filter.PostedFrom && x.DatePosted < filter.PostedTo);
