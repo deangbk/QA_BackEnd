@@ -156,41 +156,21 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private IEnumerable<EJoinClass> _ExcludeAccess_Tranche(Tranche tranche, IEnumerable<int> userIds) {
+		public static IEnumerable<EJoinClass> ExcludeExistingTrancheAccess(Tranche tranche, IEnumerable<int> userIds) {
 			// Remove all IDs that already have access to the tranche
 			return userIds
 				.Except(tranche.UserAccesses.Select(x => x.Id))
 				.Select(x => EJoinClass.TrancheUser(tranche.Id, x));
 		}
-		private IEnumerable<EJoinClass> _ExcludeAccess_Project(Project project, IEnumerable<int> userIds) {
+		public static IEnumerable<EJoinClass> ExcludeExistingProjectManage(Project project, IEnumerable<int> userIds) {
 			// Remove all IDs that already have access to the project
 			return userIds
 				.Except(project.UserManagers.Select(x => x.Id))
 				.Select(x => EJoinClass.ProjectUser(project.Id, x));
 		}
 
-		private List<int> _ReadIntListFromFile(IFormFile file) {
-			List<int> res = new();
-			using (var stream = file.OpenReadStream()) {
-				using var reader = new StreamReader(stream, Encoding.ASCII);
-
-				var lines = new List<string>();
-				while (!reader.EndOfStream) {
-					var line = reader.ReadLine();
-					if (line != null && line.Length > 0)
-						lines.Add(line);
-				}
-
-				foreach (var line in lines) {
-					var data = line.Split(',').Select(x => int.Parse(x.Trim()));
-					res.AddRange(data);
-				}
-			}
-			return res;
-		}
-
-		[HttpPut("grant_access/{tid}/{uid}")]
-		public async Task<IActionResult> GrantTrancheAccess(int tid, int uid, [FromRoute] bool elevated) {
+		[HttpPut("grant_manage/{tid}/{uid}")]
+		public async Task<IActionResult> GrantProjectManagement(int tid, int uid) {
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
@@ -200,42 +180,32 @@ namespace DocumentsQA_Backend.Controllers {
 			if (user == null)
 				return BadRequest("User not found");
 
-			if (!elevated) {
-				// Grant normal access to only one tranche
+			// Grant elevated access (manager) to all tranches in the project
 
-				if (!tranche.UserAccesses.Exists(x => x.Id == uid))
-					tranche.UserAccesses.Add(user);
+			// Add access for each tranche in project
+			foreach (var i in project.Tranches) {
+				if (!i.UserAccesses.Exists(x => x.Id == uid))
+					i.UserAccesses.Add(user);
 			}
-			else {
-				// Grant elevated access (manager) to all tranches in the project
-
-				// Add access for each tranche in project
-				foreach (var i in project.Tranches) {
-					if (!i.UserAccesses.Exists(x => x.Id == uid))
-						i.UserAccesses.Add(user);
-				}
-
-				// Add to project manager
-				if (!project.UserManagers.Exists(x => x.Id == uid))
-					project.UserManagers.Add(user);
-			}
+			// Add to project manager
+			if (!project.UserManagers.Exists(x => x.Id == uid))
+				project.UserManagers.Add(user);
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
-		[HttpPut("grant_access_withfile/{tid}")]
+		[HttpPut("grant_manage_withfile/{tid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]	// 4MB
-		public async Task<IActionResult> GrantTrancheAccessFromFile(int tid, 
-			[FromQuery] bool elevated, [FromForm] IFormFile file) {
-
+		public async Task<IActionResult> GrantProjectManagementFromFile(int tid, [FromForm] IFormFile file) {
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
 			Project project = tranche.Project;
 
-			List<int> userIdsGrant = new();
+			List<int> userIds = new();
 			try {
-				userIdsGrant = _ReadIntListFromFile(file);
+				using var stream = file.OpenReadStream();
+				userIds = FileHelpers.ReadIntListFromFile(stream);
 			}
 			catch (Exception e) {
 				return BadRequest("File parse error: " + e.Message);
@@ -243,97 +213,60 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
 			var dbSetManager = _dataContext.Set<EJoinClass>("ProjectUserManage");
+			
+			// Grant elevated access (manager) to all tranches in the project
 
-			if (!elevated) {
-				// Grant normal access to only one tranche
-
-				dbSetTranche.AddRange(_ExcludeAccess_Tranche(tranche, userIdsGrant));
+			// Add access for each tranche in project
+			foreach (var i in project.Tranches) {
+				dbSetTranche.AddRange(ExcludeExistingTrancheAccess(i, userIds));
 			}
-			else {
-				// Grant elevated access (manager) to all tranches in the project
-
-				// Add access for each tranche in project
-				foreach (var i in project.Tranches) {
-					dbSetTranche.AddRange(_ExcludeAccess_Tranche(i, userIdsGrant));
-				}
-
-				// Add to project manager
-				dbSetManager.AddRange(_ExcludeAccess_Project(project, userIdsGrant));
-			}
+			// Add to project manager
+			dbSetManager.AddRange(ExcludeExistingProjectManage(project, userIds));
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
 
-		[HttpDelete("remove_access/{tid}/{uid}")]
-		public async Task<IActionResult> RemoveTrancheAccess(int tid, int uid, [FromQuery] bool elevated) {
+		[HttpDelete("remove_manage/{tid}/{uid}")]
+		public async Task<IActionResult> RemoveProjectManagement(int tid, int uid) {
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
 			Project project = tranche.Project;
-
-			if (!elevated) {
-				// Remove access from one tranche
-				if (!project.UserManagers.Exists(x => x.Id == uid)) {
-					tranche.UserAccesses.RemoveAll(x => x.Id == uid);
-				}
-				else {
-					return BadRequest("Cannot remove tranche access from the user "
-						+ "as they have elevated rights for this project\n"
-						+ "Call API with elevated=true");
-				}
+			
+			// Remove access from all tranches
+			foreach (var i in project.Tranches) {
+				i.UserAccesses.RemoveAll(x => x.Id == uid);
 			}
-			else {
-				// Remove access from all tranches
-				foreach (var i in project.Tranches) {
-					i.UserAccesses.RemoveAll(x => x.Id == uid);
-				}
-
-				// Also remove manage access for the project
-				project.UserManagers.RemoveAll(x => x.Id == uid);
-			}
+			// Remove manage access for the project
+			project.UserManagers.RemoveAll(x => x.Id == uid);
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
-		[HttpDelete("remove_access_withfile/{tid}")]
+		[HttpDelete("remove_manage_withfile/{tid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]	// 4MB
-		public async Task<IActionResult> RemoveTrancheAccessFromFile(int tid, 
-			[FromQuery] bool elevated, [FromForm] IFormFile file) {
-
+		public async Task<IActionResult> RemoveProjectManagementFromFile(int tid, [FromForm] IFormFile file) {
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
 			Project project = tranche.Project;
 
-			List<int> userIdsGrant = new();
+			List<int> userIds = new();
 			try {
-				userIdsGrant = _ReadIntListFromFile(file);
+				using var stream = file.OpenReadStream();
+				userIds = FileHelpers.ReadIntListFromFile(stream);
 			}
 			catch (Exception e) {
 				return BadRequest("File parse error: " + e.Message);
 			}
 
-			if (!elevated) {
-				// Remove access from one tranche
-				if (!project.UserManagers.Exists(x => userIdsGrant.Any(y => y == x.Id))) {
-					tranche.UserAccesses.RemoveAll(x => userIdsGrant.Any(y => y == x.Id));
-				}
-				else {
-					return BadRequest("Cannot remove tranche access from one or more users "
-						+ "as they have elevated rights for this project\n"
-						+ "Call API with elevated=true");
-				}
+			// Remove access from all tranches
+			foreach (var i in project.Tranches) {
+				i.UserAccesses.RemoveAll(x => userIds.Any(y => y == x.Id));
 			}
-			else {
-				// Remove access from all tranches
-				foreach (var i in project.Tranches) {
-					i.UserAccesses.RemoveAll(x => userIdsGrant.Any(y => y == x.Id));
-				}
-
-				// Also remove manage access for the project
-				project.UserManagers.RemoveAll(x => userIdsGrant.Any(y => y == x.Id));
-			}
+			// Also remove manage access for the project
+			project.UserManagers.RemoveAll(x => userIds.Any(y => y == x.Id));
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
