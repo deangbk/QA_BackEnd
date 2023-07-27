@@ -114,9 +114,5 @@ namespace DocumentsQA_Backend.Services {
 
 			return Task.FromResult(false);
 		}
-		public Task<bool> AllowManageTranche(HttpContext ctx, Tranche tranche) {
-			var allow = AllowManageProject(ctx, tranche.Project);
-			return allow;
-		}
 	}
 }

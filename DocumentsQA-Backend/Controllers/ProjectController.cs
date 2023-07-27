@@ -14,6 +14,7 @@ using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Services;
+using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
@@ -26,7 +27,9 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly AccessService _access;
 
-		public ProjectController(DataContext dataContext, ILogger<PostController> logger, AccessService access) {
+		public ProjectController(DataContext dataContext, ILogger<PostController> logger, 
+			AccessService access) {
+
 			_dataContext = dataContext;
 			_logger = logger;
 
@@ -51,7 +54,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(HttpContext, project))
+			if (!await _access.AllowManageProject(HttpContext, project))
 				return Unauthorized();
 
 			var listManagerIds = project.UserManagers
@@ -84,5 +87,9 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok(listUserIds);
 		}
+
+		// -----------------------------------------------------
+
+		
 	}
 }
