@@ -69,7 +69,6 @@ namespace DocumentsQA_Backend.Services {
 			bool allowProject = ProjectHelpers.CanUserAccessProject(project, userId);
 			return Task.FromResult(allowProject);
 		}
-
 		public Task<bool> AllowToTranche(HttpContext ctx, Tranche tranche) {
 			var claimsPrincipal = ctx.User;
 
@@ -92,6 +91,32 @@ namespace DocumentsQA_Backend.Services {
 			// Allow normal users with access
 			bool allowProject = tranche.UserAccesses.Any(x => x.Id == userId);
 			return Task.FromResult(allowProject);
+		}
+
+		public Task<bool> AllowManageProject(HttpContext ctx, Project project) {
+			var claimsPrincipal = ctx.User;
+
+			var userIdClaim = claimsPrincipal.FindFirst("id")?.Value;
+			var userRoleClaim = claimsPrincipal.FindFirst("role")?.Value;
+
+			// Admins can access everything
+			if (userRoleClaim == AppRole.Admin)
+				return Task.FromResult(true);
+
+			int userId = _ParseUserID(userIdClaim);
+
+			// Allow project managers
+			if (userRoleClaim == AppRole.Manager) {
+				bool allowManager = project.UserManagers.Any(x => x.Id == userId);
+				if (allowManager)
+					return Task.FromResult(true);
+			}
+
+			return Task.FromResult(false);
+		}
+		public Task<bool> AllowManageTranche(HttpContext ctx, Tranche tranche) {
+			var allow = AllowManageProject(ctx, tranche.Project);
+			return allow;
 		}
 	}
 }
