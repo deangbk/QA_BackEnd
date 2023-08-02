@@ -21,8 +21,6 @@ namespace DocumentsQA_Backend.Models {
 		[MaxLength(256)]
 		public string DisplayName { get; set; } = null!;
 		public DateTime DateCreated { get; set; }
-
-		public virtual List<Document> Documents { get; set; } = new();			// One-to-many with Document
 	}
 
 	// -----------------------------------------------------

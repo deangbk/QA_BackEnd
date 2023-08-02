@@ -28,8 +28,8 @@ namespace DocumentsQA_Backend.Models {
 		public int? AssocQuestionId { get; set; }		// FK to Question
 		public virtual Question? AssocQuestion { get; set; } = null!;
 
-		public int? AssocUserId { get; set; }			// FK to User
-		public virtual AppUser? AssocUser { get; set; } = null!;
+		public int? AssocAccountId { get; set; }		// FK to Account
+		public virtual Account? AssocAccount { get; set; } = null!;
 
 		public bool Hidden { get; set; } = false;
 		public bool AllowPrint { get; set; } = false;
@@ -38,6 +38,6 @@ namespace DocumentsQA_Backend.Models {
 	public enum DocumentType {
 		General,		// No association
 		Question,		// Associated with a specific question
-		Account,		// Associated with a specific user
+		Account,		// Associated with a specific account
 	}
 }

@@ -183,7 +183,7 @@ namespace DocumentsQA_Backend.Data {
 				modelBuilder.Entity<Document>()
 					.HasOne(e => e.UploadedBy)
 					.WithMany()
-					.HasForeignKey(e => e.AssocQuestionId)
+					.HasForeignKey(e => e.UploadedById)
 					.OnDelete(DeleteBehavior.Restrict)
 					.IsRequired();
 
@@ -195,11 +195,11 @@ namespace DocumentsQA_Backend.Data {
 					.OnDelete(DeleteBehavior.Cascade)
 					.IsRequired(false);
 
-				// Map Document:User as N:1
+				// Map Document:Account as N:1
 				modelBuilder.Entity<Document>()
-					.HasOne(e => e.AssocQuestion)
-					.WithMany(e => e.Attachments)
-					.HasForeignKey(e => e.AssocQuestionId)
+					.HasOne(e => e.AssocAccount)
+					.WithMany(e => e.Documents)
+					.HasForeignKey(e => e.AssocAccountId)
 					.OnDelete(DeleteBehavior.Cascade)
 					.IsRequired(false);
 			}

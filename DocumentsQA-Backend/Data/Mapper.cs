@@ -111,7 +111,7 @@ namespace DocumentsQA_Backend.Data {
 			}
 			if (detailsLevel >= 2) {
 				table["assoc_post"] = obj.AssocQuestionId!;
-				table["assoc_user"] = obj.AssocUserId!;
+				table["assoc_account"] = obj.AssocAccountId!;
 			}
 
 			return table;
