@@ -29,13 +29,30 @@ namespace DocumentsQA_Backend.Models {
 	// https://stackoverflow.com/a/35521154
 
 	public class AppRole : IdentityRole<int> {
-		public AppRole() { }
-		public AppRole(string name) { Name = name; }
+		// Private ctors to forbid creating new roles
+		private AppRole() { }
+		private AppRole(string name) { Name = name; }
 
 		// -----------------------------------------------------
 
-		public static readonly string User = "user";
-		public static readonly string Manager = "manager";
-		public static readonly string Admin = "admin";
+		public static readonly AppRole User = new("user");
+		public static readonly AppRole Manager = new("manager");
+		public static readonly AppRole Admin = new("admin");
+		public static readonly AppRole Empty = new();
+
+		public static AppRole FromString(string name) => name switch {
+			"user" => User,
+			"manager" => Manager,
+			"admin" => Admin,
+			_ => Empty,
+		};
+		public override string ToString() => this.Name;
+		public override bool Equals(object? obj) {
+			if (obj is AppRole role)
+				return this.Name.Equals(role.Name);
+			return false;
+		}
+
+		public bool IsStaff() => this.Equals(Manager) || this.Equals(Admin);
 	}
 }

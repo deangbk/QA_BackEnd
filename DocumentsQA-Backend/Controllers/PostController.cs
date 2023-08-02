@@ -24,9 +24,9 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly DataContext _dataContext;
 		private readonly ILogger<PostController> _logger;
 
-		private readonly IAccessService _access;
+		private readonly AccessService _access;
 
-		public PostController(DataContext dataContext, ILogger<PostController> logger, IAccessService access) {
+		public PostController(DataContext dataContext, ILogger<PostController> logger, AccessService access) {
 			_dataContext = dataContext;
 			_logger = logger;
 

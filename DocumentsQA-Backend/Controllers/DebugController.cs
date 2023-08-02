@@ -45,7 +45,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		[HttpPost("create_users")]
 		public async Task<IActionResult> CreateUsers() {
-			var _NewUser = async (string name, string email, string pass, string role) => {
+			var _NewUser = async (string name, string email, string pass, AppRole role) => {
 				var user = new AppUser() {
 					UserName = email,
 					Email = email,
@@ -57,8 +57,8 @@ namespace DocumentsQA_Backend.Controllers {
 				var result = await _userManager.CreateAsync(user, pass);
 				if (result.Succeeded) {
 					// Set user role
-					await _userManager.AddClaimAsync(user, new Claim("role", role));
-					await _userManager.AddToRoleAsync(user, role);
+					await _userManager.AddClaimAsync(user, new Claim("role", role.Name));
+					await _userManager.AddToRoleAsync(user, role.Name);
 				}
 				return result.Succeeded;
 			};

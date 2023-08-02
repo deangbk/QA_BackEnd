@@ -45,12 +45,13 @@ namespace DocumentsQA_Backend.Controllers {
 		[HttpPut("gen_roles")]
 		[AllowAnonymous]
 		public async Task<IActionResult> CreateDefaultRoles() {
-			string[] roles = new[] { AppRole.User, AppRole.Manager, AppRole.Admin };
+			AppRole[] roles = new[] {
+				AppRole.User, AppRole.Manager, AppRole.Admin };
 
-			foreach (var roleName in roles) {
+			foreach (var role in roles) {
+				string roleName = role.Name;
 				bool roleExists = await _roleManager.RoleExistsAsync(roleName);
 				if (!roleExists) {
-					var role = new AppRole(roleName);
 					await _roleManager.CreateAsync(role);
 				}
 			}
@@ -58,6 +59,7 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok();
 		}
 
+		/*
 		[HttpPut("create_role/{role}")]
 		public async Task<IActionResult> CreateRole(string role) {
 			var roleExists = await _roleManager.RoleExistsAsync(role);
@@ -70,6 +72,7 @@ namespace DocumentsQA_Backend.Controllers {
 			else
 				return BadRequest(result.Errors);
 		}
+		*/
 
 		[HttpPut("grant_role/{uid}/{role}")]
 		public async Task<IActionResult> GrantUserRole(int uid, string role) {
