@@ -29,8 +29,7 @@ namespace DocumentsQA_Backend.Models {
 	// https://stackoverflow.com/a/35521154
 
 	public class AppRole : IdentityRole<int> {
-		// Private ctors to forbid creating new roles
-		private AppRole() { }
+		public AppRole() { }
 		private AppRole(string name) { Name = name; }
 
 		// -----------------------------------------------------
@@ -39,6 +38,8 @@ namespace DocumentsQA_Backend.Models {
 		public static readonly AppRole Manager = new("manager");
 		public static readonly AppRole Admin = new("admin");
 		public static readonly AppRole Empty = new();
+
+		public bool IsStaff() => this.Equals(Manager) || this.Equals(Admin);
 
 		public static AppRole FromString(string name) => name switch {
 			"user" => User,
@@ -52,7 +53,6 @@ namespace DocumentsQA_Backend.Models {
 				return this.Name.Equals(role.Name);
 			return false;
 		}
-
-		public bool IsStaff() => this.Equals(Manager) || this.Equals(Admin);
+		public override int GetHashCode() => this.Name.GetHashCode();
 	}
 }

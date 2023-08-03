@@ -187,6 +187,14 @@ namespace DocumentsQA_Backend.Data {
 					.OnDelete(DeleteBehavior.Restrict)
 					.IsRequired();
 
+				// Map Document:Project as N:1
+				modelBuilder.Entity<Document>()
+					.HasOne(e => e.Project)
+					.WithMany()
+					.HasForeignKey(e => e.ProjectId)
+					.OnDelete(DeleteBehavior.Restrict)
+					.IsRequired(false);
+
 				// Map Document:Question as N:1
 				modelBuilder.Entity<Document>()
 					.HasOne(e => e.AssocQuestion)

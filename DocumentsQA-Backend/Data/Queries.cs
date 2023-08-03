@@ -13,8 +13,16 @@ namespace DocumentsQA_Backend.Data {
 			var res = await dataContext.Tranches.FindAsync(id);
 			return res;
 		}
+		public static async Task<Account?> GetAccountFromId(DataContext dataContext, int id) {
+			var res = await dataContext.Accounts.FindAsync(id);
+			return res;
+		}
 		public static async Task<Question?> GetQuestionFromId(DataContext dataContext, int id) {
 			var res = await dataContext.Questions.FindAsync(id);
+			return res;
+		}
+		public static async Task<Document?> GetDocumentFromId(DataContext dataContext, int id) {
+			var res = await dataContext.Documents.FindAsync(id);
 			return res;
 		}
 
