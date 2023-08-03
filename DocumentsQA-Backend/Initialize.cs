@@ -81,12 +81,17 @@ namespace DocumentsQA_Backend {
 				})
 					.AddJwtBearer(options => {
 						options.TokenValidationParameters = new TokenValidationParameters {
-							ValidateIssuerSigningKey = true,
+							// Don't care about these
 							ValidateIssuer = false,
 							ValidateAudience = false,
-							ValidateLifetime = true,
+
+							// Validate signing key
+							ValidateIssuerSigningKey = true,
 							IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(JwtKey)),
-							ClockSkew = TokenValidationParameters.DefaultClockSkew,
+
+							// Don't allow any time difference, the expiration time is already large enough
+							ValidateLifetime = true,
+							ClockSkew = TimeSpan.Zero,
 						};
 					});
 
