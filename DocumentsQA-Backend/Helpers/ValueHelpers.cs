@@ -40,5 +40,14 @@ namespace DocumentsQA_Backend.Helpers {
 				return str;
 			return str.Length < maxLength ? str : str.Substring(0, maxLength);
 		}
+
+		public static Stream ToStream(this string str) {
+			MemoryStream stream = new();
+			using (var writer = new StreamWriter(stream)) {
+				writer.Write(str);
+			}
+			stream.Position = 0;
+			return stream;
+		}
 	}
 }
