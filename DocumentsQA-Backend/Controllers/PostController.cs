@@ -35,9 +35,9 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		[HttpGet("get_page/{pid}")]
-		public async Task<IActionResult> GetPostsPage(int pid, 
-			[FromQuery] PostGetFilterDTO filter, [FromQuery] PostGetDTO get) {
+		[HttpGet("get_post/{pid}")]
+		public async Task<IActionResult> GetPosts(int pid, 
+			[FromQuery] PostGetFilterDTO filterDTO, [FromQuery] int details = 0) {
 
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -45,45 +45,83 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!await _access.AllowToProject(HttpContext, project))
 				return Unauthorized();
 
-			var query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);
+			bool bElevated = _access.UserHasElevatedAccess(HttpContext);
 
-			if (filter.TicketID != null) {
-				query = query.Where(x => x.Id == filter.TicketID);
+			IQueryable<Question> query;
+			if (bElevated)
+				query = project.Questions.AsQueryable();
+			else
+				query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);
+
+			if (filterDTO.PostedFrom is not null) {
+				query = query.Where(x => x.DatePosted >= filterDTO.PostedFrom);
 			}
-			if (filter.PosterID != null) {
-				query = query.Where(x => x.PostedById == filter.PosterID);
+			if (filterDTO.PostedTo is not null) {
+				query = query.Where(x => x.DatePosted < filterDTO.PostedTo);
 			}
-			if (filter.Tranche != null) {
-				query = query.Where(x => x.Account == null || x.Account.Tranche.Name == filter.Tranche);
+
+			var listPosts = await query.ToListAsync();
+			var listPostTables = listPosts.Select(x => Mapper.FromPost(x, details));
+
+			return Ok(listPostTables);
+		}
+
+		[HttpGet("get_page/{pid}")]
+		public async Task<IActionResult> GetPostsPage(int pid, [FromQuery] PostGetFilterDTO filterDTO,
+			[FromQuery] PaginateDTO pageDTO, [FromQuery] int details = 0) {
+
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+			if (!await _access.AllowToProject(HttpContext, project))
+				return Unauthorized();
+
+			bool bElevated = _access.UserHasElevatedAccess(HttpContext);
+
+			IQueryable<Question> query;
+			if (bElevated)
+				query = _dataContext.Questions.AsQueryable();
+			else
+				query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);
+
+			if (filterDTO.TicketID != null) {
+				query = query.Where(x => x.Id == filterDTO.TicketID);
 			}
-			if (filter.PostedFrom is not null && filter.PostedTo is not null) {
-				query = query.Where(x => x.DatePosted >= filter.PostedFrom && x.DatePosted < filter.PostedTo);
+			if (filterDTO.PosterID != null) {
+				query = query.Where(x => x.PostedById == filterDTO.PosterID);
 			}
-			if (filter.OnlyAnswered != null) {
-				if (filter.OnlyAnswered.Value) {
+			if (filterDTO.Tranche != null) {
+				query = query.Where(x => x.Account == null || x.Account.Tranche.Name == filterDTO.Tranche);
+			}
+			if (filterDTO.PostedFrom is not null) {
+				query = query.Where(x => x.DatePosted >= filterDTO.PostedFrom);
+			}
+			if (filterDTO.PostedTo is not null) {
+				query = query.Where(x => x.DatePosted < filterDTO.PostedTo);
+			}
+			if (filterDTO.OnlyAnswered != null) {
+				if (filterDTO.OnlyAnswered.Value)
 					query = query.Where(x => x.QuestionAnswer != null);
-				}
-				else {
+				else
 					query = query.Where(x => x.QuestionAnswer == null);
-				}
 			}
-			if (filter.SearchTerm != null) {
-				query = query.Where(x => EF.Functions.Contains(x.QuestionText, filter.SearchTerm));
+			if (filterDTO.SearchTerm != null) {
+				query = query.Where(x => EF.Functions.Contains(x.QuestionText, filterDTO.SearchTerm));
 			}
 
 			int countTotal = await query.CountAsync();
-			int countPerPage = get.PostsPerPage;
+			int countPerPage = pageDTO.CountPerPage;
 			int maxPages = (int)Math.Ceiling(countTotal / (double)countPerPage);
 
 			// Paginate result
 			{
 				query = query
-					.Skip(get.Page * countPerPage)
+					.Skip(pageDTO.Page * countPerPage)
 					.Take(countPerPage);
 			}
 
 			var listPosts = await query.ToListAsync();
-			var listPostTables = listPosts.Select(x => Mapper.FromPost(x, get.DetailsLevel));
+			var listPostTables = listPosts.Select(x => Mapper.FromPost(x, details));
 
 			return Ok(new JsonTable() {
 				["count_total"] = countTotal,
