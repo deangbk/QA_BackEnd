@@ -124,6 +124,8 @@ namespace DocumentsQA_Backend {
 				services.AddSingleton<IAccessService, AccessAllowAll>();
 			}
 
+			services.AddHttpContextAccessor();
+
 			services.AddEndpointsApiExplorer();
 			//services.AddSwaggerGen();
 		}
@@ -171,7 +173,7 @@ namespace DocumentsQA_Backend {
 		}
 	}
 	public class AccessAllowAll : IAccessService {
-		public Task<bool> AllowToProject(HttpContext ctx, Project project) => Task.FromResult(true);
-		public Task<bool> AllowToTranche(HttpContext ctx, Tranche tranche) => Task.FromResult(true);
+		public Task<bool> AllowToProject(Project project) => Task.FromResult(true);
+		public Task<bool> AllowToTranche(Tranche tranche) => Task.FromResult(true);
 	}
 }

@@ -43,7 +43,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(HttpContext, project))
+			if (!await _access.AllowToProject(project))
 				return Unauthorized();
 
 			return Ok(Mapper.FromProject(project, 2));
@@ -54,7 +54,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowManageProject(HttpContext, project))
+			if (!await _access.AllowManageProject(project))
 				return Unauthorized();
 
 			var listManagerIds = project.UserManagers
@@ -78,7 +78,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(HttpContext, project))
+			if (!await _access.AllowToProject(project))
 				return Unauthorized();
 
 			var listUserIds = project.UserManagers

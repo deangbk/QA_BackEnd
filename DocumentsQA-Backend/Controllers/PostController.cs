@@ -42,10 +42,10 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(HttpContext, project))
+			if (!await _access.AllowToProject(project))
 				return Unauthorized();
 
-			bool bElevated = _access.UserHasElevatedAccess(HttpContext);
+			bool bElevated = _access.UserHasElevatedAccess();
 
 			IQueryable<Question> query;
 			if (bElevated)
@@ -73,10 +73,10 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(HttpContext, project))
+			if (!await _access.AllowToProject(project))
 				return Unauthorized();
 
-			bool bElevated = _access.UserHasElevatedAccess(HttpContext);
+			bool bElevated = _access.UserHasElevatedAccess();
 
 			IQueryable<Question> query;
 			if (bElevated)

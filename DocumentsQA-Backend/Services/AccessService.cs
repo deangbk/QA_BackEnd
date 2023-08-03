@@ -18,8 +18,8 @@ using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Services {
 	public interface IAccessService {
-		public Task<bool> AllowToProject(HttpContext ctx, Project project);
-		public Task<bool> AllowToTranche(HttpContext ctx, Tranche tranche);
+		public Task<bool> AllowToProject(Project project);
+		public Task<bool> AllowToTranche(Tranche tranche);
 	}
 
 	public class AccessService : IAccessService {
@@ -27,12 +27,16 @@ namespace DocumentsQA_Backend.Services {
 		private readonly ILogger<AccessService> _logger;
 		private readonly SignInManager<AppUser> _signinManager;
 
+		private readonly IHttpContextAccessor _httpContextAccessor;
+
 		public AccessService(DataContext dataContext, ILogger<AccessService> logger,
-			SignInManager<AppUser> signinManager) {
+			SignInManager<AppUser> signinManager, IHttpContextAccessor httpContextAccessor) {
 
 			_dataContext = dataContext;
 			_logger = logger;
 			_signinManager = signinManager;
+
+			_httpContextAccessor = httpContextAccessor;
 		}
 
 		// -----------------------------------------------------
@@ -46,58 +50,61 @@ namespace DocumentsQA_Backend.Services {
 			}
 		}
 
-		public int GetUserID(HttpContext ctx) {
+		public int GetUserID() {
+			HttpContext ctx = _httpContextAccessor.HttpContext!;
 			var claims = ctx.User;
 			var idClaim = claims.FindFirst("id")?.Value;
 			return _ParseUserID(idClaim);
 		}
-		public bool UserHasRole(HttpContext ctx, AppRole role) {
+		public bool UserHasRole(AppRole role) {
+			HttpContext ctx = _httpContextAccessor.HttpContext!;
 			var claims = ctx.User;
 			return claims.IsInRole(role.Name);
 		}
-		public bool UserHasElevatedAccess(HttpContext ctx) {
+		public bool UserHasElevatedAccess() {
+			HttpContext ctx = _httpContextAccessor.HttpContext!;
 			var claims = ctx.User;
 			return claims.IsInRole(AppRole.Admin.Name) 
 				|| claims.IsInRole(AppRole.Manager.Name);
 		}
 
-		public Task<bool> AllowToProject(HttpContext ctx, Project project) {
-			return AllowToProject(ctx, project, 
+		public Task<bool> AllowToProject(Project project) {
+			return AllowToProject(project, 
 				id => ProjectHelpers.CanUserAccessProject(project, id));
 		}
-		public Task<bool> AllowToProject(HttpContext ctx, Project project, Func<int, bool> userAllowPolicy) {
-			var userId = GetUserID(ctx);
+		public Task<bool> AllowToProject(Project project, Func<int, bool> userAllowPolicy) {
+			var userId = GetUserID();
 
 			// Admins can access everything
-			if (UserHasRole(ctx, AppRole.Admin))
+			if (UserHasRole(AppRole.Admin))
 				return Task.FromResult(true);
 
 			// Allow project managers
-			if (UserHasRole(ctx, AppRole.Manager)) {
+			if (UserHasRole(AppRole.Manager)) {
 				bool allowManager = project.UserManagers.Any(x => x.Id == userId);
 				if (allowManager)
 					return Task.FromResult(true);
 			}
 
 			// Allow normal users
-			if (UserHasRole(ctx, AppRole.User))
+			if (UserHasRole(AppRole.User))
 				return Task.FromResult(userAllowPolicy(userId));
 
 			// Unknown role, refuse
 			return Task.FromResult(false);
 		}
 
-		public Task<bool> AllowToTranche(HttpContext ctx, Tranche tranche) {
-			return AllowToTranche(ctx, tranche,
+		public Task<bool> AllowToTranche(Tranche tranche) {
+			return AllowToTranche(tranche,
 				id => tranche.UserAccesses.Any(x => x.Id == id));
 		}
-		public Task<bool> AllowToTranche(HttpContext ctx, Tranche tranche, Func<int, bool> userAllowPolicy) {
-			return AllowToProject(ctx, tranche.Project, userAllowPolicy);
+		public Task<bool> AllowToTranche(Tranche tranche, Func<int, bool> userAllowPolicy) {
+			return AllowToProject(tranche.Project, userAllowPolicy);
 		}
 
-		public Task<bool> AllowManageProject(HttpContext ctx, Project project) {
+		public Task<bool> AllowManageProject(Project project) {
 			// Use the normal AllowToProject, but always refuse normal users
-			return AllowToProject(ctx, project, _ => false);
+			return AllowToProject(project, _ => false);
 		}
 	}
 }

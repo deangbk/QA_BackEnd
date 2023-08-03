@@ -47,7 +47,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Tranche not found");
 			Project project = tranche.Project;
 
-			if (!await _access.AllowManageProject(HttpContext, project))
+			if (!await _access.AllowManageProject(project))
 				return Unauthorized();
 
 			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());   // Horrific
@@ -68,7 +68,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Tranche not found");
 			Project project = tranche.Project;
 
-			if (!await _access.AllowManageProject(HttpContext, project))
+			if (!await _access.AllowManageProject(project))
 				return Unauthorized();
 
 			List<int> userIdsGrant = new();
@@ -95,7 +95,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Tranche not found");
 			Project project = tranche.Project;
 
-			if (!await _access.AllowManageProject(HttpContext, project))
+			if (!await _access.AllowManageProject(project))
 				return Unauthorized();
 
 			if (!project.UserManagers.Exists(x => x.Id == uid)) {
@@ -116,7 +116,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Tranche not found");
 			Project project = tranche.Project;
 
-			if (!await _access.AllowManageProject(HttpContext, project))
+			if (!await _access.AllowManageProject(project))
 				return Unauthorized();
 
 			List<int> userIdsGrant = new();
@@ -147,7 +147,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowManageProject(HttpContext, project))
+			if (!await _access.AllowManageProject(project))
 				return Unauthorized();
 
 			DateTime dateCreated = DateTime.Now;

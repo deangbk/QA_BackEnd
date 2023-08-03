@@ -43,19 +43,19 @@ namespace DocumentsQA_Backend.Controllers {
 			switch (document.Type) {
 				case DocumentType.General: {
 					var project = document.Project;
-					if (await _access.AllowToProject(HttpContext, project!))
+					if (await _access.AllowToProject(project!))
 						return true;
 					break;
 				}
 				case DocumentType.Question: {
 					var project = document.AssocQuestion!.Project;
-					if (await _access.AllowToProject(HttpContext, project))
+					if (await _access.AllowToProject(project))
 						return true;
 					break;
 				}
 				case DocumentType.Account: {
 					var tranche = document.AssocAccount!.Tranche;
-					if (await _access.AllowToTranche(HttpContext, tranche))
+					if (await _access.AllowToTranche(tranche))
 						return true;
 					break;
 				}
@@ -107,7 +107,7 @@ namespace DocumentsQA_Backend.Controllers {
 				// Basic encryption on the bytes, no need to be cryptographically secure
 				// Just enough so people couldn't just open the browser console and export it
 
-				int userId = _access.GetUserID(HttpContext);
+				int userId = _access.GetUserID();
 				var hashKey = MD5.HashData(BitConverter.GetBytes(userId));
 				for (int i = 0; i < fileBytes.Length; ++i) {
 					fileBytes[i] ^= hashKey[i % hashKey.Length];
@@ -136,7 +136,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(HttpContext, project))
+			if (!await _access.AllowToProject(project))
 				return Unauthorized();
 
 			var listDocuments = await _dataContext.Documents
@@ -191,7 +191,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (bNameAlreadyExists)
 				return null;
 
-			int uploaderId = _access.GetUserID(HttpContext);
+			int uploaderId = _access.GetUserID();
 
 			return new Document {
 				FileUrl = upload.Url,
@@ -214,7 +214,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(HttpContext, project))
+			if (!await _access.AllowToProject(project))
 				return Unauthorized();
 
 			Document? document = await _DocumentFromUploadDTO(id, upload);
@@ -236,7 +236,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Question not found");
 			Project project = question.Project;
 
-			if (!await _access.AllowToProject(HttpContext, project))
+			if (!await _access.AllowToProject(project))
 				return Unauthorized();
 
 			Document? document = await _DocumentFromUploadDTO(id, upload);
@@ -259,7 +259,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Account not found");
 			Tranche tranche = account.Tranche;
 
-			if (!await _access.AllowToTranche(HttpContext, tranche))
+			if (!await _access.AllowToTranche(tranche))
 				return Unauthorized();
 
 			Document? document = await _DocumentFromUploadDTO(tranche.ProjectId, upload);
