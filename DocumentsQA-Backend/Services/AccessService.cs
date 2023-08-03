@@ -47,14 +47,18 @@ namespace DocumentsQA_Backend.Services {
 		}
 
 		public int GetUserID(HttpContext ctx) {
-			var claimsPrincipal = ctx.User;
-			var idClaim = claimsPrincipal.FindFirst("id")?.Value;
+			var claims = ctx.User;
+			var idClaim = claims.FindFirst("id")?.Value;
 			return _ParseUserID(idClaim);
 		}
-		public AppRole GetUserRole(HttpContext ctx) {
-			var claimsPrincipal = ctx.User;
-			var roleClaim = claimsPrincipal.FindFirst("role")?.Value;
-			return AppRole.FromString(roleClaim ?? "");
+		public bool UserHasRole(HttpContext ctx, AppRole role) {
+			var claims = ctx.User;
+			return claims.IsInRole(role.Name);
+		}
+		public bool UserHasElevatedAccess(HttpContext ctx) {
+			var claims = ctx.User;
+			return claims.IsInRole(AppRole.Admin.Name) 
+				|| claims.IsInRole(AppRole.Manager.Name);
 		}
 
 		public Task<bool> AllowToProject(HttpContext ctx, Project project) {
@@ -63,21 +67,20 @@ namespace DocumentsQA_Backend.Services {
 		}
 		public Task<bool> AllowToProject(HttpContext ctx, Project project, Func<int, bool> userAllowPolicy) {
 			var userId = GetUserID(ctx);
-			var userRole = GetUserRole(ctx);
 
 			// Admins can access everything
-			if (userRole == AppRole.Admin)
+			if (UserHasRole(ctx, AppRole.Admin))
 				return Task.FromResult(true);
 
 			// Allow project managers
-			if (userRole == AppRole.Manager) {
+			if (UserHasRole(ctx, AppRole.Manager)) {
 				bool allowManager = project.UserManagers.Any(x => x.Id == userId);
 				if (allowManager)
 					return Task.FromResult(true);
 			}
 
 			// Allow normal users
-			if (userRole == AppRole.User)
+			if (UserHasRole(ctx, AppRole.User))
 				return Task.FromResult(userAllowPolicy(userId));
 
 			// Unknown role, refuse
@@ -89,26 +92,7 @@ namespace DocumentsQA_Backend.Services {
 				id => tranche.UserAccesses.Any(x => x.Id == id));
 		}
 		public Task<bool> AllowToTranche(HttpContext ctx, Tranche tranche, Func<int, bool> userAllowPolicy) {
-			var userId = GetUserID(ctx);
-			var userRole = GetUserRole(ctx);
-
-			// Admins can access everything
-			if (userRole == AppRole.Admin)
-				return Task.FromResult(true);
-
-			// Allow project managers
-			if (userRole == AppRole.Manager) {
-				bool allowManager = tranche.Project.UserManagers.Any(x => x.Id == userId);
-				if (allowManager)
-					return Task.FromResult(true);
-			}
-
-			// Allow normal users
-			if (userRole == AppRole.User)
-				return Task.FromResult(userAllowPolicy(userId));
-
-			// Unknown role, refuse
-			return Task.FromResult(false);
+			return AllowToProject(ctx, tranche.Project, userAllowPolicy);
 		}
 
 		public Task<bool> AllowManageProject(HttpContext ctx, Project project) {
