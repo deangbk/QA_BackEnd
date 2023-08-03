@@ -117,7 +117,7 @@ namespace DocumentsQA_Backend {
 						policy => policy.RequireClaim("role", AppRole.Admin.Name, AppRole.Manager.Name));
 				});
 
-				services.AddScoped<IAccessService, AccessService>();
+				services.AddScoped<AccessService, AccessService>();
 			}
 			else {
 				services.AddSingleton<IAuthorizationHandler, AuthorizationAllowAnonymous>();
