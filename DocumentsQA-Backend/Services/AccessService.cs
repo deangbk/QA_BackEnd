@@ -73,7 +73,7 @@ namespace DocumentsQA_Backend.Services {
 		}
 
 		public bool IsValidUser() => GetUserID() >= 0;
-		public bool IsNormalUser() => UserHasRole(AppRole.User);
+		public bool IsNormalUser() => UserHasRole(AppRole.User); 
 		public bool IsSuperUser() => UserHasRole(AppRole.Admin) || UserHasRole(AppRole.Manager);
 		public bool IsAdmin() => UserHasRole(AppRole.Admin);
 

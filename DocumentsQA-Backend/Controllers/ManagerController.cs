@@ -111,6 +111,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
+		/*
 		[HttpDelete("remove_access_withfile/{tid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]  // 4MB
 		public async Task<IActionResult> RemoveTrancheAccessFromFile(int tid, [FromForm] IFormFile file) {
@@ -141,6 +142,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
+		*/
 
 		// -----------------------------------------------------
 

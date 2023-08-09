@@ -237,7 +237,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			
+
 			// Remove access from all tranches
 			foreach (var i in project.Tranches) {
 				i.UserAccesses.RemoveAll(x => x.Id == uid);
@@ -248,13 +248,13 @@ namespace DocumentsQA_Backend.Controllers {
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
-		[HttpDelete("remove_manage_withfile/{tid}")]
+		/*
+		[HttpDelete("remove_manage_withfile/{pid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]	// 4MB
-		public async Task<IActionResult> RemoveProjectManagementFromFile(int tid, [FromForm] IFormFile file) {
-			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
-			if (tranche == null)
-				return BadRequest("Tranche not found");
-			Project project = tranche.Project;
+		public async Task<IActionResult> RemoveProjectManagementFromFile(int pid, [FromForm] IFormFile file) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
 
 			List<int> userIds = new();
 			try {
@@ -275,5 +275,6 @@ namespace DocumentsQA_Backend.Controllers {
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
+		*/
 	}
 }
