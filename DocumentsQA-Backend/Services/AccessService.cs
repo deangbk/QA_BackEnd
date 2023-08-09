@@ -21,6 +21,7 @@ namespace DocumentsQA_Backend.Services {
 		public int GetUserID();
 		public bool UserHasRole(AppRole role);
 
+		public bool IsValidUser();
 		public bool IsNormalUser();
 		public bool IsSuperUser();
 		public bool IsAdmin();
@@ -71,6 +72,7 @@ namespace DocumentsQA_Backend.Services {
 			return claims.IsInRole(role.Name);
 		}
 
+		public bool IsValidUser() => GetUserID() >= 0;
 		public bool IsNormalUser() => UserHasRole(AppRole.User);
 		public bool IsSuperUser() => UserHasRole(AppRole.Admin) || UserHasRole(AppRole.Manager);
 		public bool IsAdmin() => UserHasRole(AppRole.Admin);

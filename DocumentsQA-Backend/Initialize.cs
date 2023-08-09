@@ -107,7 +107,7 @@ namespace DocumentsQA_Backend {
 					};
 				});
 				*/
-
+				/*
 				services.AddAuthorization(options => {
 					options.AddPolicy("IsAdmin", 
 						policy => policy.RequireClaim("role", AppRole.Admin.Name));
@@ -116,6 +116,7 @@ namespace DocumentsQA_Backend {
 					options.AddPolicy("IsStaff", 
 						policy => policy.RequireClaim("role", AppRole.Admin.Name, AppRole.Manager.Name));
 				});
+				*/
 
 				services.AddScoped<IAccessService, AccessService>();
 			}
@@ -136,18 +137,8 @@ namespace DocumentsQA_Backend {
 			if (IsDevelopment) {
 				app.UseDeveloperExceptionPage();
 			}
-			else {
-				app.UseExceptionHandler(builder => {
-					builder.Run(async context => {
-						context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-						var error = context.Features.Get<IExceptionHandlerFeature>();
-						if (error != null) {
-							context.Response.AddApplicationError(error.Error.Message);
-							await context.Response.WriteAsync(error.Error.Message);
-						}
-					});
-				});
-			}
+
+			app.UseMiddleware<ExceptionMiddleware>();
 
 			app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
@@ -176,6 +167,7 @@ namespace DocumentsQA_Backend {
 		public int GetUserID() => -1;
 		public bool UserHasRole(AppRole role) => true;
 
+		public bool IsValidUser() => true;
 		public bool IsNormalUser() => true;
 		public bool IsSuperUser() => true;
 		public bool IsAdmin() => true;

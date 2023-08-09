@@ -36,6 +36,9 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_userManager = userManager;
 			_access = access;
+
+			if (!_access.IsSuperUser())
+				throw new AccessUnauthorizedException("Manager status required");
 		}
 
 		// -----------------------------------------------------

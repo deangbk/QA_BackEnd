@@ -34,6 +34,9 @@ namespace DocumentsQA_Backend.Controllers {
 			_logger = logger;
 
 			_access = access;
+
+			if (!_access.IsValidUser())
+				throw new AccessUnauthorizedException();
 		}
 
 		// -----------------------------------------------------

@@ -31,6 +31,9 @@ namespace DocumentsQA_Backend.Controllers {
 			_logger = logger;
 
 			_access = access;
+
+			if (!_access.IsValidUser())
+				throw new AccessUnauthorizedException();
 		}
 
 		// -----------------------------------------------------
@@ -45,7 +48,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
-			bool bElevated = _access.UserHasElevatedAccess();
+			bool bElevated = _access.IsSuperUser();
 
 			IQueryable<Question> query;
 			if (bElevated)
