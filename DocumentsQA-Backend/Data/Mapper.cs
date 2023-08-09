@@ -55,8 +55,8 @@ namespace DocumentsQA_Backend.Data {
 			var table = new JsonTable() {
 				["q_num"] = obj.QuestionNum,
 				["type"] = obj.Type,
-				["tranche"] = obj.Account != null ? obj.Account.Tranche.Name : "",
-				["account"] = obj.Account != null ? obj.Account.AccountNo : "",
+				["tranche"] = obj.Account != null ? obj.Account.Tranche.Name : null!,
+				["account"] = obj.Account != null ? obj.Account.AccountNo : null!,
 
 				["q_text"] = obj.QuestionText,
 				["a_text"] = obj.QuestionAnswer!,
@@ -66,7 +66,10 @@ namespace DocumentsQA_Backend.Data {
 				["date_post"] = obj.DatePosted,
 				["date_edit"] = obj.DateLastEdited,
 
-				["attachments"] = obj.Attachments.Select(x => FromDocument(x, 0)).ToList(),
+				["attachments"] = obj.Attachments
+					.OrderBy(x => x.DateUploaded)
+					.Select(x => FromDocument(x, 0))
+					.ToList(),
 			};
 
 			if (detailsLevel >= 1) {
@@ -92,26 +95,30 @@ namespace DocumentsQA_Backend.Data {
 		public static JsonTable FromDocument(Document obj, int detailsLevel = 0) {
 			var table = new JsonTable() {
 				["id"] = obj.Id,
-
 				["name"] = obj.FileName,
-				["url"] = obj.FileUrl,
 
-				["hidden"] = obj.Hidden,
-				["allow_print"] = obj.AllowPrint,
+				["date_upload"] = obj.DateUploaded,
 			};
 
 			if (detailsLevel >= 1) {
+				table["url"] = obj.FileUrl;
+				//table["doc_type"] = obj.Type;
+
+				table["hidden"] = obj.Hidden;
+				table["allow_print"] = obj.AllowPrint;
+
+				if (obj.Type == DocumentType.Question) {
+					table["assoc_post"] = obj.AssocQuestionId!;
+				}
+				else if (obj.Type == DocumentType.Account) {
+					table["assoc_account"] = obj.AssocAccountId!;
+				}
+			}
+			if (detailsLevel >= 2) {
 				table["description"] = obj.Description ?? "";
 				table["file_type"] = obj.FileType ?? "";
 
-				table["doc_type"] = obj.Type;
-
 				table["upload_by"] = obj.UploadedById;
-				table["date_upload"] = obj.DateUploaded;
-			}
-			if (detailsLevel >= 2) {
-				table["assoc_post"] = obj.AssocQuestionId!;
-				table["assoc_account"] = obj.AssocAccountId!;
 			}
 
 			return table;
