@@ -145,6 +145,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var listDocuments = await _dataContext.Documents
 				.Where(x => x.ProjectId == id)
 				.Where(x => x.Type == DocumentType.General)
+				.OrderBy(x => x.DateUploaded)
 				.ToListAsync();
 			var listDocumentTables = listDocuments.Select(x => Mapper.FromDocument(x, details));
 
@@ -160,7 +161,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (question == null)
 				return BadRequest("Question not found");
 
-			var listDocuments = question.Attachments;
+			var listDocuments = question.Attachments
+				.OrderBy(x => x.DateUploaded);
 			var listDocumentTables = listDocuments.Select(x => Mapper.FromDocument(x, details));
 
 			return Ok(listDocumentTables);
@@ -175,7 +177,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (account == null)
 				return BadRequest("Account not found");
 
-			var listDocuments = account.Documents;
+			var listDocuments = account.Documents
+				.OrderBy(x => x.DateUploaded);
 			var listDocumentTables = listDocuments.Select(x => Mapper.FromDocument(x, details));
 
 			return Ok(listDocumentTables);
