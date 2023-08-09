@@ -25,10 +25,10 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly DataContext _dataContext;
 		private readonly ILogger<PostController> _logger;
 
-		private readonly AccessService _access;
+		private readonly IAccessService _access;
 
 		public ProjectController(DataContext dataContext, ILogger<PostController> logger, 
-			AccessService access) {
+			IAccessService access) {
 
 			_dataContext = dataContext;
 			_logger = logger;
@@ -43,7 +43,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(project))
+			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
 			return Ok(Mapper.FromProject(project, 2));
@@ -54,7 +54,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowManageProject(project))
+			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
 			var listManagerIds = project.UserManagers
@@ -78,7 +78,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(project))
+			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
 			var listUserIds = project.UserManagers

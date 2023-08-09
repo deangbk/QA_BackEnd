@@ -18,8 +18,17 @@ using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Services {
 	public interface IAccessService {
-		public Task<bool> AllowToProject(Project project);
-		public Task<bool> AllowToTranche(Tranche tranche);
+		public int GetUserID();
+		public bool UserHasRole(AppRole role);
+
+		public bool IsNormalUser();
+		public bool IsSuperUser();
+		public bool IsAdmin();
+
+		public bool AllowToProject(Project project);
+		public bool AllowToTranche(Tranche tranche);
+		public bool AllowManageProject(Project project);
+		public bool AllowManageTranche(Tranche tranche);
 	}
 
 	public class AccessService : IAccessService {
@@ -61,50 +70,51 @@ namespace DocumentsQA_Backend.Services {
 			var claims = ctx.User;
 			return claims.IsInRole(role.Name);
 		}
-		public bool UserHasElevatedAccess() {
-			HttpContext ctx = _httpContextAccessor.HttpContext!;
-			var claims = ctx.User;
-			return claims.IsInRole(AppRole.Admin.Name) 
-				|| claims.IsInRole(AppRole.Manager.Name);
-		}
 
-		public Task<bool> AllowToProject(Project project) {
+		public bool IsNormalUser() => UserHasRole(AppRole.User);
+		public bool IsSuperUser() => UserHasRole(AppRole.Admin) || UserHasRole(AppRole.Manager);
+		public bool IsAdmin() => UserHasRole(AppRole.Admin);
+
+		public bool AllowToProject(Project project) {
 			return AllowToProject(project, 
 				id => ProjectHelpers.CanUserAccessProject(project, id));
 		}
-		public Task<bool> AllowToProject(Project project, Func<int, bool> userAllowPolicy) {
+		public bool AllowToProject(Project project, Func<int, bool> userAllowPolicy) {
 			var userId = GetUserID();
 
 			// Admins can access everything
 			if (UserHasRole(AppRole.Admin))
-				return Task.FromResult(true);
+				return true;
 
 			// Allow project managers
 			if (UserHasRole(AppRole.Manager)) {
 				bool allowManager = project.UserManagers.Any(x => x.Id == userId);
 				if (allowManager)
-					return Task.FromResult(true);
+					return true;
 			}
 
 			// Allow normal users
 			if (UserHasRole(AppRole.User))
-				return Task.FromResult(userAllowPolicy(userId));
+				return userAllowPolicy(userId);
 
 			// Unknown role, refuse
-			return Task.FromResult(false);
+			return false;
 		}
 
-		public Task<bool> AllowToTranche(Tranche tranche) {
+		public bool AllowToTranche(Tranche tranche) {
 			return AllowToTranche(tranche,
 				id => tranche.UserAccesses.Any(x => x.Id == id));
 		}
-		public Task<bool> AllowToTranche(Tranche tranche, Func<int, bool> userAllowPolicy) {
+		public bool AllowToTranche(Tranche tranche, Func<int, bool> userAllowPolicy) {
 			return AllowToProject(tranche.Project, userAllowPolicy);
 		}
 
-		public Task<bool> AllowManageProject(Project project) {
+		public bool AllowManageProject(Project project) {
 			// Use the normal AllowToProject, but always refuse normal users
 			return AllowToProject(project, _ => false);
+		}
+		public bool AllowManageTranche(Tranche tranche) {
+			return AllowManageProject(tranche.Project);
 		}
 	}
 }

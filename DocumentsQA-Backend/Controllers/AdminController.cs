@@ -16,25 +16,30 @@ using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Models;
+using DocumentsQA_Backend.Services;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/admin")]
 	[ApiController]
-	//[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "IsAdmin")]
+	[Authorize]
 	public class AdminController : Controller {
 		private readonly DataContext _dataContext;
 		private readonly ILogger<PostController> _logger;
 
+		private readonly IAccessService _access;
+
 		private readonly UserManager<AppUser> _userManager;
 		private readonly RoleManager<AppRole> _roleManager;
 
-		public AdminController(DataContext dataContext, ILogger<PostController> logger, 
+		public AdminController(DataContext dataContext, ILogger<PostController> logger, IAccessService access, 
 			UserManager<AppUser> userManager, RoleManager<AppRole> roleManager) {
 
 			_dataContext = dataContext;
 			_logger = logger;
+
+			_access = access;
 
 			_userManager = userManager;
 			_roleManager = roleManager;

@@ -117,7 +117,7 @@ namespace DocumentsQA_Backend {
 						policy => policy.RequireClaim("role", AppRole.Admin.Name, AppRole.Manager.Name));
 				});
 
-				services.AddScoped<AccessService, AccessService>();
+				services.AddScoped<IAccessService, AccessService>();
 			}
 			else {
 				services.AddSingleton<IAuthorizationHandler, AuthorizationAllowAnonymous>();
@@ -173,7 +173,16 @@ namespace DocumentsQA_Backend {
 		}
 	}
 	public class AccessAllowAll : IAccessService {
-		public Task<bool> AllowToProject(Project project) => Task.FromResult(true);
-		public Task<bool> AllowToTranche(Tranche tranche) => Task.FromResult(true);
+		public int GetUserID() => -1;
+		public bool UserHasRole(AppRole role) => true;
+
+		public bool IsNormalUser() => true;
+		public bool IsSuperUser() => true;
+		public bool IsAdmin() => true;
+
+		public bool AllowToProject(Project project) => true;
+		public bool AllowToTranche(Tranche tranche) => true;
+		public bool AllowManageProject(Project project) => true;
+		public bool AllowManageTranche(Tranche tranche) => true;
 	}
 }

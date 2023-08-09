@@ -27,9 +27,9 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly DataContext _dataContext;
 		private readonly ILogger<DocumentController> _logger;
 
-		private readonly AccessService _access;
+		private readonly IAccessService _access;
 
-		public DocumentController(DataContext dataContext, ILogger<DocumentController> logger, AccessService access) {
+		public DocumentController(DataContext dataContext, ILogger<DocumentController> logger, IAccessService access) {
 			_dataContext = dataContext;
 			_logger = logger;
 
@@ -38,24 +38,24 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private async Task<bool> AllowDocumentAccess(Document document) {
+		private bool AllowDocumentAccess(Document document) {
 			// NullReferenceException purposely not guarded against here, handle it in caller code
 			switch (document.Type) {
 				case DocumentType.General: {
 					var project = document.Project;
-					if (await _access.AllowToProject(project!))
+					if (_access.AllowToProject(project!))
 						return true;
 					break;
 				}
 				case DocumentType.Question: {
 					var project = document.AssocQuestion!.Project;
-					if (await _access.AllowToProject(project))
+					if (_access.AllowToProject(project))
 						return true;
 					break;
 				}
 				case DocumentType.Account: {
 					var tranche = document.AssocAccount!.Tranche;
-					if (await _access.AllowToTranche(tranche))
+					if (_access.AllowToTranche(tranche))
 						return true;
 					break;
 				}
@@ -70,7 +70,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Document not found");
 
 			try {
-				if (!await AllowDocumentAccess(document))
+				if (!AllowDocumentAccess(document))
 					return Unauthorized();
 			}
 			catch (NullReferenceException) {
@@ -87,7 +87,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Document not found");
 
 			try {
-				if (!await AllowDocumentAccess(document))
+				if (!AllowDocumentAccess(document))
 					return Unauthorized();
 			}
 			catch (NullReferenceException) {
@@ -136,7 +136,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(project))
+			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
 			var listDocuments = await _dataContext.Documents
@@ -214,7 +214,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(project))
+			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
 			Document? document = await _DocumentFromUploadDTO(id, upload);
@@ -236,7 +236,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Question not found");
 			Project project = question.Project;
 
-			if (!await _access.AllowToProject(project))
+			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
 			Document? document = await _DocumentFromUploadDTO(id, upload);
@@ -259,7 +259,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Account not found");
 			Tranche tranche = account.Tranche;
 
-			if (!await _access.AllowToTranche(tranche))
+			if (!_access.AllowManageTranche(tranche))
 				return Unauthorized();
 
 			Document? document = await _DocumentFromUploadDTO(tranche.ProjectId, upload);

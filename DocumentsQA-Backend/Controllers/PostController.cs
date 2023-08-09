@@ -24,9 +24,9 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly DataContext _dataContext;
 		private readonly ILogger<PostController> _logger;
 
-		private readonly AccessService _access;
+		private readonly IAccessService _access;
 
-		public PostController(DataContext dataContext, ILogger<PostController> logger, AccessService access) {
+		public PostController(DataContext dataContext, ILogger<PostController> logger, IAccessService access) {
 			_dataContext = dataContext;
 			_logger = logger;
 
@@ -42,7 +42,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(project))
+			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
 			bool bElevated = _access.UserHasElevatedAccess();
@@ -73,10 +73,10 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowToProject(project))
+			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
-			bool bElevated = _access.UserHasElevatedAccess();
+			bool bElevated = _access.IsSuperUser();
 
 			IQueryable<Question> query;
 			if (bElevated)
@@ -134,6 +134,10 @@ namespace DocumentsQA_Backend.Controllers {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
 				return BadRequest("Question not found");
+			Project project = question.Project;
+
+			if (!_access.AllowToProject(project))
+				return Unauthorized();
 
 			var listComments = await _dataContext.Comments
 				.Where(x => x.QuestionId == id)
