@@ -250,7 +250,9 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Users create failed: " + e.Message);
 			}
 
-			return Ok(listUserData.Count);
+			var userIds = listUsers.Select(x => x.Id).ToList();
+
+			return Ok(userIds);
 		}
 	}
 }

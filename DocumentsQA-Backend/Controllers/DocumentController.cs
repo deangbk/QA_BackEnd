@@ -84,7 +84,7 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpGet("get/{id}")]
-		public async Task<IActionResult> GetDocument(int id, [FromQuery] int page) {
+		public async Task<IActionResult> GetDocument(int id) {
 			Document? document = await Queries.GetDocumentFromId(_dataContext, id);
 			if (document == null)
 				return BadRequest("Document not found");

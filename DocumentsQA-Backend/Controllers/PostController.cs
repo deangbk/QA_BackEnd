@@ -38,7 +38,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		[HttpGet("get_post/{pid}")]
+		[HttpGet("get_posts/{pid}")]
 		public async Task<IActionResult> GetPosts(int pid, 
 			[FromQuery] PostGetFilterDTO filterDTO, [FromQuery] int details = 0) {
 
@@ -69,7 +69,7 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(listPostTables);
 		}
 
-		[HttpGet("get_page/{pid}")]
+		[HttpGet("get_posts_page/{pid}")]
 		public async Task<IActionResult> GetPostsPage(int pid, [FromQuery] PostGetFilterDTO filterDTO,
 			[FromQuery] PaginateDTO pageDTO, [FromQuery] int details = 0) {
 
@@ -150,5 +150,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok(listCommentTables);
 		}
+
+		
 	}
 }
