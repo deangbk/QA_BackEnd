@@ -115,18 +115,18 @@ namespace DocumentsQA_Backend.Controllers {
 		public async Task<IActionResult> LogIn([FromForm] UserCredentials uc) {
 			// _signinManager.SignInAsync creates a cookie under the hood so don't use that
 			var user = await _userManager.FindByNameAsync(uc.Email);
-			var result = await _signinManager.CheckPasswordSignInAsync(user, uc.Password, false);
+			if (user != null) {
+				var result = await _signinManager.CheckPasswordSignInAsync(user, uc.Password, false);
 
-			if (result.Succeeded) {
-				var token = await _CreateUserToken(uc);
-				return Ok(token);
+				if (result.Succeeded) {
+					var token = await _CreateUserToken(uc);
+					return Ok(token);
+				}
+				else if (result.IsLockedOut) {
+					return BadRequest("User currently locked out");
+				}
 			}
-			else if (result.IsLockedOut) {
-				return BadRequest("User currently locked out");
-			}
-			else {
-				return BadRequest("Incorrect login");
-			}
+			return BadRequest("Incorrect login");
 		}
 	}
 }
