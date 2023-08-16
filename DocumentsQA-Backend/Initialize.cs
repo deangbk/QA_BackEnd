@@ -81,12 +81,17 @@ namespace DocumentsQA_Backend {
 				})
 					.AddJwtBearer(options => {
 						options.TokenValidationParameters = new TokenValidationParameters {
-							ValidateIssuerSigningKey = true,
+							// Don't care about these
 							ValidateIssuer = false,
 							ValidateAudience = false,
-							ValidateLifetime = true,
+
+							// Validate signing key
+							ValidateIssuerSigningKey = true,
 							IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(JwtKey)),
-							ClockSkew = TokenValidationParameters.DefaultClockSkew,
+
+							// Don't allow any time difference, the expiration time is already large enough
+							ValidateLifetime = true,
+							ClockSkew = TimeSpan.Zero,
 						};
 					});
 
@@ -102,12 +107,16 @@ namespace DocumentsQA_Backend {
 					};
 				});
 				*/
-
+				/*
 				services.AddAuthorization(options => {
-					options.AddPolicy("IsAdmin", policy => policy.RequireClaim("role", AppRole.Admin));
-					options.AddPolicy("IsManager", policy => policy.RequireClaim("role", AppRole.Manager));
-					options.AddPolicy("IsStaff", policy => policy.RequireClaim("role", AppRole.Admin, AppRole.Manager));
+					options.AddPolicy("IsAdmin", 
+						policy => policy.RequireClaim("role", AppRole.Admin.Name));
+					options.AddPolicy("IsManager", 
+						policy => policy.RequireClaim("role", AppRole.Manager.Name));
+					options.AddPolicy("IsStaff", 
+						policy => policy.RequireClaim("role", AppRole.Admin.Name, AppRole.Manager.Name));
 				});
+				*/
 
 				services.AddScoped<IAccessService, AccessService>();
 			}
@@ -115,6 +124,8 @@ namespace DocumentsQA_Backend {
 				services.AddSingleton<IAuthorizationHandler, AuthorizationAllowAnonymous>();
 				services.AddSingleton<IAccessService, AccessAllowAll>();
 			}
+
+			services.AddHttpContextAccessor();
 
 			services.AddEndpointsApiExplorer();
 			//services.AddSwaggerGen();
@@ -126,18 +137,8 @@ namespace DocumentsQA_Backend {
 			if (IsDevelopment) {
 				app.UseDeveloperExceptionPage();
 			}
-			else {
-				app.UseExceptionHandler(builder => {
-					builder.Run(async context => {
-						context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-						var error = context.Features.Get<IExceptionHandlerFeature>();
-						if (error != null) {
-							context.Response.AddApplicationError(error.Error.Message);
-							await context.Response.WriteAsync(error.Error.Message);
-						}
-					});
-				});
-			}
+
+			app.UseMiddleware<ExceptionMiddleware>();
 
 			app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
@@ -163,7 +164,17 @@ namespace DocumentsQA_Backend {
 		}
 	}
 	public class AccessAllowAll : IAccessService {
-		public Task<bool> AllowToProject(HttpContext ctx, Project project) => Task.FromResult(true);
-		public Task<bool> AllowToTranche(HttpContext ctx, Tranche tranche) => Task.FromResult(true);
+		public int GetUserID() => -1;
+		public bool UserHasRole(AppRole role) => true;
+
+		public bool IsValidUser() => true;
+		public bool IsNormalUser() => true;
+		public bool IsSuperUser() => true;
+		public bool IsAdmin() => true;
+
+		public bool AllowToProject(Project project) => true;
+		public bool AllowToTranche(Tranche tranche) => true;
+		public bool AllowManageProject(Project project) => true;
+		public bool AllowManageTranche(Tranche tranche) => true;
 	}
 }

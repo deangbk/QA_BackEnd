@@ -21,8 +21,6 @@ namespace DocumentsQA_Backend.Models {
 		[MaxLength(256)]
 		public string DisplayName { get; set; } = null!;
 		public DateTime DateCreated { get; set; }
-
-		public virtual List<Document> Documents { get; set; } = new();			// One-to-many with Document
 	}
 
 	// -----------------------------------------------------
@@ -32,12 +30,29 @@ namespace DocumentsQA_Backend.Models {
 
 	public class AppRole : IdentityRole<int> {
 		public AppRole() { }
-		public AppRole(string name) { Name = name; }
+		private AppRole(string name) { Name = name; }
 
 		// -----------------------------------------------------
 
-		public static readonly string User = "user";
-		public static readonly string Manager = "manager";
-		public static readonly string Admin = "admin";
+		public static readonly AppRole User = new("user");
+		public static readonly AppRole Manager = new("manager");
+		public static readonly AppRole Admin = new("admin");
+		public static readonly AppRole Empty = new();
+
+		public bool IsStaff() => this.Equals(Manager) || this.Equals(Admin);
+
+		public static AppRole FromString(string name) => name switch {
+			"user" => User,
+			"manager" => Manager,
+			"admin" => Admin,
+			_ => Empty,
+		};
+		public override string ToString() => this.Name;
+		public override bool Equals(object? obj) {
+			if (obj is AppRole role)
+				return this.Name.Equals(role.Name);
+			return false;
+		}
+		public override int GetHashCode() => this.Name.GetHashCode();
 	}
 }

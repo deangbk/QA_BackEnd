@@ -20,22 +20,25 @@ using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Controllers {
 	[Route("api/manage")]
-	//[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "IsStaff")]
+	[Authorize]
 	public class ManagerController : Controller {
 		private readonly DataContext _dataContext;
 		private readonly ILogger<ManagerController> _logger;
 
 		private readonly UserManager<AppUser> _userManager;
-		private readonly AccessService _access;
+		private readonly IAccessService _access;
 
 		public ManagerController(DataContext dataContext, ILogger<ManagerController> logger,
-			UserManager<AppUser> userManager, AccessService access) {
+			UserManager<AppUser> userManager, IAccessService access) {
 
 			_dataContext = dataContext;
 			_logger = logger;
 
 			_userManager = userManager;
 			_access = access;
+
+			if (!_access.IsSuperUser())
+				throw new AccessUnauthorizedException("Manager status required");
 		}
 
 		// -----------------------------------------------------
@@ -52,7 +55,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Tranche not found");
 			Project project = tranche.Project;
 
-			if (!await _access.AllowManageProject(HttpContext, project))
+			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
 			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());   // Horrific
@@ -73,7 +76,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Tranche not found");
 			Project project = tranche.Project;
 
-			if (!await _access.AllowManageProject(HttpContext, project))
+			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
 			List<int> userIdsGrant = new();
@@ -100,7 +103,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Tranche not found");
 			Project project = tranche.Project;
 
-			if (!await _access.AllowManageProject(HttpContext, project))
+			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
 			if (!project.UserManagers.Exists(x => x.Id == uid)) {
@@ -113,6 +116,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
+		/*
 		[HttpDelete("remove_access_withfile/{tid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]  // 4MB
 		public async Task<IActionResult> RemoveTrancheAccessFromFile(int tid, [FromForm] IFormFile file) {
@@ -121,7 +125,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Tranche not found");
 			Project project = tranche.Project;
 
-			if (!await _access.AllowManageProject(HttpContext, project))
+			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
 			List<int> userIdsGrant = new();
@@ -143,6 +147,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
+		*/
 
 		// -----------------------------------------------------
 
@@ -152,7 +157,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-			if (!await _access.AllowManageProject(HttpContext, project))
+			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
 			DateTime dateCreated = DateTime.Now;
@@ -252,7 +257,9 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Users create failed: " + e.Message);
 			}
 
-			return Ok(listUserData.Count);
+			var userIds = listUsers.Select(x => x.Id).ToList();
+
+			return Ok(userIds);
 		}
 	}
 }

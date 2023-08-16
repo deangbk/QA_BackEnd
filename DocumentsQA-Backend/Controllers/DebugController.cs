@@ -4,8 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Net;
 using System.Text;
+using System.Security.Claims;
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,9 +16,6 @@ using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Services;
-using Microsoft.AspNetCore.Identity;
-using System.Security.Claims;
-using System.Security.Cryptography;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
@@ -45,7 +44,13 @@ namespace DocumentsQA_Backend.Controllers {
 
 		[HttpPost("create_users")]
 		public async Task<IActionResult> CreateUsers() {
-			var _NewUser = async (string name, string email, string pass, string role) => {
+			var rolesMap = new Dictionary<AppRole, AppRole[]> {
+				[AppRole.Admin] = new[] { AppRole.Admin, AppRole.User },
+				[AppRole.Manager] = new[] { AppRole.Manager, AppRole.User },
+				[AppRole.User] = new[] { AppRole.User },
+			};
+
+			var _NewUser = async (string name, string email, string pass, AppRole role) => {
 				var user = new AppUser() {
 					UserName = email,
 					Email = email,
@@ -57,8 +62,11 @@ namespace DocumentsQA_Backend.Controllers {
 				var result = await _userManager.CreateAsync(user, pass);
 				if (result.Succeeded) {
 					// Set user role
-					await _userManager.AddClaimAsync(user, new Claim("role", role));
-					await _userManager.AddToRoleAsync(user, role);
+					var roles = rolesMap[role];
+					foreach (var iRole in roles) {
+						await _userManager.AddClaimAsync(user, new Claim("role", iRole.Name));
+						await _userManager.AddToRoleAsync(user, iRole.Name);
+					}
 				}
 				return result.Succeeded;
 			};

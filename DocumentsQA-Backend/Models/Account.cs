@@ -15,5 +15,7 @@ namespace DocumentsQA_Backend.Models {
 		public int AccountNo { get; set; }
 		[MaxLength(256)]
 		public string? AccountName { get; set; }
+
+		public virtual List<Document> Documents { get; set; } = new();		// One-to-many with Document
 	}
 }

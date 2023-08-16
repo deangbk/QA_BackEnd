@@ -19,6 +19,7 @@ using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Models;
+using DocumentsQA_Backend.Services;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;

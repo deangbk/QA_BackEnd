@@ -16,28 +16,36 @@ using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Models;
+using DocumentsQA_Backend.Services;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/admin")]
 	[ApiController]
-	//[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Policy = "IsAdmin")]
+	[Authorize]
 	public class AdminController : Controller {
 		private readonly DataContext _dataContext;
 		private readonly ILogger<PostController> _logger;
 
+		private readonly IAccessService _access;
+
 		private readonly UserManager<AppUser> _userManager;
 		private readonly RoleManager<AppRole> _roleManager;
 
-		public AdminController(DataContext dataContext, ILogger<PostController> logger, 
+		public AdminController(DataContext dataContext, ILogger<PostController> logger, IAccessService access, 
 			UserManager<AppUser> userManager, RoleManager<AppRole> roleManager) {
 
 			_dataContext = dataContext;
 			_logger = logger;
 
+			_access = access;
+
 			_userManager = userManager;
 			_roleManager = roleManager;
+
+			if (!_access.IsAdmin())
+				throw new AccessUnauthorizedException("Admin status required");
 		}
 
 		// -----------------------------------------------------
@@ -45,12 +53,13 @@ namespace DocumentsQA_Backend.Controllers {
 		[HttpPut("gen_roles")]
 		[AllowAnonymous]
 		public async Task<IActionResult> CreateDefaultRoles() {
-			string[] roles = new[] { AppRole.User, AppRole.Manager, AppRole.Admin };
+			AppRole[] roles = new[] {
+				AppRole.User, AppRole.Manager, AppRole.Admin };
 
-			foreach (var roleName in roles) {
+			foreach (var role in roles) {
+				string roleName = role.Name;
 				bool roleExists = await _roleManager.RoleExistsAsync(roleName);
 				if (!roleExists) {
-					var role = new AppRole(roleName);
 					await _roleManager.CreateAsync(role);
 				}
 			}
@@ -58,8 +67,7 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok();
 		}
 
-
-		/// Create different access roles for users (Admin)
+		/*
 		[HttpPut("create_role/{role}")]
 		public async Task<IActionResult> CreateRole(string role) {
 			var roleExists = await _roleManager.RoleExistsAsync(role);
@@ -72,7 +80,8 @@ namespace DocumentsQA_Backend.Controllers {
 			else
 				return BadRequest(result.Errors);
 		}
-		/// grants a user a role - each users can have many roles
+		*/
+
 		[HttpPut("grant_role/{uid}/{role}")]
 		public async Task<IActionResult> GrantUserRole(int uid, string role) {
 			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());	// Horrific
@@ -83,11 +92,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (roleFind == null)
 				return BadRequest("Role not found");
 
-			var claims = await _userManager.GetClaimsAsync(user);
-			var roleExists = claims
-				.Where(x => x.ValueType == "role")
-				.Any(x => x.Value == role);
-
+			var roleExists = await _userManager.IsInRoleAsync(user, role);
 			if (!roleExists) {
 				await _userManager.AddClaimAsync(user, new Claim("role", role));
 				await _userManager.AddToRoleAsync(user, role);
@@ -95,8 +100,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok();
 		}
-
-		/// removes a role from a user
 		[HttpDelete("remove_role/{uid}/{role}")]
 		public async Task<IActionResult> RemoveUserRole(int uid, string role) {
 			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());	// Horrific
@@ -119,7 +122,7 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		// -----------------------------------------------------
-		/// recives project data from frontend to create a new project including tranches as comma delemitered string
+
 		[HttpPost("create_project")]
 		public async Task<IActionResult> CreateProject([FromForm] CreateProjectDTO dto) {
 			Project project = new Project {
@@ -172,13 +175,12 @@ namespace DocumentsQA_Backend.Controllers {
 				.Except(project.UserManagers.Select(x => x.Id))
 				.Select(x => EJoinClass.ProjectUser(project.Id, x));
 		}
-		/// admin granting access to a manager for a project
-		[HttpPut("grant_manage/{tid}/{uid}")]
-		public async Task<IActionResult> GrantProjectManagement(int tid, int uid) {
-			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
-			if (tranche == null)
-				return BadRequest("Tranche not found");
-			Project project = tranche.Project;
+
+		[HttpPut("grant_manage/{pid}/{uid}")]
+		public async Task<IActionResult> GrantProjectManagement(int pid, int uid) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
 
 			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());	// Horrific
 			if (user == null)
@@ -198,15 +200,12 @@ namespace DocumentsQA_Backend.Controllers {
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
-
-		///grants access to multiple users at once from a file
-		[HttpPut("grant_manage_withfile/{tid}")]
+		[HttpPut("grant_manage_withfile/{pid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]	// 4MB
-		public async Task<IActionResult> GrantProjectManagementFromFile(int tid, [FromForm] IFormFile file) {
-			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
-			if (tranche == null)
-				return BadRequest("Tranche not found");
-			Project project = tranche.Project;
+		public async Task<IActionResult> GrantProjectManagementFromFile(int pid, [FromForm] IFormFile file) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
 
 			List<int> userIds = new();
 			try {
@@ -233,13 +232,12 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(rows);
 		}
 
-		[HttpDelete("remove_manage/{tid}/{uid}")]
-		public async Task<IActionResult> RemoveProjectManagement(int tid, int uid) {
-			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
-			if (tranche == null)
-				return BadRequest("Tranche not found");
-			Project project = tranche.Project;
-			
+		[HttpDelete("remove_manage/{pid}/{uid}")]
+		public async Task<IActionResult> RemoveProjectManagement(int pid, int uid) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
 			// Remove access from all tranches
 			foreach (var i in project.Tranches) {
 				i.UserAccesses.RemoveAll(x => x.Id == uid);
@@ -250,13 +248,13 @@ namespace DocumentsQA_Backend.Controllers {
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
-		[HttpDelete("remove_manage_withfile/{tid}")]
+		/*
+		[HttpDelete("remove_manage_withfile/{pid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]	// 4MB
-		public async Task<IActionResult> RemoveProjectManagementFromFile(int tid, [FromForm] IFormFile file) {
-			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
-			if (tranche == null)
-				return BadRequest("Tranche not found");
-			Project project = tranche.Project;
+		public async Task<IActionResult> RemoveProjectManagementFromFile(int pid, [FromForm] IFormFile file) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
 
 			List<int> userIds = new();
 			try {
@@ -277,5 +275,6 @@ namespace DocumentsQA_Backend.Controllers {
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
+		*/
 	}
 }

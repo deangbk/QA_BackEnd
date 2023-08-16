@@ -3,15 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace DocumentsQA_Backend.DTO {
-	public class PostGetDTO {
+	public class PaginateDTO {
 		[BindProperty(Name = "Count")]
-		public int PostsPerPage { get; set; } = 16;
+		public int CountPerPage { get; set; } = 16;
 
 		[BindProperty(Name = "Page")]
 		public int Page { get; set; }
-
-		[BindProperty(Name = "Details")]
-		public int DetailsLevel { get; set; } = 0;
 	}
 
 	public class PostGetFilterDTO {
