@@ -111,7 +111,7 @@ namespace DocumentsQA_Backend.Controllers {
 				// Just enough so people couldn't just open the browser console and export it
 
 				int userId = _access.GetUserID();
-				var hashKey = MD5.HashData(BitConverter.GetBytes(userId));
+				var hashKey = MD5.HashData(Encoding.ASCII.GetBytes(userId.ToString()));
 				for (int i = 0; i < fileBytes.Length; ++i) {
 					fileBytes[i] ^= hashKey[i % hashKey.Length];
 				}
