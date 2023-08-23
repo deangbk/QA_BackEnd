@@ -22,7 +22,7 @@ namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/document")]
-	[Authorize]
+	//[Authorize]
 	public class DocumentController : Controller {
 		private readonly DataContext _dataContext;
 		private readonly ILogger<DocumentController> _logger;
