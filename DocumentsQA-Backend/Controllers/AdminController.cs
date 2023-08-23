@@ -50,8 +50,15 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
+		/// <summary>
+		/// Generates default roles:
+		/// <list type="bullet">
+		/// <item>"user"</item>
+		/// <item>"manager"</item>
+		/// <item>"admin"</item>
+		/// </list>
+		/// </summary>
 		[HttpPut("gen_roles")]
-		[AllowAnonymous]
 		public async Task<IActionResult> CreateDefaultRoles() {
 			AppRole[] roles = new[] {
 				AppRole.User, AppRole.Manager, AppRole.Admin };
@@ -82,6 +89,9 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 		*/
 
+		/// <summary>
+		/// Grants a role to a user
+		/// </summary>
 		[HttpPut("grant_role/{uid}/{role}")]
 		public async Task<IActionResult> GrantUserRole(int uid, string role) {
 			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());	// Horrific
@@ -92,14 +102,21 @@ namespace DocumentsQA_Backend.Controllers {
 			if (roleFind == null)
 				return BadRequest("Role not found");
 
-			var roleExists = await _userManager.IsInRoleAsync(user, role);
-			if (!roleExists) {
-				await _userManager.AddClaimAsync(user, new Claim("role", role));
-				await _userManager.AddToRoleAsync(user, role);
-			}
+			await _GrantUserRole(user, roleFind);
 
 			return Ok();
 		}
+		private async Task _GrantUserRole(AppUser user, AppRole role) {
+			var roleExists = await _userManager.IsInRoleAsync(user, role.Name);
+			if (!roleExists) {
+				await _userManager.AddClaimAsync(user, new Claim("role", role.Name));
+				await _userManager.AddToRoleAsync(user, role.Name);
+			}
+		}
+
+		/// <summary>
+		/// Removes a role from a user
+		/// </summary>
 		[HttpDelete("remove_role/{uid}/{role}")]
 		public async Task<IActionResult> RemoveUserRole(int uid, string role) {
 			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());	// Horrific
@@ -145,6 +162,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Tranches: incorrect input format");
 			}
 
+			// Wrap all operations in a transaction so failure would revert the entire thing
 			using (var transaction = _dataContext.Database.BeginTransaction()) {
 				_dataContext.Projects.Add(project);
 				await _dataContext.SaveChangesAsync();
@@ -176,6 +194,11 @@ namespace DocumentsQA_Backend.Controllers {
 				.Select(x => EJoinClass.ProjectUser(project.Id, x));
 		}
 
+		/// <summary>
+		/// Grants project management rights to a user
+		/// <para>Also grants the manager role to the user if they're not already one</para>
+		/// <para>To grant simply read access, see <see cref="ManagerController.GrantTrancheAccess"/></para>
+		/// </summary>
 		[HttpPut("grant_manage/{pid}/{uid}")]
 		public async Task<IActionResult> GrantProjectManagement(int pid, int uid) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
@@ -186,20 +209,39 @@ namespace DocumentsQA_Backend.Controllers {
 			if (user == null)
 				return BadRequest("User not found");
 
-			// Grant elevated access (manager) to all tranches in the project
+			// Make the user a manager if they're not already one
+			await _GrantUserRole(user, AppRole.Manager);
 
-			// Add access for each tranche in project
-			foreach (var i in project.Tranches) {
-				if (!i.UserAccesses.Exists(x => x.Id == uid))
-					i.UserAccesses.Add(user);
+			// Grant elevated access (manager) to all tranches in the project
+			{
+				// Add access for each tranche in project
+				foreach (var i in project.Tranches) {
+					if (!i.UserAccesses.Exists(x => x.Id == uid))
+						i.UserAccesses.Add(user);
+				}
+				// Add to project manager
+				if (!project.UserManagers.Exists(x => x.Id == uid))
+					project.UserManagers.Add(user);
 			}
-			// Add to project manager
-			if (!project.UserManagers.Exists(x => x.Id == uid))
-				project.UserManagers.Add(user);
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
+
+		/// <summary>
+		/// Grants project management rights to a group of users
+		/// <para>Also grants the manager role to the users if they're not already one</para>
+		/// <para>To grant simply read access, see <see cref="ManagerController.GrantTrancheAccessFromFile"/></para>
+		/// <example>
+		/// Example file structure is (newline is interpreted as a comma):
+		/// <code>
+		///		100, 101, 102
+		///		103
+		///		104, 105
+		///		110, 120, 1111
+		/// </code>
+		/// </example>
+		/// </summary>
 		[HttpPut("grant_manage_withfile/{pid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]	// 4MB
 		public async Task<IActionResult> GrantProjectManagementFromFile(int pid, [FromForm] IFormFile file) {
@@ -216,22 +258,45 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("File parse error: " + e.Message);
 			}
 
-			var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
-			var dbSetManager = _dataContext.Set<EJoinClass>("ProjectUserManage");
-			
-			// Grant elevated access (manager) to all tranches in the project
-
-			// Add access for each tranche in project
-			foreach (var i in project.Tranches) {
-				dbSetTranche.AddRange(ExcludeExistingTrancheAccess(i, userIds));
+			// Verify user IDs
+			{
+				var userIdsExist = await _dataContext.Users
+					.Where(x => userIds.Any(y => y == x.Id))
+					.Select(x => x.Id)
+					.ToListAsync();
+				if (userIdsExist.Count != userIds.Count) {
+					var invalidUsers = userIds.Except(userIdsExist);
+					return BadRequest("Users don't exist: " + string.Join(", ", invalidUsers));
+				}
 			}
-			// Add to project manager
-			dbSetManager.AddRange(ExcludeExistingProjectManage(project, userIds));
+
+			// Make the users managers if they're not already one
+			foreach (var id in userIds) {
+				AppUser? user = await _userManager.FindByIdAsync(id.ToString());	// Horrific
+				await _GrantUserRole(user, AppRole.Manager);
+			}
+
+			// Grant elevated access (manager) to all tranches in the project
+			{
+				var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
+				var dbSetManager = _dataContext.Set<EJoinClass>("ProjectUserManage");
+
+				// Add access for each tranche in project
+				foreach (var i in project.Tranches) {
+					dbSetTranche.AddRange(ExcludeExistingTrancheAccess(i, userIds));
+				}
+				// Add to project manager
+				dbSetManager.AddRange(ExcludeExistingProjectManage(project, userIds));
+			}
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
 
+		/// <summary>
+		/// Removes project management rights from a user, also removes all tranche read access
+		/// <para>Does not remove the user's manager role</para>
+		/// </summary>
 		[HttpDelete("remove_manage/{pid}/{uid}")]
 		public async Task<IActionResult> RemoveProjectManagement(int pid, int uid) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);

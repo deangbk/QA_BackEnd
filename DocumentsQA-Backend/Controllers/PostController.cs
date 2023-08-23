@@ -38,6 +38,16 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
+		/// <summary>
+		/// Gets project questions
+		/// <para>If user has management rights, all questions will be returned.</para>
+		/// <para>Otherwise, only approved questions will be returned.</para>
+		/// <para>Valid filters for filterDTO:</para>
+		/// <list type="bullet">
+		///		<item>PostedFrom</item>
+		///		<item>PostedTo</item>
+		/// </list>
+		/// </summary>
 		[HttpGet("get_posts/{pid}")]
 		public async Task<IActionResult> GetPosts(int pid, 
 			[FromQuery] PostGetFilterDTO filterDTO, [FromQuery] int details = 0) {
@@ -69,6 +79,21 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(listPostTables);
 		}
 
+		/// <summary>
+		/// Gets project questions as paginated list
+		/// <para>If user has management rights, all questions will be returned.</para>
+		/// <para>Otherwise, only approved questions will be returned.</para>
+		/// <para>Valid filters for filterDTO:</para>
+		/// <list type="bullet">
+		///		<item>TicketID</item>
+		///		<item>PosterID</item>
+		///		<item>Tranche</item>
+		///		<item>PostedFrom</item>
+		///		<item>PostedTo</item>
+		///		<item>OnlyAnswered</item>
+		///		<item>SearchTerm</item>
+		/// </list>
+		/// </summary>
 		[HttpGet("get_posts_page/{pid}")]
 		public async Task<IActionResult> GetPostsPage(int pid, [FromQuery] PostGetFilterDTO filterDTO,
 			[FromQuery] PaginateDTO pageDTO, [FromQuery] int details = 0) {
@@ -132,6 +157,9 @@ namespace DocumentsQA_Backend.Controllers {
 			});
 		}
 
+		/// <summary>
+		/// Gets all comments on a question
+		/// </summary>
 		[HttpGet("get_comments/{id}")]
 		public async Task<IActionResult> GetPostComments(int id) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);

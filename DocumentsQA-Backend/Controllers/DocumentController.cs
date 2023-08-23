@@ -66,6 +66,9 @@ namespace DocumentsQA_Backend.Controllers {
 			return false;
 		}
 
+		/// <summary>
+		/// Gets document information
+		/// </summary>
 		[HttpGet("get_info/{id}")]
 		public async Task<IActionResult> GetDocumentInfo(int id, [FromQuery] int details = 0) {
 			Document? document = await Queries.GetDocumentFromId(_dataContext, id);
@@ -83,6 +86,9 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(Mapper.FromDocument(document, details));
 		}
 
+		/// <summary>
+		/// Gets document file stream, encrypted with a basic, non-cryptographically-secure method
+		/// </summary>
 		[HttpGet("get/{id}")]
 		public async Task<IActionResult> GetDocument(int id) {
 			Document? document = await Queries.GetDocumentFromId(_dataContext, id);
@@ -133,6 +139,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		/// <summary>
 		/// Get all general documents in the project
+		/// <para>Ordered by upload date</para>
 		/// </summary>
 		[HttpGet("with_proj/{id}")]
 		public async Task<IActionResult> GetDocument_General(int id, [FromQuery] int details = 0) {
@@ -154,6 +161,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		/// <summary>
 		/// Get all documents attached to the post
+		/// <para>Ordered by upload date</para>
 		/// </summary>
 		[HttpGet("with_post/{id}")]
 		public async Task<IActionResult> GetDocument_Post(int id, [FromQuery] int details = 0) {
@@ -170,6 +178,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		/// <summary>
 		/// Get all documents related to the account
+		/// <para>Ordered by upload date</para>
 		/// </summary>
 		[HttpGet("with_acc/{id}")]
 		public async Task<IActionResult> GetDocument_Account(int id, [FromQuery] int details = 0) {
@@ -215,6 +224,9 @@ namespace DocumentsQA_Backend.Controllers {
 			};
 		}
 
+		/// <summary>
+		/// Uploads a general document, attached to a project
+		/// </summary>
 		[HttpPost("upload_proj/{id}")]
 		public async Task<IActionResult> UploadDocument_General(int id, [FromForm] DocumentUploadDTO upload) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
@@ -235,6 +247,9 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(document.Id);
 		}
 
+		/// <summary>
+		/// Uploads a document, attached to a specific question
+		/// </summary>
 		[HttpPost("upload_post/{id}")]
 		public async Task<IActionResult> UploadDocument_Post(int id, [FromForm] DocumentUploadDTO upload) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
@@ -258,6 +273,9 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(document.Id);
 		}
 
+		/// <summary>
+		/// Uploads a document, attached to a specific account
+		/// </summary>
 		[HttpPost("upload_acc/{id}")]
 		public async Task<IActionResult> UploadDocument_Account(int id, [FromForm] DocumentUploadDTO upload) {
 			Account? account = await Queries.GetAccountFromId(_dataContext, id);
