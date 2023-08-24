@@ -122,8 +122,10 @@ namespace DocumentsQA_Backend {
 			}
 			else {
 				services.AddSingleton<IAuthorizationHandler, AuthorizationAllowAnonymous>();
-				services.AddSingleton<IAccessService, AccessAllowAll>();
+				services.AddScoped<IAccessService, AccessAllowAll>();
 			}
+
+			services.AddScoped<IEmailService, EmailService>();
 
 			services.AddHttpContextAccessor();
 
