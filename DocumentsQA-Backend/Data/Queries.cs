@@ -34,5 +34,13 @@ namespace DocumentsQA_Backend.Data {
 				.Where(x => x.ProjectId == pid)
 				.Where(x => x.QuestionApprovedById != null);
 		}
+		/// <summary>
+		/// Gets query of all unapproved questions in the project
+		/// </summary>
+		public static IQueryable<Question> GetUnapprovedQuestionsQuery(DataContext dataContext, int pid) {
+			return dataContext.Questions
+				.Where(x => x.ProjectId == pid)
+				.Where(x => x.QuestionApprovedById == null);
+		}
 	}
 }
