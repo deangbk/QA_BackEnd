@@ -195,20 +195,13 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private async Task<Document?> _DocumentFromUploadDTO(int projectId, DocumentUploadDTO upload) {
-			string fileName = Path.GetFileName(upload.Url);
-			string fileExt = Path.GetExtension(fileName).Substring(1);	// substr to remove the dot
-
-			var bNameAlreadyExists = await _dataContext.Documents
-				.Where(x => x.ProjectId == projectId)
-				.Where(x => x.FileName == fileName)
-				.AnyAsync();
-			if (bNameAlreadyExists)
-				return null;
+		private async Task<(bool, Document)> _DocumentFromUploadDTO(int projectId, DocumentUploadDTO upload) {
+			string fileName = projectId.ToString() + "_" + Path.GetFileName(upload.Url);
+			string fileExt = Path.GetExtension(fileName).Substring(1);  // substr to remove the dot
 
 			int uploaderId = _access.GetUserID();
 
-			return new Document {
+			var document = new Document {
 				FileUrl = upload.Url,
 				FileName = fileName,
 				FileType = fileExt,
@@ -222,6 +215,13 @@ namespace DocumentsQA_Backend.Controllers {
 
 				DateUploaded = DateTime.Now,
 			};
+
+			var bNameAlreadyExists = await _dataContext.Documents
+				.Where(x => x.ProjectId == projectId)
+				.Where(x => x.FileName == fileName)
+				.AnyAsync();
+
+			return (!bNameAlreadyExists, document);
 		}
 
 		/// <summary>
@@ -235,9 +235,9 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
-			Document? document = await _DocumentFromUploadDTO(id, upload);
-			if (document == null)
-				return BadRequest($"File {Path.GetFileName(upload.Url)} already exists");
+			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
+			if (!bValid)
+				return BadRequest($"File {document.FileName} already exists");
 
 			document.Type = DocumentType.General;
 
@@ -260,9 +260,9 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
-			Document? document = await _DocumentFromUploadDTO(id, upload);
-			if (document == null)
-				return BadRequest($"File {Path.GetFileName(upload.Url)} already exists");
+			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
+			if (!bValid)
+				return BadRequest($"File {document.FileName} already exists");
 
 			document.Type = DocumentType.Question;
 			document.AssocQuestionId = id;
@@ -286,9 +286,9 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageTranche(tranche))
 				return Unauthorized();
 
-			Document? document = await _DocumentFromUploadDTO(tranche.ProjectId, upload);
-			if (document == null)
-				return BadRequest($"File {Path.GetFileName(upload.Url)} already exists");
+			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
+			if (!bValid)
+				return BadRequest($"File {document.FileName} already exists");
 
 			document.Type = DocumentType.Account;
 			document.AssocAccountId = id;
