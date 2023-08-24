@@ -96,18 +96,6 @@ namespace DocumentsQA_Backend {
 					});
 
 				/*
-				services.ConfigureApplicationCookie(options => {
-					// Prevent login redirection on unauthorized
-					options.Cookie.HttpOnly = true;
-					options.LoginPath = "";
-					options.AccessDeniedPath = "";
-					options.Events.OnRedirectToLogin = context => {
-						context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-						return Task.CompletedTask;
-					};
-				});
-				*/
-				/*
 				services.AddAuthorization(options => {
 					options.AddPolicy("IsAdmin", 
 						policy => policy.RequireClaim("role", AppRole.Admin.Name));
@@ -125,7 +113,11 @@ namespace DocumentsQA_Backend {
 				services.AddScoped<IAccessService, AccessAllowAll>();
 			}
 
-			services.AddScoped<IEmailService, EmailService>();
+			// Register email services
+			{
+				services.AddHostedService<ConsumeScopedServiceHostedService>();
+				services.AddScoped<IScopedProcessingService, EmailService>();
+			}
 
 			services.AddHttpContextAccessor();
 

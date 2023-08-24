@@ -27,5 +27,15 @@ namespace DocumentsQA_Backend.Helpers {
 				.Where(x => x.ProjectId == pid)
 				.ToList();
 		}
+
+		/// <summary>
+		/// Gets all user IDs who has access to the project
+		/// </summary>
+		public static List<int> GetProjectUserAccesses(Project project) {
+			return project.Tranches
+				.SelectMany(x => x.UserAccesses)
+				.Select(x => x.Id)
+				.ToList();
+		}
 	}
 }
