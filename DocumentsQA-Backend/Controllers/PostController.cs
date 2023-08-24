@@ -364,6 +364,8 @@ namespace DocumentsQA_Backend.Controllers {
 			question.AnswerApprovedById = null;
 			question.DateAnswerApproved = null;
 
+			question.DailyEmailSent = false;
+
 			await _dataContext.SaveChangesAsync();
 			return Ok();
 		}
@@ -406,6 +408,8 @@ namespace DocumentsQA_Backend.Controllers {
 					i.DateAnswerApproved = null;
 				}
 				i.DateLastEdited = time;
+
+				i.DailyEmailSent = false;
 			}
 
 			await _dataContext.SaveChangesAsync();
@@ -455,6 +459,8 @@ namespace DocumentsQA_Backend.Controllers {
 					i.DateAnswerApproved = null;
 				}
 				i.DateLastEdited = time;
+
+				i.DailyEmailSent = false;
 			}
 
 			await _dataContext.SaveChangesAsync();
