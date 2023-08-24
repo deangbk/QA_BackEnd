@@ -10,7 +10,7 @@ namespace DocumentsQA_Backend.Models {
 		public int Id { get; set; }
 
 		public int QuestionNum { get; set; }
-		public int Type { get; set; }
+		public QuestionType Type { get; set; }
 
 		public int ProjectId { get; set; }					// FK to Project
 		public virtual Project Project { get; set; } = null!;
@@ -35,6 +35,7 @@ namespace DocumentsQA_Backend.Models {
 		public virtual AppUser LastEditor { get; set; } = null!;
 
 		public DateTime DatePosted { get; set; }
+		public DateTime? DateAnswered { get; set; }
 		public DateTime? DateQuestionApproved { get; set; }
 		public DateTime? DateAnswerApproved { get; set; }
 		public DateTime DateLastEdited { get; set; }
@@ -43,5 +44,10 @@ namespace DocumentsQA_Backend.Models {
 
 		public virtual List<Document> Attachments { get; set; } = new();	// One-to-many with Document
 		public virtual List<Comment> Comments { get; set; } = new();		// One-to-many with Comment
+	}
+
+	public enum QuestionType {
+		General,	// General question
+		Account,	// Associated with a specific account
 	}
 }
