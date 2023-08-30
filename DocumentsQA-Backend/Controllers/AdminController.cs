@@ -53,9 +53,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Generates default roles:
 		/// <list type="bullet">
-		/// <item>"user"</item>
-		/// <item>"manager"</item>
-		/// <item>"admin"</item>
+		///		<item>"user"</item>
+		///		<item>"manager"</item>
+		///		<item>"admin"</item>
 		/// </list>
 		/// </summary>
 		[HttpPut("gen_roles")]
@@ -148,6 +148,7 @@ namespace DocumentsQA_Backend.Controllers {
 				CompanyName = dto.Company,
 				ProjectStartDate = dto.DateStart,
 				ProjectEndDate = dto.DateEnd,
+				LastEmailSentDate = DateTime.MinValue,
 			};
 
 			List<string> tranches;

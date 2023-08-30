@@ -49,7 +49,7 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 		}
 
-		private bool? _CheckGetPostPermissions(bool? getType, bool bUserIsElevated) {
+		private static bool? _CheckGetPostPermissions(bool? getType, bool bUserIsElevated) {
 			// Handle get permissions for normal users
 			if (!bUserIsElevated) {
 
@@ -289,8 +289,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 				DatePosted = time,
 				DateLastEdited = time,
-
-				DailyEmailSent = false,
 			};
 
 			project.Questions.Add(question);
@@ -330,8 +328,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 				DatePosted = time,
 				DateLastEdited = time,
-
-				DailyEmailSent = false,
 			};
 
 			tranche.Project.Questions.Add(question);
@@ -363,8 +359,6 @@ namespace DocumentsQA_Backend.Controllers {
 			question.DateQuestionApproved = null;
 			question.AnswerApprovedById = null;
 			question.DateAnswerApproved = null;
-
-			question.DailyEmailSent = false;
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
@@ -408,8 +402,6 @@ namespace DocumentsQA_Backend.Controllers {
 					i.DateAnswerApproved = null;
 				}
 				i.DateLastEdited = time;
-
-				i.DailyEmailSent = false;
 			}
 
 			await _dataContext.SaveChangesAsync();
@@ -459,8 +451,6 @@ namespace DocumentsQA_Backend.Controllers {
 					i.DateAnswerApproved = null;
 				}
 				i.DateLastEdited = time;
-
-				i.DailyEmailSent = false;
 			}
 
 			await _dataContext.SaveChangesAsync();

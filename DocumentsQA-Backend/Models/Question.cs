@@ -40,8 +40,6 @@ namespace DocumentsQA_Backend.Models {
 		public DateTime? DateAnswerApproved { get; set; }
 		public DateTime DateLastEdited { get; set; }
 
-		public bool DailyEmailSent { get; set; } = false;
-
 		public virtual List<Document> Attachments { get; set; } = new();	// One-to-many with Document
 		public virtual List<Comment> Comments { get; set; } = new();		// One-to-many with Comment
 	}

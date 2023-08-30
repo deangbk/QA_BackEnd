@@ -30,6 +30,7 @@ namespace DocumentsQA_Backend.Models {
 
 		public DateTime ProjectStartDate { get; set; }
 		public DateTime ProjectEndDate { get; set; }
+		public DateTime LastEmailSentDate { get; set; }
 
 		public virtual List<Tranche> Tranches { get; set; } = new();			// One-to-many with Tranche
 		public virtual List<Question> Questions { get; set; } = new();			// One-to-many with Question
