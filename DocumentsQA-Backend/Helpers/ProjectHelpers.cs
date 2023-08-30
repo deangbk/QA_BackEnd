@@ -37,5 +37,14 @@ namespace DocumentsQA_Backend.Helpers {
 				.Select(x => x.Id)
 				.ToList();
 		}
+
+		/// <summary>
+		/// Gets all user IDs who has access to the tranche
+		/// </summary>
+		public static List<int> GetTrancheUserAccesses(Tranche tranche) {
+			return tranche.UserAccesses
+				.Select(x => x.Id)
+				.ToList();
+		}
 	}
 }
