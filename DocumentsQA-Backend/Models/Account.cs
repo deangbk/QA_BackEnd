@@ -17,5 +17,8 @@ namespace DocumentsQA_Backend.Models {
 		public string? AccountName { get; set; }
 
 		public virtual List<Document> Documents { get; set; } = new();		// One-to-many with Document
+
+		// Get the format "A_0001", "C_0032", "D_9999" and the such
+		public string GetIdentifierName() => string.Format("{0}_{1:D4}", Tranche.Name, AccountNo);
 	}
 }

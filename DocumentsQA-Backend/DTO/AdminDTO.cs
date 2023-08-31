@@ -16,4 +16,11 @@ namespace DocumentsQA_Backend.DTO {
 		[BindProperty(Name = "Tranches")]
 		public string InitialTranches { get; set; } = null!;
 	}
+
+	public class CreateAccountDTO {
+		public string Tranche { get; set; } = null!;
+
+		public int Number { get; set; }
+		public string Name { get; set; } = null!;
+	}
 }
