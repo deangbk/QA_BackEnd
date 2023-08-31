@@ -117,6 +117,7 @@ namespace DocumentsQA_Backend {
 			{
 				services.AddHostedService<ConsumeScopedServiceHostedService>();
 				services.AddScoped<IScopedProcessingService, EmailService>();
+				services.AddScoped<IEmailService, EmailService>();
 			}
 
 			services.AddHttpContextAccessor();
