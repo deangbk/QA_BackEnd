@@ -261,6 +261,7 @@ namespace DocumentsQA_Backend.Services {
 			bool res = true;
 			DateTime now = DateTime.Now;
 
+			// The filter there is kind of useless innit
 			var projects = await _dataContext.Projects
 				.Where(x => x.LastEmailSentDate < now)
 				.ToListAsync();
@@ -290,7 +291,7 @@ namespace DocumentsQA_Backend.Services {
 						var questionIds = questions.Select(x => x.Id);
 						var add = await queryDocuments
 							.Where(x => x.Type == DocumentType.Question)
-							.Where(x => questionIds.Any(y => y == (x.AssocQuestionId ?? -1)))
+							.Where(x => questionIds.Any(y => y == (x.AssocQuestionId ?? -1)))	// Coalesce nullable
 							.ToListAsync();
 						documents.AddRange(add);
 					}
@@ -318,7 +319,6 @@ namespace DocumentsQA_Backend.Services {
 
 						// Get questions in this tranche
 						var questions = group.ToList();
-						var questionIds = questions.Select(x => x.Id);
 
 						// Get documents attached to accounts in this tranche
 						var documents = await queryDocuments
@@ -326,15 +326,17 @@ namespace DocumentsQA_Backend.Services {
 							.Where(x => x.AssocAccountId == account.Id)
 							.ToListAsync();
 						{
+							var questionIds = questions.Select(x => x.Id);
+
 							// Get documents attached to questions in this tranche
 							var add = await queryDocuments
 								.Where(x => x.Type == DocumentType.Question)
-								.Where(x => questionIds.Any(y => y == (x.AssocQuestionId ?? -1)))
+								.Where(x => questionIds.Any(y => y == (x.AssocQuestionId ?? -1)))	// Coalesce nullable
 								.ToListAsync();
 							documents.AddRange(add);
 						}
 
-						// Add to all users with this tranche access
+						// Add to all users with access to this tranche
 						var followers = ProjectHelpers.GetTrancheUserAccesses(tranche);
 						foreach (var id in followers) {
 							var userData = mapUserData[id];
@@ -395,6 +397,7 @@ namespace DocumentsQA_Backend.Services {
 					.Select(x => x.Id)
 					.ToList();
 
+				// Get stuff posted/uploaded in the past
 				var queryQuestions = _dataContext.Questions
 					.Where(x => x.ProjectId == project.Id && x.DateLastEdited < user.DateCreated);
 				var queryDocuments = _dataContext.Documents
