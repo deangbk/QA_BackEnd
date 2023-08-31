@@ -29,8 +29,11 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly SignInManager<AppUser> _signinManager;
 		private readonly RoleManager<AppRole> _roleManager;
 
+		private readonly IEmailService _emailService;
+
 		public DebugController(DataContext dataContext, ILogger<DebugController> logger,
-			UserManager<AppUser> userManager, SignInManager<AppUser> signinManager, RoleManager<AppRole> roleManager) {
+			UserManager<AppUser> userManager, SignInManager<AppUser> signinManager, RoleManager<AppRole> roleManager,
+			IEmailService emailService) {
 
 			_dataContext = dataContext;
 			_logger = logger;
@@ -38,6 +41,8 @@ namespace DocumentsQA_Backend.Controllers {
 			_userManager = userManager;
 			_signinManager = signinManager;
 			_roleManager = roleManager;
+
+			_emailService = emailService;
 		}
 
 		// -----------------------------------------------------
@@ -115,6 +120,113 @@ namespace DocumentsQA_Backend.Controllers {
 			var count = await _dataContext.SaveChangesAsync();
 
 			return Ok(count);
+		}
+
+		[HttpPost("send_test_mail")]
+		public async Task<IActionResult> TestSendEmail([FromQuery] string email) {
+			var res = await _emailService.SendTestEmail(email);
+			if (res)
+				return Ok();
+			else
+				return StatusCode(500);
+		}
+
+		[HttpPut("create_accounts/{tid}/{count}")]
+		public async Task<IActionResult> CreateAccounts(int tid, int count) {
+			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
+			if (tranche == null)
+				return BadRequest("Tranche not found");
+
+			Random rnd = new Random(DateTime.Now.GetHashCode());
+			var _RandString = (int len) => {
+				const string chars = "abcde fghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ";
+				string s = "";
+				for (int i = 0; i < len; ++i) {
+					s += chars[rnd.Next(0, chars.Length)];
+				}
+				return s;
+			};
+
+			var names = Enumerable.Range(0, count)
+				.Select(x => _RandString(rnd.Next(8, 32)))
+				.ToArray();
+			var accounts = names.Select(
+				(x, i) => new Account() {
+					TrancheId = tranche.Id,
+					AccountNo = i + 1,
+					AccountName = x,
+				})
+				.ToList();
+
+			// Wrap all operations in a transaction so failure would revert the entire thing
+			using (var transaction = _dataContext.Database.BeginTransaction()) {
+				_dataContext.Accounts.Where(x => x.TrancheId == tid).ExecuteDelete();
+				await _dataContext.SaveChangesAsync();
+
+				_dataContext.Accounts.AddRange(accounts);
+				await _dataContext.SaveChangesAsync();
+
+				await transaction.CommitAsync();
+			}
+
+			return Ok();
+		}
+
+		[HttpPost("create_questions/{tid}/{postBy}/{count}")]
+		public async Task<IActionResult> CreateQuestions(int tid, int postBy, int count) {
+			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
+			if (tranche == null)
+				return BadRequest("Tranche not found");
+
+			Random rnd = new Random(DateTime.Now.GetHashCode());
+			var _RandString = (int len) => {
+				string s = "";
+				for (int i = 0; i < len; ++i) {
+					if (rnd.NextDouble() < 0.5)
+						s += (char)rnd.Next(0x20, 0x7e + 1);		// English chars
+					else
+						s += (char)rnd.Next(0x0e01, 0x0e33 + 1);	// Thai chars
+				}
+				return s;
+			};
+
+			int maxQuestionNum = 1;
+			try {
+				maxQuestionNum = await _dataContext.Questions
+					.Where(x => x.ProjectId == tranche.ProjectId)
+					.Select(x => x.QuestionNum)
+					.MaxAsync();
+			}
+			catch (Exception) {
+				maxQuestionNum = 1;
+			}
+
+			var accounts = await _dataContext.Accounts
+				.Where(x => x.TrancheId == tranche.Id)
+				.Select(x => x.Id)
+				.ToListAsync();
+
+			var now = DateTime.Now;
+			var questions = Enumerable.Range(1, count).Select(x => new Question {
+				QuestionNum = maxQuestionNum + x,
+				Type = QuestionType.Account,
+
+				ProjectId = tranche.ProjectId,
+				AccountId = accounts[rnd.Next(0, accounts.Count)],
+
+				QuestionText = _RandString(rnd.Next(16, 128)),
+
+				PostedById = postBy,
+				LastEditorId = postBy,
+
+				DatePosted = now,
+				DateLastEdited = now,
+			}).ToList();
+
+			tranche.Project.Questions.AddRange(questions);
+			var rows = await _dataContext.SaveChangesAsync();
+
+			return Ok(rows);
 		}
 	}
 }
