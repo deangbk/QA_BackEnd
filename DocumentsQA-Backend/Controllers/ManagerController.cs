@@ -309,5 +309,58 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok(userIds);
 		}
+
+		// -----------------------------------------------------
+
+		/// <summary>
+		/// Gets project questions as paginated list
+		/// <para>Valid filters for filterDTO:</para>
+		/// <list type="bullet">
+		///		<item>TicketID</item>
+		///		<item>PosterID</item>
+		///		<item>Tranche</item>
+		///		<item>Account</item>
+		///		<item>PostedFrom</item>
+		///		<item>PostedTo</item>
+		///		<item>OnlyAnswered</item>
+		///		<item>SearchTerm</item>
+		/// </list>
+		/// </summary>
+		[HttpGet("get_posts/{pid}")]
+		public async Task<IActionResult> GetPosts(int pid, [FromQuery] PostGetFilterDTO filterDTO, [FromQuery] int details = 0) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+			if (!_access.AllowManageProject(project))
+				return Unauthorized();
+
+			IQueryable<Question> query;
+			{
+				switch (filterDTO.Approved) {
+					case true:
+						query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);	// Gets only approved
+						break;
+					case false:
+						query = Queries.GetUnapprovedQuestionsQuery(_dataContext, pid); // Gets only unapproved
+						break;
+					case null:
+						query = project.Questions.AsQueryable();	// Gets everything
+						break;
+				}
+			}
+
+			try {
+				query = PostHelpers.FilterQuery(query, filterDTO);
+			}
+			catch (ArgumentException e) {
+				ModelState.AddModelError(e.ParamName!, e.Message);
+				return BadRequest(new ValidationProblemDetails(ModelState));
+			}
+
+			var listPosts = await query.ToListAsync();
+			var listPostTables = listPosts.Select(x => Mapper.FromPost(x, details));
+
+			return Ok(listPostTables);
+		}
 	}
 }

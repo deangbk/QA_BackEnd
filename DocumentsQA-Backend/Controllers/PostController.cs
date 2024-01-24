@@ -89,6 +89,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			IQueryable<Question> query;
 			{
+				/*
 				bool bElevated = _access.IsSuperUser();
 				bool? approved = _CheckGetPostPermissions(filterDTO.Approved, bElevated);
 				switch (approved) {
@@ -102,6 +103,8 @@ namespace DocumentsQA_Backend.Controllers {
 						query = project.Questions.AsQueryable();	// Gets everything
 						break;
 				}
+				*/
+				query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);	// Gets only approved
 			}
 
 			if (filterDTO.Type is not null) {
@@ -140,13 +143,13 @@ namespace DocumentsQA_Backend.Controllers {
 		///		<item>TicketID</item>
 		///		<item>PosterID</item>
 		///		<item>Tranche</item>
+		///		<item>Account</item>
 		///		<item>PostedFrom</item>
 		///		<item>PostedTo</item>
 		///		<item>OnlyAnswered</item>
 		///		<item>SearchTerm</item>
 		/// </list>
-		/// <para>If user has management rights, Approved will work normally.</para>
-		/// <para>If user is a normal user, unapproved questions cannot be queried, regardless of Approved.</para>
+		/// <para>Will only return approved questions.</para>
 		/// </summary>
 		[HttpGet("get_posts_page/{pid}")]
 		public async Task<IActionResult> GetPostsPage(int pid, [FromQuery] PostGetFilterDTO filterDTO,
@@ -160,6 +163,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			IQueryable<Question> query;
 			{
+				/*
 				bool bElevated = _access.IsSuperUser();
 				bool? approved = _CheckGetPostPermissions(filterDTO.Approved, bElevated);
 				switch (approved) {
@@ -173,58 +177,31 @@ namespace DocumentsQA_Backend.Controllers {
 						query = project.Questions.AsQueryable();	// Gets everything
 						break;
 				}
+				*/
+				query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);	// Gets only approved
 			}
 
-			if (filterDTO.Type is not null) {
-				string typeName = filterDTO.Type.ToLower();
-				if (typeName == "general") {
-					query = query.Where(x => x.Type == QuestionType.General);
-				}
-				else if (typeName == "account") {
-					if (filterDTO.Account == null) {
-						ModelState.AddModelError("Account", "Account number must not be null");
-						return BadRequest(new ValidationProblemDetails(ModelState));
-					}
-
-					query = query.Where(x => x.Type == QuestionType.Account
-						&& x.AccountId == filterDTO.Account);
-				}
+			try {
+				query = PostHelpers.FilterQuery(query, filterDTO);
 			}
-
-			if (filterDTO.TicketID != null) {
-				query = query.Where(x => x.Id == filterDTO.TicketID);
-			}
-			if (filterDTO.PosterID != null) {
-				query = query.Where(x => x.PostedById == filterDTO.PosterID);
-			}
-			if (filterDTO.Tranche != null) {
-				query = query.Where(x => x.Account == null || x.Account.Tranche.Name == filterDTO.Tranche);
-			}
-			if (filterDTO.PostedFrom is not null) {
-				query = query.Where(x => x.DatePosted >= filterDTO.PostedFrom);
-			}
-			if (filterDTO.PostedTo is not null) {
-				query = query.Where(x => x.DatePosted < filterDTO.PostedTo);
-			}
-			if (filterDTO.OnlyAnswered != null) {
-				if (filterDTO.OnlyAnswered.Value)
-					query = query.Where(x => x.QuestionAnswer != null);
-				else
-					query = query.Where(x => x.QuestionAnswer == null);
-			}
-			if (filterDTO.SearchTerm != null) {
-				query = query.Where(x => EF.Functions.Contains(x.QuestionText, filterDTO.SearchTerm));
+			catch (ArgumentException e) {
+				ModelState.AddModelError(e.ParamName!, e.Message);
+				return BadRequest(new ValidationProblemDetails(ModelState));
 			}
 
 			int countTotal = await query.CountAsync();
-			int countPerPage = pageDTO.CountPerPage;
-			int maxPages = (int)Math.Ceiling(countTotal / (double)countPerPage);
 
-			// Paginate result
 			{
-				query = query
-					.Skip(pageDTO.Page * countPerPage)
-					.Take(countPerPage);
+				int countPerPage = pageDTO.CountPerPage;
+
+				// Paginate result
+				if (pageDTO.Page >= 0 && pageDTO.CountPerPage >= 1) {
+					int maxPages = (int)Math.Ceiling(countTotal / (double)countPerPage);
+
+					query = query
+						.Skip(pageDTO.Page * countPerPage)
+						.Take(countPerPage);
+				}
 			}
 
 			var listPosts = await query.ToListAsync();

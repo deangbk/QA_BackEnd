@@ -18,6 +18,9 @@ namespace DocumentsQA_Backend.DTO {
 		[BindProperty(Name = "Tranche")]
 		public string? Tranche { get; set; }
 
+		[BindProperty(Name = "Account")]
+		public int? Account { get; set; }
+
 		[BindProperty(Name = "Ticket")]
 		public int? TicketID { get; set; }
 
@@ -49,7 +52,6 @@ namespace DocumentsQA_Backend.DTO {
 		/// </list>
 		/// </summary>
 		public string? Type { get; set; } = null;
-		public int? Account { get; set; } = null;
 	}
 
 	public class PostCreateDTO {
