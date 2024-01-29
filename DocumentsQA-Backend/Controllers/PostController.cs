@@ -207,7 +207,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (question == null)
 				return BadRequest("Question not found");
 
-			if (!PostHelpers.AllowUserReadPost(_access, question))
+			// Only staff can add answer
+			if (!PostHelpers.AllowUserManagePost(_access, question))
 				return Unauthorized();
 
 			var time = DateTime.Now;
@@ -217,6 +218,35 @@ namespace DocumentsQA_Backend.Controllers {
 			question.DateAnswered = time;
 			question.DateLastEdited = time;
 
+			// Automatically approve
+			question.AnswerApprovedById = _access.GetUserID();
+			question.DateAnswerApproved = time;
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+
+		/// <summary>
+		/// Edits the question
+		/// </summary>
+		[HttpPut("edit/{id}")]
+		public async Task<IActionResult> EditQuestion(int id, [FromForm] PostCreateDTO editDTO) {
+			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
+			if (question == null)
+				return BadRequest("Question not found");
+
+			if (!PostHelpers.AllowUserEditPost(_access, question))
+				return Unauthorized();
+
+			var time = DateTime.Now;
+			var userId = _access.GetUserID();
+
+			question.QuestionText = editDTO.Text;
+
+			question.LastEditorId = userId;
+			question.DateLastEdited = time;
+
+			// Editing should also invalidate previous approval status
 			question.QuestionApprovedById = null;
 			question.DateQuestionApproved = null;
 			question.AnswerApprovedById = null;
