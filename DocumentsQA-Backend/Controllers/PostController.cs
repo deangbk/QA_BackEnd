@@ -74,12 +74,16 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest(new ValidationProblemDetails(ModelState));
 			}
 
-			int countTotal = await query.CountAsync();
+			// Then filter based on access
+			var listPosts = query.AsEnumerable()
+				.Where(x => PostHelpers.AllowUserReadPost(_access, x))
+				.ToList();
+			int countTotal = listPosts.Count;
 
+			// Paginate result; but return everything if Page is less than 0
 			{
 				int countPerPage = pageDTO.CountPerPage;
 
-				// Paginate result
 				if (pageDTO.Page >= 0 && pageDTO.CountPerPage >= 1) {
 					int maxPages = (int)Math.Ceiling(countTotal / (double)countPerPage);
 
@@ -89,7 +93,6 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 			}
 
-			var listPosts = await query.ToListAsync();
 			var listPostTables = listPosts.Select(x => Mapper.FromPost(x, details));
 
 			return Ok(new JsonTable() {
