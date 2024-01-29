@@ -274,7 +274,7 @@ namespace DocumentsQA_Backend.Controllers {
 							UserName = email,
 							DisplayName = name,
 							Company = project.CompanyName,
-							FavouriteProjectId = project.Id,
+							//FavouriteProjectId = project.Id,
 							DateCreated = dateCreated,
 						};
 						listUsers.Add(user);

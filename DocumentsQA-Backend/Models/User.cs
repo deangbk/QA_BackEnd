@@ -12,8 +12,10 @@ namespace DocumentsQA_Backend.Models {
 		public virtual List<Project> ProjectManages { get; set; } = new();		// Reference navigation for many-to-many FK
 		public virtual List<Tranche> TrancheAccesses { get; set; } = new();		// Reference navigation for many-to-many FK
 		
+		/*
 		public int? FavouriteProjectId { get; set; }		// User's "favourite" proj, aka the proj the user gets directed to when logging in
 		public virtual Project? FavouriteProject { get; set; }
+		*/
 
 		[MaxLength(256)]
 		public string Company { get; set; } = null!;

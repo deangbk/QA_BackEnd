@@ -86,6 +86,7 @@ namespace DocumentsQA_Backend.Data {
 						b.Property<int>("Id"));
 				});
 
+				/*
 				// Map User:Project as N:1
 				modelBuilder.Entity<AppUser>()
 					.HasOne(e => e.FavouriteProject)
@@ -93,6 +94,7 @@ namespace DocumentsQA_Backend.Data {
 					.HasForeignKey(e => e.FavouriteProjectId)
 					.OnDelete(DeleteBehavior.SetNull)
 					.IsRequired(false);
+				*/
 
 				// Map User:Tranche as N:M using join entity
 				modelBuilder.Entity<AppUser>()
