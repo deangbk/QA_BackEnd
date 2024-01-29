@@ -37,34 +37,6 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		// -----------------------------------------------------
-		
-		private bool _CheckQuestionAccess(Question question) {
-			if (question.Type == QuestionType.General) {
-				Project project = question.Project;
-				return _access.AllowToProject(project);
-			}
-			else {
-				Tranche tranche = question.Account!.Tranche;
-				return _access.AllowToTranche(tranche);
-			}
-		}
-
-		private static bool? _CheckGetPostPermissions(bool? getType, bool bUserIsElevated) {
-			// Handle get permissions for normal users
-			if (!bUserIsElevated) {
-
-				// If requesting for everything -> resolve to get only approved
-				if (getType == null) {
-					getType = true;
-				}
-
-				// If requesting for unapproved -> throw a 401
-				else if (getType == false) {
-					throw new AccessUnauthorizedException("Cannot get list of unapproved questions");
-				}
-			}
-			return getType;
-		}
 
 		/// <summary>
 		/// Gets project questions as paginated list
@@ -135,7 +107,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (question == null)
 				return BadRequest("Question not found");
 
-			if (!_CheckQuestionAccess(question))
+			if (!PostHelpers.AllowUserReadPost(_access, question))
 				return Unauthorized();
 
 			var listComments = await _dataContext.Comments
@@ -235,7 +207,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (question == null)
 				return BadRequest("Question not found");
 
-			if (!_CheckQuestionAccess(question))
+			if (!PostHelpers.AllowUserReadPost(_access, question))
 				return Unauthorized();
 
 			var time = DateTime.Now;

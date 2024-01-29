@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.DTO;
+using DocumentsQA_Backend.Services;
 
 namespace DocumentsQA_Backend.Helpers {
 	public class PostHelpers {
@@ -59,6 +60,30 @@ namespace DocumentsQA_Backend.Helpers {
 			}
 
 			return query;
+		}
+
+		public static bool AllowUserReadPost(IAccessService access, Question question) {
+			if (question.Type == QuestionType.General) {
+				Project project = question.Project;
+				return access.AllowToProject(project);
+			}
+			else {
+				Tranche tranche = question.Account!.Tranche;
+				return access.AllowToTranche(tranche);
+			}
+		}
+		public static bool AllowUserEditPost(IAccessService access, Question question) {
+			return AllowUserManagePost(access, question) || (access.GetUserID() == question.PostedById);
+		}
+		public static bool AllowUserManagePost(IAccessService access, Question question) {
+			if (question.Type == QuestionType.General) {
+				Project project = question.Project;
+				return access.AllowManageProject(project);
+			}
+			else {
+				Tranche tranche = question.Account!.Tranche;
+				return access.AllowManageTranche(tranche);
+			}
 		}
 	}
 }
