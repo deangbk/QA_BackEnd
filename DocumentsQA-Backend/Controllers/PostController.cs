@@ -37,7 +37,7 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		// -----------------------------------------------------
-
+		
 		private bool _CheckQuestionAccess(Question question) {
 			if (question.Type == QuestionType.General) {
 				Project project = question.Project;
@@ -67,76 +67,6 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		/// <summary>
-		/// Gets project questions
-		/// <para>Valid filters for filterDTO:</para>
-		/// <list type="bullet">
-		///		<item>PostedFrom</item>
-		///		<item>PostedTo</item>
-		///		<item>Approved</item>
-		/// </list>
-		/// <para>If user has management rights, Approved will work normally.</para>
-		/// <para>If user is a normal user, unapproved questions cannot be queried, regardless of Approved.</para>
-		/// </summary>
-		[HttpGet("get_posts/{pid}")]
-		public async Task<IActionResult> GetPosts(int pid, 
-			[FromQuery] PostGetFilterDTO filterDTO, [FromQuery] int details = 0) {
-
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-			if (!_access.AllowToProject(project))
-				return Unauthorized();
-
-			IQueryable<Question> query;
-			{
-				/*
-				bool bElevated = _access.IsSuperUser();
-				bool? approved = _CheckGetPostPermissions(filterDTO.Approved, bElevated);
-				switch (approved) {
-					case true:
-						query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);	// Gets only approved
-						break;
-					case false:
-						query = Queries.GetUnapprovedQuestionsQuery(_dataContext, pid); // Gets only unapproved
-						break;
-					case null:
-						query = project.Questions.AsQueryable();	// Gets everything
-						break;
-				}
-				*/
-				query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);	// Gets only approved
-			}
-
-			if (filterDTO.Type is not null) {
-				string typeName = filterDTO.Type.ToLower();
-				if (typeName == "general") {
-					query = query.Where(x => x.Type == QuestionType.General);
-				}
-				else if (typeName == "account") {
-					if (filterDTO.Account == null) {
-						ModelState.AddModelError("Account", "Account number must not be null");
-						return BadRequest(new ValidationProblemDetails(ModelState));
-					}
-
-					query = query.Where(x => x.Type == QuestionType.Account 
-						&& x.AccountId == filterDTO.Account);
-				}
-			}
-
-			if (filterDTO.PostedFrom is not null) {
-				query = query.Where(x => x.DatePosted >= filterDTO.PostedFrom);
-			}
-			if (filterDTO.PostedTo is not null) {
-				query = query.Where(x => x.DatePosted < filterDTO.PostedTo);
-			}
-
-			var listPosts = await query.ToListAsync();
-			var listPostTables = listPosts.Select(x => Mapper.FromPost(x, details));
-
-			return Ok(listPostTables);
-		}
-
-		/// <summary>
 		/// Gets project questions as paginated list
 		/// <para>Valid filters for filterDTO:</para>
 		/// <list type="bullet">
@@ -151,8 +81,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </list>
 		/// <para>Will only return approved questions.</para>
 		/// </summary>
-		[HttpGet("get_posts_page/{pid}")]
-		public async Task<IActionResult> GetPostsPage(int pid, [FromQuery] PostGetFilterDTO filterDTO,
+		[HttpGet("get_posts/{pid}")]
+		public async Task<IActionResult> GetPosts(int pid, [FromQuery] PostGetFilterDTO filterDTO,
 			[FromQuery] PaginateDTO pageDTO, [FromQuery] int details = 0) {
 
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
@@ -161,25 +91,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
-			IQueryable<Question> query;
-			{
-				/*
-				bool bElevated = _access.IsSuperUser();
-				bool? approved = _CheckGetPostPermissions(filterDTO.Approved, bElevated);
-				switch (approved) {
-					case true:
-						query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);	// Gets only approved
-						break;
-					case false:
-						query = Queries.GetUnapprovedQuestionsQuery(_dataContext, pid); // Gets only unapproved
-						break;
-					case null:
-						query = project.Questions.AsQueryable();	// Gets everything
-						break;
-				}
-				*/
-				query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);	// Gets only approved
-			}
+			// Gets only approved
+			IQueryable<Question> query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);
 
 			try {
 				query = PostHelpers.FilterQuery(query, filterDTO);
