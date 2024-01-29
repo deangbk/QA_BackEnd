@@ -9,6 +9,9 @@ namespace DocumentsQA_Backend.Models {
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
 		public int Id { get; set; }
 
+		public int ProjectID { get; set; }			// FK to Project
+		public virtual Project Project { get; set; } = null!;
+
 		public int TrancheId { get; set; }			// FK to Tranche
 		public virtual Tranche Tranche { get; set; } = null!;
 

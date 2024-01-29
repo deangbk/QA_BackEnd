@@ -106,6 +106,14 @@ namespace DocumentsQA_Backend.Data {
 
 			// Model: Account
 			{
+				// Map Account:Project as N:1
+				modelBuilder.Entity<Account>()
+					.HasOne(e => e.Project)
+					.WithMany()
+					.HasForeignKey(e => e.ProjectID)
+					.OnDelete(DeleteBehavior.Restrict)
+					.IsRequired();
+
 				// Map Account:Tranche as N:1
 				modelBuilder.Entity<Account>()
 					.HasOne(e => e.Tranche)
