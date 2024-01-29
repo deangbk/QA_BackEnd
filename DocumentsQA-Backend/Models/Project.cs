@@ -1,9 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Hosting;
-using System.Collections.Generic;
 
 namespace DocumentsQA_Backend.Models {
 	[PrimaryKey(nameof(Id))]

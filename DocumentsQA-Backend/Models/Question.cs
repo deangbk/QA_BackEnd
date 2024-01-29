@@ -4,6 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 
 namespace DocumentsQA_Backend.Models {
+	public enum QuestionCategory {
+		General,
+		Collateral,
+		Litigation,
+		Lycanthropy,
+	}
+
 	[PrimaryKey(nameof(Id))]
 	public class Question {
 		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -11,6 +18,7 @@ namespace DocumentsQA_Backend.Models {
 
 		public int QuestionNum { get; set; }
 		public QuestionType Type { get; set; }
+		public QuestionCategory Category { get; set; }
 
 		public int ProjectId { get; set; }					// FK to Project
 		public virtual Project Project { get; set; } = null!;

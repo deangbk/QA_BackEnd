@@ -55,6 +55,7 @@ namespace DocumentsQA_Backend.Data {
 			var table = new JsonTable() {
 				["q_num"] = obj.QuestionNum,
 				["type"] = obj.Type,
+				["category"] = obj.Category,
 				["tranche"] = obj.Account != null ? obj.Account.Tranche.Name : null!,
 				["account"] = obj.Account != null ? obj.Account.AccountNo : null!,
 
