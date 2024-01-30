@@ -76,10 +76,10 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Then filter based on access
 			//    NOTE: Might be a little inefficient, but the access logic is too complicated to be handled on the DB
-			var listPosts = query.AsEnumerable()
+			var listPosts = (await query.ToListAsync())
 				.Where(x => PostHelpers.AllowUserReadPost(_access, x))
 				.ToList();
-			int countTotal = listPosts.Count;
+			int countTotal = listPosts.Count();
 
 			// Paginate result; but return everything if Page is less than 0
 			{

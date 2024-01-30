@@ -358,7 +358,7 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			// Then filter based on access
-			var listPosts = query.AsEnumerable()
+			var listPosts = (await query.ToListAsync())
 				.Where(x => PostHelpers.AllowUserReadPost(_access, x))
 				.ToList();
 			var listPostTables = listPosts.Select(x => Mapper.FromPost(x, details));
