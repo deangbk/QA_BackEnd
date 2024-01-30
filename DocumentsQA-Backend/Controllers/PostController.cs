@@ -75,6 +75,7 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			// Then filter based on access
+			//    NOTE: Might be a little inefficient, but the access logic is too complicated to be handled on the DB
 			var listPosts = query.AsEnumerable()
 				.Where(x => PostHelpers.AllowUserReadPost(_access, x))
 				.ToList();
@@ -87,9 +88,10 @@ namespace DocumentsQA_Backend.Controllers {
 				if (pageDTO.Page >= 0 && pageDTO.CountPerPage >= 1) {
 					int maxPages = (int)Math.Ceiling(countTotal / (double)countPerPage);
 
-					query = query
+					listPosts = listPosts
 						.Skip(pageDTO.Page * countPerPage)
-						.Take(countPerPage);
+						.Take(countPerPage)
+						.ToList();
 				}
 			}
 
