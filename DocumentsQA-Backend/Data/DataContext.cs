@@ -112,7 +112,7 @@ namespace DocumentsQA_Backend.Data {
 				modelBuilder.Entity<Account>()
 					.HasOne(e => e.Project)
 					.WithMany()
-					.HasForeignKey(e => e.ProjectID)
+					.HasForeignKey(e => e.ProjectId)
 					.OnDelete(DeleteBehavior.Restrict)
 					.IsRequired();
 
