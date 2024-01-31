@@ -1,5 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Data;
+using System.Security.Claims;
+
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -56,5 +60,12 @@ namespace DocumentsQA_Backend.Models {
 			return false;
 		}
 		public override int GetHashCode() => this.Name.GetHashCode();
+
+		// -----------------------------------------------------
+
+		public static async Task AddRoleToUser(UserManager<AppUser> userManager, AppUser user, AppRole role) {
+			await userManager.AddClaimAsync(user, new Claim("role", role.Name));
+			await userManager.AddToRoleAsync(user, role.Name);
+		}
 	}
 }

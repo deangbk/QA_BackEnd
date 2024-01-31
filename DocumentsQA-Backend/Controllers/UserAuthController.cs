@@ -65,11 +65,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (result.Succeeded) {
 				// Set user role
-				{
-					string role = AppRole.User.Name;
-					await _userManager.AddClaimAsync(user, new Claim("role", role));
-					await _userManager.AddToRoleAsync(user, role);
-				}
+				await AppRole.AddRoleToUser(_userManager, user, AppRole.User);
 
 				var token = await _CreateUserToken(uc);
 				return Ok(token);
