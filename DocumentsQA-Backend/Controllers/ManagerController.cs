@@ -94,8 +94,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 			List<int> userIdsGrant = new();
 			try {
-				using var stream = file.OpenReadStream();
-				userIdsGrant = FileHelpers.ReadIntListFromFile(stream);
+				string contents = await FileHelpers.ReadIFormFile(file);
+				userIdsGrant = ValueHelpers.SplitIntString(contents).ToList();
 			}
 			catch (Exception e) {
 				return BadRequest("File parse error: " + e.Message);
@@ -146,8 +146,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 			List<int> userIdsGrant = new();
 			try {
-				using var stream = file.OpenReadStream();
-				userIdsGrant = FileHelpers.ReadIntListFromFile(stream);
+				string contents = await FileHelpers.ReadIFormFile(file);
+				userIdsGrant = ValueHelpers.SplitIntString(contents).ToList();
 			}
 			catch (Exception e) {
 				return BadRequest("File parse error: " + e.Message);
@@ -197,15 +197,9 @@ namespace DocumentsQA_Backend.Controllers {
 			var fileLines = new List<string>();
 			{
 				try {
-					using var stream = file.OpenReadStream();
-					using (var reader = new StreamReader(stream, Encoding.Unicode)) {
-						while (!reader.EndOfStream) {
-							var line = reader.ReadLine();
-							if (line != null && line.Length > 0)
-								fileLines.Add(line);
+					string contents = await FileHelpers.ReadIFormFile(file);
+					fileLines = contents.SplitLines();
 						}
-					}
-				}
 				catch (Exception e) {
 					return BadRequest("File open error: " + e.Message);
 				}

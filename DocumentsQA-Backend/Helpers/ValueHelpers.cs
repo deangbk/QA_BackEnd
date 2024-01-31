@@ -36,18 +36,40 @@ namespace DocumentsQA_Backend.Helpers {
 
 	public static class StringExt {
 		public static string Truncate(this string str, int maxLength) {
+			if (str == null) throw new ArgumentNullException(str);
+
 			if (string.IsNullOrEmpty(str))
 				return str;
 			return str.Length < maxLength ? str : str.Substring(0, maxLength);
 		}
 
 		public static Stream ToStream(this string str) {
+			if (str == null) throw new ArgumentNullException(str);
+
 			MemoryStream stream = new();
 			using (var writer = new StreamWriter(stream)) {
 				writer.Write(str);
 			}
 			stream.Position = 0;
 			return stream;
+		}
+
+		public static List<string> SplitLines(this string str) {
+			if (str == null) throw new ArgumentNullException(str);
+
+			var lines = new List<string>();
+			using (var sr = new StringReader(str)) {
+				while (true) {
+					var line = sr.ReadLine();
+
+					if (line == null)
+						break;
+					else if (line.Length > 0)
+						lines.Add(line);
+				}
+			}
+
+			return lines;
 		}
 	}
 }
