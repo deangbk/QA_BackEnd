@@ -56,8 +56,16 @@ namespace DocumentsQA_Backend.DTO {
 		public QuestionCategory? Category { get; set; } = null;
 	}
 
-	public class PostCreateDTO {
+	public class PostCreateGeneralDTO {
 		public string Text { get; set; } = null!;
+		public QuestionCategory? Category { get; set; } = null;
+	}
+	public class PostCreateAccountDTO {
+		[BindProperty(Name = "account")]
+		public int AccountId { get; set; }
+
+		public string Text { get; set; } = null!;
+		public QuestionCategory? Category { get; set; } = null;
 	}
 
 	public class PostSetAnswerDTO {

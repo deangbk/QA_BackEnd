@@ -16,6 +16,27 @@ using DocumentsQA_Backend.Services;
 
 namespace DocumentsQA_Backend.Helpers {
 	public class PostHelpers {
+		public static Question CreateQuestion(QuestionType type, QuestionCategory category, int projectId, string text, int userId) {
+			var time = DateTime.Now;
+			Question question = new Question {
+				QuestionNum = 0,
+				Type = type,
+				Category = category,
+
+				ProjectId = projectId,
+				AccountId = null,
+
+				QuestionText = text,
+
+				PostedById = userId,
+				LastEditorId = userId,
+
+				DatePosted = time,
+				DateLastEdited = time,
+			};
+			return question;
+		}
+
 		public static IQueryable<Question> FilterQuery(IQueryable<Question> baseQuery, PostGetFilterDTO filter) {
 			IQueryable<Question> query = baseQuery;
 

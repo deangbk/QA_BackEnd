@@ -130,7 +130,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Posts a general question
 		/// </summary>
 		[HttpPost("post_question_g/{pid}")]
-		public async Task<IActionResult> PostGeneralQuestion(int pid, [FromForm] PostCreateDTO createDTO) {
+		public async Task<IActionResult> PostGeneralQuestion(int pid, [FromForm] PostCreateGeneralDTO createDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -138,25 +138,9 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
-			var time = DateTime.Now;
-			var userId = _access.GetUserID();
-
-			Question question = new Question {
-				QuestionNum = 0,
-				Type = QuestionType.General,
-
-				ProjectId = project.Id,
-				AccountId = null,
-
-				QuestionText = createDTO.Text,
-
-				PostedById = userId,
-
-				LastEditorId = userId,
-
-				DatePosted = time,
-				DateLastEdited = time,
-			};
+			var question = PostHelpers.CreateQuestion(
+				QuestionType.General, createDTO.Category ?? QuestionCategory.General, 
+				project.Id, createDTO.Text, _access.GetUserID());
 
 			project.Questions.Add(question);
 
@@ -167,39 +151,30 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Posts an account question
 		/// </summary>
-		[HttpPost("post_question_a/{id}")]
-		public async Task<IActionResult> PostAccountQuestion(int id, [FromForm] PostCreateDTO createDTO) {
-			Account? account = await Queries.GetAccountFromId(_dataContext, id);
-			if (account == null)
-				return BadRequest("Account not found");
-			Tranche tranche = account.Tranche;
+		[HttpPost("post_question_a/{pid}")]
+		public async Task<IActionResult> PostAccountQuestion(int pid, [FromForm] PostCreateAccountDTO createDTO) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
 
-			if (!_access.AllowToTranche(tranche))
+			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
-			var time = DateTime.Now;
-			var userId = _access.GetUserID();
+			Account? account = await Queries.GetAccountFromId(_dataContext, createDTO.AccountId);
+			if (account == null)
+				return BadRequest("Account not found");
 
-			Question question = new Question {
-				QuestionNum = 0,
-				Type = QuestionType.General,
+			if (!_access.AllowToTranche(account.Tranche))
+				return Unauthorized();
 
-				ProjectId = tranche.ProjectId,
-				AccountId = account.Id,
+			var question = PostHelpers.CreateQuestion(
+				QuestionType.Account, createDTO.Category ?? QuestionCategory.General,
+				account.ProjectId, createDTO.Text, _access.GetUserID());
+			question.AccountId = account.Id;
 
-				QuestionText = createDTO.Text,
-
-				PostedById = userId,
-
-				LastEditorId = userId,
-
-				DatePosted = time,
-				DateLastEdited = time,
-			};
-
-			tranche.Project.Questions.Add(question);
-
+			account.Project.Questions.Add(question);
 			await _dataContext.SaveChangesAsync();
+
 			return Ok(question.Id);
 		}
 
