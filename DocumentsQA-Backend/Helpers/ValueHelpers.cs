@@ -71,5 +71,13 @@ namespace DocumentsQA_Backend.Helpers {
 
 			return lines;
 		}
+
+		public static string ReplaceAt(this string str, int i, char ch) {
+			if (str == null) throw new ArgumentNullException(str);
+
+			char[] chars = str.ToCharArray();
+			chars[i] = ch;
+			return new string(chars);
+		}
 	}
 }

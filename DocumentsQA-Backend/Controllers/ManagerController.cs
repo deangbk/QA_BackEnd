@@ -167,6 +167,14 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
+		private class _TmpUserData {
+			public AppUser? User { get; set; }
+			public string Email { get; set; } = string.Empty;
+			public string Password { get; set; } = string.Empty;
+			public string Name { get; set; } = string.Empty;
+			public HashSet<int>? Tranches { get; set; }
+		}
+
 		/// <summary>
 		/// Creates new user in bulk, with access to specific tranches of a project
 		/// <para>Each line is a user data; email, display name [, tranches access...]</para>
@@ -192,14 +200,14 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
-			DateTime dateCreated = DateTime.Now;
+			DateTime date = DateTime.Now;
 
 			var fileLines = new List<string>();
 			{
 				try {
 					string contents = await FileHelpers.ReadIFormFile(file);
 					fileLines = contents.SplitLines();
-						}
+				}
 				catch (Exception e) {
 					return BadRequest("File open error: " + e.Message);
 				}
@@ -207,14 +215,21 @@ namespace DocumentsQA_Backend.Controllers {
 
 			Dictionary<string, int> trancheMap = project.Tranches
 				.ToDictionary(x => x.Name, x => x.Id);
-			List<(string email, string pass, string name, HashSet<int>? tranches)> listUserData = new();
+			List<_TmpUserData> listUser = new();
 
 			{
-				Random rnd = new Random(DateTime.Now.GetHashCode());
+				Random rnd = new Random(date.GetHashCode());
 				const string passwordChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 				var _GeneratePassword = (int length) => {
-					return string.Concat(Enumerable.Range(0, length)
+					var pass = string.Concat(Enumerable.Range(0, length)
 						.Select(x => passwordChars[rnd.Next() % passwordChars.Length]));
+
+					// Must contain at least 1 digit
+					if (!pass.Any(x => Char.IsDigit(x))) {
+						pass = pass.ReplaceAt(0, '0');
+					}
+
+					return pass;
 				};
 
 				int iLine = 1;
@@ -225,7 +240,7 @@ namespace DocumentsQA_Backend.Controllers {
 						string email = data[0];
 						string displayName = data[1];
 
-						HashSet<int>? tranches = null;
+						HashSet<int>? tranches;
 
 						if (data.Length > 2) {
 							// * means all tranches, represented with a null, because this is unfortunately not Rust
@@ -239,10 +254,20 @@ namespace DocumentsQA_Backend.Controllers {
 									.ToHashSet();
 							}
 						}
+						else {
+							// No access to any tranche -> empty set
+							tranches = new();
+						}
 
 						string randPassword = _GeneratePassword(8);
 
-						listUserData.Add((email, displayName, randPassword, tranches));
+						listUser.Add(new _TmpUserData {
+							Email = email,
+							Password = randPassword,
+							Name = displayName,
+							Tranches = tranches,
+							User = null,
+						});
 						++iLine;
 					}
 				}
@@ -254,7 +279,6 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 			}
 
-			List<AppUser> listUsers = new();
 			try {
 				// Wrap all operations in a transaction so failure would revert the entire thing
 				using (var transaction = _dataContext.Database.BeginTransaction()) {
@@ -262,30 +286,28 @@ namespace DocumentsQA_Backend.Controllers {
 					// If the system is to be scaled in the future, find some way to efficiently bulk-create users
 					//	rather than repeatedly awaiting CreateAsync
 
-					foreach (var (email, pass, name, _) in listUserData) {
+					foreach (var u in listUser) {
 						var user = new AppUser {
-							Email = email,
-							UserName = email,
-							DisplayName = name,
+							Email = u.Email,
+							UserName = u.Email,
+							DisplayName = u.Name,
 							Company = project.CompanyName,
-							//FavouriteProjectId = project.Id,
-							DateCreated = dateCreated,
+							DateCreated = date,
 						};
-						listUsers.Add(user);
+						u.User = user;
 
-						var result = await _userManager.CreateAsync(user, pass);
+						var result = await _userManager.CreateAsync(user, u.Password);
 						if (!result.Succeeded)
-							throw new Exception(email);
+							throw new Exception(u.Email);
+
+						// Set user role
+						await AppRole.AddRoleToUser(_userManager, user, AppRole.User);
 					}
 
 					foreach (var iTranche in project.Tranches) {
-						var accesses = listUsers
-							.Select((user, i) => (user, i))
-							.Where(x => {
-								var tranches = listUserData[x.i].tranches;
-								return tranches == null || tranches.Contains(iTranche.Id);
-							})
-							.Select(x => x.user)
+						var accesses = listUser
+							.Where(x => x.Tranches == null || x.Tranches.Contains(iTranche.Id))
+							.Select(x => x.User!)
 							.ToArray();
 						iTranche.UserAccesses.AddRange(accesses);
 					}
@@ -298,10 +320,16 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Users create failed: " + e.Message);
 			}
 
-			// Return IDs of all created users
-			var userIds = listUsers.Select(x => x.Id).ToList();
+			// Return data all created users
+			var userInfos = listUser
+				.Select(x => new {
+					id = x.User!.Id,
+					user = x.Email,
+					pass = x.Password,
+				})
+				.ToList();
 
-			return Ok(userIds);
+			return Ok(userInfos);
 		}
 
 		// -----------------------------------------------------
