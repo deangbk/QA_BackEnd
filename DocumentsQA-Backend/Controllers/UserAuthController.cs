@@ -53,10 +53,13 @@ namespace DocumentsQA_Backend.Controllers {
 				UserName = uc.Email,
 				Email = uc.Email,
 				DisplayName = uc.DisplayName,
+				Company = uc.Company,
 				DateCreated = DateTime.Now,
 			};
 			if (uc.DisplayName.Length == 0)
 				return BadRequest("DisplayName must not be empty");
+			if (uc.Company.Length == 0)
+				return BadRequest("Company must not be empty");
 
 			var result = await _userManager.CreateAsync(user, uc.Password);
 

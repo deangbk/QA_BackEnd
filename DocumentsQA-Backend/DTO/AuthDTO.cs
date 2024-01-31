@@ -16,5 +16,6 @@ namespace DocumentsQA_Backend.DTO {
 		public string Password { get; set; } = string.Empty;
 
 		public string DisplayName { get; set; } = string.Empty;
+		public string Company { get; set; } = string.Empty;
 	}
 }
