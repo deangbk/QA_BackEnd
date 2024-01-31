@@ -52,6 +52,8 @@ namespace DocumentsQA_Backend.DTO {
 		/// </list>
 		/// </summary>
 		public string? Type { get; set; } = null;
+
+		public QuestionCategory? Category { get; set; } = null;
 	}
 
 	public class PostCreateDTO {

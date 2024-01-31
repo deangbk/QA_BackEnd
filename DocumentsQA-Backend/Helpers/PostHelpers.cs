@@ -33,7 +33,9 @@ namespace DocumentsQA_Backend.Helpers {
 						&& x.AccountId == filter.Account);
 				}
 			}
-
+			if (filter.Category != null) {
+				query = query.Where(x => x.Category == filter.Category);
+			}
 			if (filter.TicketID != null) {
 				query = query.Where(x => x.Id == filter.TicketID);
 			}
