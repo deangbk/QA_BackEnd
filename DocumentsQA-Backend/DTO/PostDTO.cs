@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.ComponentModel.DataAnnotations;
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
+
+using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend.DTO {
 	public class PaginateDTO {
@@ -56,14 +59,9 @@ namespace DocumentsQA_Backend.DTO {
 		public QuestionCategory? Category { get; set; } = null;
 	}
 
-	public class PostCreateGeneralDTO {
-		public string Text { get; set; } = null!;
-		public QuestionCategory? Category { get; set; } = null;
-	}
-	public class PostCreateAccountDTO {
+	public class PostCreateDTO {
 		[BindProperty(Name = "account")]
-		public int AccountId { get; set; }
-
+		public int? AccountId { get; set; } = null;
 		public string Text { get; set; } = null!;
 		public QuestionCategory? Category { get; set; } = null;
 	}

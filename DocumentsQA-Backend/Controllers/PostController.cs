@@ -130,7 +130,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Posts a general question
 		/// </summary>
 		[HttpPost("post_question_g/{pid}")]
-		public async Task<IActionResult> PostGeneralQuestion(int pid, [FromBody] PostCreateGeneralDTO createDTO) {
+		public async Task<IActionResult> PostGeneralQuestion(int pid, [FromBody] PostCreateDTO createDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -139,8 +139,9 @@ namespace DocumentsQA_Backend.Controllers {
 				return Unauthorized();
 
 			var question = PostHelpers.CreateQuestion(
-				QuestionType.General, createDTO.Category ?? QuestionCategory.General, 
-				project.Id, createDTO.Text, _access.GetUserID());
+				QuestionType.General, project.Id, 
+				createDTO.Text, createDTO.Category ?? QuestionCategory.General, 
+				_access.GetUserID());
 
 			project.Questions.Add(question);
 
@@ -152,7 +153,12 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Posts an account question
 		/// </summary>
 		[HttpPost("post_question_a/{pid}")]
-		public async Task<IActionResult> PostAccountQuestion(int pid, [FromBody] PostCreateAccountDTO createDTO) {
+		public async Task<IActionResult> PostAccountQuestion(int pid, [FromBody] PostCreateDTO createDTO) {
+			if (createDTO.AccountId == null) {
+				ModelState.AddModelError("AccountId", "AccountId cannot be null");
+				return BadRequest(new ValidationProblemDetails(ModelState));
+			}
+
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -160,7 +166,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
-			Account? account = await Queries.GetAccountFromId(_dataContext, createDTO.AccountId);
+			Account? account = await Queries.GetAccountFromId(_dataContext, createDTO.AccountId.Value);
 			if (account == null)
 				return BadRequest("Account not found");
 
@@ -168,8 +174,9 @@ namespace DocumentsQA_Backend.Controllers {
 				return Unauthorized();
 
 			var question = PostHelpers.CreateQuestion(
-				QuestionType.Account, createDTO.Category ?? QuestionCategory.General,
-				account.ProjectId, createDTO.Text, _access.GetUserID());
+				QuestionType.Account, project.Id,
+				createDTO.Text, createDTO.Category ?? QuestionCategory.General,
+				_access.GetUserID());
 			question.AccountId = account.Id;
 
 			account.Project.Questions.Add(question);
