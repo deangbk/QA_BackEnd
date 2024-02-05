@@ -253,7 +253,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (questions.Count != approveDTO.Questions.Count) {
 				var invalidIds = approveDTO.Questions
 					.Except(questions.Select(x => x.Id));
-				return BadRequest("Questions not found: " + string.Join(", ", invalidIds));
+				return BadRequest("Questions not found: " + ValueHelpers.PrintEnumerable(invalidIds));
 			}
 
 			var time = DateTime.Now;
@@ -295,7 +295,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (questions.Count != approveDTO.Questions.Count) {
 				var invalidIds = approveDTO.Questions
 					.Except(questions.Select(x => x.Id));
-				return BadRequest("Questions not found: " + string.Join(", ", invalidIds));
+				return BadRequest("Questions not found: " + ValueHelpers.PrintEnumerable(invalidIds));
 			}
 
 			{
@@ -304,7 +304,7 @@ namespace DocumentsQA_Backend.Controllers {
 					.Select(x => x.Id)
 					.ToList();
 				if (unanswered.Count > 0) {
-					return BadRequest("Unanswered questions: " + string.Join(", ", unanswered));
+					return BadRequest("Unanswered questions: " + ValueHelpers.PrintEnumerable(unanswered));
 				}
 			}
 

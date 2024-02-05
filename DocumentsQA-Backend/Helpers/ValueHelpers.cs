@@ -25,12 +25,25 @@ namespace DocumentsQA_Backend.Helpers {
 		}
 
 		public static int AddRange<TKey, TValue>(this Dictionary<TKey, TValue> dict, params (TKey, TValue)[] values)
-			where TKey : notnull {
+			where TKey : notnull
+		{
 
 			foreach (var (k, v) in values) {
 				dict.Add(k, v);
 			}
 			return dict.Count;
+		}
+
+		public static string PrintEnumerable<T>(IEnumerable<T> e, 
+			string delim = ", ", string before = "[", string after = "]")
+		{
+			StringBuilder sb = new();
+
+			sb.Append(before);
+			sb.AppendJoin(delim, e);
+			sb.Append(after);
+
+			return sb.ToString();
 		}
 	}
 
