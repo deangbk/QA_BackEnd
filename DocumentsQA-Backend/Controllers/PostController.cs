@@ -225,22 +225,9 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!PostHelpers.AllowUserEditPost(_access, question))
 				return Unauthorized();
 
-			var time = DateTime.Now;
-			var userId = _access.GetUserID();
-
-			question.QuestionText = editDTO.Text;
-			if (editDTO.Category != null) {
-				question.Category = editDTO.Category.Value;
-			}
-
-			question.LastEditorId = userId;
-			question.DateLastEdited = time;
-
-			// Editing should also invalidate previous approval status
-			question.QuestionApprovedById = null;
-			question.DateQuestionApproved = null;
-			question.AnswerApprovedById = null;
-			question.DateAnswerApproved = null;
+			PostHelpers.EditQuestion(question, 
+				editDTO.Text, editDTO.Category ?? question.Category, 
+				_access.GetUserID());
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();

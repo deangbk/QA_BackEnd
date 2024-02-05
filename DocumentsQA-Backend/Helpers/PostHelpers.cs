@@ -36,6 +36,21 @@ namespace DocumentsQA_Backend.Helpers {
 			};
 			return question;
 		}
+		public static void EditQuestion(Question question, string text, QuestionCategory category, int userId) {
+			var time = DateTime.Now;
+
+			question.QuestionText = text;
+			question.Category = category;
+
+			question.LastEditorId = userId;
+			question.DateLastEdited = time;
+
+			// Editing should also invalidate previous approval status
+			question.QuestionApprovedById = null;
+			question.DateQuestionApproved = null;
+			question.AnswerApprovedById = null;
+			question.DateAnswerApproved = null;
+		}
 
 		public static IQueryable<Question> FilterQuery(IQueryable<Question> baseQuery, PostGetFilterDTO filter) {
 			IQueryable<Question> query = baseQuery;
