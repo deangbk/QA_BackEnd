@@ -222,6 +222,9 @@ namespace DocumentsQA_Backend.Controllers {
 			var userId = _access.GetUserID();
 
 			question.QuestionText = editDTO.Text;
+			if (editDTO.Category != null) {
+				question.Category = editDTO.Category.Value;
+			}
 
 			question.LastEditorId = userId;
 			question.DateLastEdited = time;

@@ -68,6 +68,10 @@ namespace DocumentsQA_Backend.DTO {
 		public QuestionCategory? Category { get; set; } = null;
 	}
 
+	public class PostEditDTO {
+		public string Text { get; set; } = null!;
+		public QuestionCategory? Category { get; set; } = null;
+	}
 	public class PostSetAnswerDTO {
 		public string Answer { get; set; } = null!;
 	}
