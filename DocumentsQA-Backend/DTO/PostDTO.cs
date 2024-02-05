@@ -78,4 +78,8 @@ namespace DocumentsQA_Backend.DTO {
 		public bool Approve { get; set; }
 		public List<int> Questions { get; set; } = new();
 	}
+
+	public class PostCreateMultipleDTO {
+		public List<PostCreateDTO> Posts { get; set; } = null!;
+	}
 }

@@ -325,5 +325,94 @@ namespace DocumentsQA_Backend.Controllers {
 			await _dataContext.SaveChangesAsync();
 			return Ok();
 		}
+
+		// -----------------------------------------------------
+
+		/// <summary>
+		/// Posts general questions in bulk
+		/// </summary>
+		[HttpPost("post_question_g_multiple/{pid}")]
+		public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] PostCreateMultipleDTO dto) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			if (!_access.AllowToProject(project))
+				return Unauthorized();
+
+			List<Question> listQuestions = new();
+
+			foreach (var i in dto.Posts) {
+				var question = PostHelpers.CreateQuestion(
+					QuestionType.Account, project.Id,
+					i.Text, i.Category ?? QuestionCategory.General,
+					_access.GetUserID());
+
+				listQuestions.Add(question);
+			}
+
+			project.Questions.AddRange(listQuestions);
+			await _dataContext.SaveChangesAsync();
+
+			// Return IDs of all created questions
+			var questionIds = listQuestions.Select(x => x.Id).ToList();
+
+			return Ok(questionIds);
+		}
+
+		/// <summary>
+		/// Posts account questions in bulk
+		/// </summary>
+		[HttpPost("post_account_a_multiple/{pid}")]
+		public async Task<IActionResult> PostAccountQuestionMultiple(int pid, [FromBody] PostCreateMultipleDTO dto) {
+			if (dto.Posts.Any(x => x.AccountId == null)) {
+				ModelState.AddModelError("AccountId", "AccountId cannot be null");
+				return BadRequest(new ValidationProblemDetails(ModelState));
+			}
+
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			if (!_access.AllowToProject(project))
+				return Unauthorized();
+
+			{
+				// Detect invalid accounts + check access
+
+				var accountIds = dto.Posts.Select(x => x.AccountId!.Value);
+				var mapAccounts = await Queries.GetAccountsMapFromIds(_dataContext, accountIds);
+
+				foreach (var (_, i) in mapAccounts!) {
+					if (!_access.AllowToTranche(i.Tranche))
+						return Unauthorized();
+				}
+
+				if (mapAccounts!.Count != dto.Posts.Count) {
+					var invalidAccounts = accountIds.Except(mapAccounts.Keys);
+					return BadRequest("Account not found: " + ValueHelpers.PrintEnumerable(invalidAccounts));
+				}
+			}
+
+			List<Question> listQuestions = new();
+
+			foreach (var i in dto.Posts) {
+				var question = PostHelpers.CreateQuestion(
+					QuestionType.Account, project.Id,
+					i.Text, i.Category ?? QuestionCategory.General,
+					_access.GetUserID());
+				question.AccountId = i.AccountId;
+
+				listQuestions.Add(question);
+			}
+
+			project.Questions.AddRange(listQuestions);
+			await _dataContext.SaveChangesAsync();
+
+			// Return IDs of all created questions
+			var questionIds = listQuestions.Select(x => x.Id).ToList();
+
+			return Ok(questionIds);
+		}
 	}
 }
