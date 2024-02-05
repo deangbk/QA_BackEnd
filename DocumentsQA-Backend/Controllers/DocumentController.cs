@@ -228,7 +228,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Uploads a general document, attached to a project
 		/// </summary>
 		[HttpPost("upload_proj/{id}")]
-		public async Task<IActionResult> UploadDocument_General(int id, [FromForm] DocumentUploadDTO upload) {
+		public async Task<IActionResult> UploadDocument_General(int id, [FromBody] DocumentUploadDTO upload) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -251,7 +251,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Uploads a document, attached to a specific question
 		/// </summary>
 		[HttpPost("upload_post/{id}")]
-		public async Task<IActionResult> UploadDocument_Post(int id, [FromForm] DocumentUploadDTO upload) {
+		public async Task<IActionResult> UploadDocument_Post(int id, [FromBody] DocumentUploadDTO upload) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
 				return BadRequest("Question not found");
@@ -277,7 +277,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Uploads a document, attached to a specific account
 		/// </summary>
 		[HttpPost("upload_acc/{id}")]
-		public async Task<IActionResult> UploadDocument_Account(int id, [FromForm] DocumentUploadDTO upload) {
+		public async Task<IActionResult> UploadDocument_Account(int id, [FromBody] DocumentUploadDTO upload) {
 			Account? account = await Queries.GetAccountFromId(_dataContext, id);
 			if (account == null)
 				return BadRequest("Account not found");

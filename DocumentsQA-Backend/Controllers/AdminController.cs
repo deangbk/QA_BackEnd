@@ -141,7 +141,7 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		[HttpPost("create_project")]
-		public async Task<IActionResult> CreateProject([FromForm] CreateProjectDTO dto) {
+		public async Task<IActionResult> CreateProject([FromBody] CreateProjectDTO dto) {
 			Project project = new Project {
 				Name = dto.Name,
 				DisplayName = dto.Name,

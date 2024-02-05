@@ -39,7 +39,7 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		[HttpPost("create_account/{pid}")]
-		public async Task<IActionResult> CreateAccount(int pid, [FromForm] CreateAccountDTO dto) {
+		public async Task<IActionResult> CreateAccount(int pid, [FromBody] CreateAccountDTO dto) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");

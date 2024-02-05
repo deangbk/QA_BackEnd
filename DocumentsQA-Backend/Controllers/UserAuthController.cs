@@ -48,7 +48,7 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		[HttpPost("create")]
-		public async Task<IActionResult> CreateUser([FromForm] UserCredentials uc) {
+		public async Task<IActionResult> CreateUser([FromBody] UserCredentials uc) {
 			var user = new AppUser() {
 				UserName = uc.Email,
 				Email = uc.Email,
@@ -111,7 +111,7 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPost("login")]
-		public async Task<IActionResult> LogIn([FromForm] UserCredentials uc) {
+		public async Task<IActionResult> LogIn([FromBody] UserCredentials uc) {
 			// _signinManager.SignInAsync creates a cookie under the hood so don't use that
 			var user = await _userManager.FindByNameAsync(uc.Email);
 			if (user != null) {

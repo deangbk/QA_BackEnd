@@ -130,7 +130,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Posts a general question
 		/// </summary>
 		[HttpPost("post_question_g/{pid}")]
-		public async Task<IActionResult> PostGeneralQuestion(int pid, [FromForm] PostCreateGeneralDTO createDTO) {
+		public async Task<IActionResult> PostGeneralQuestion(int pid, [FromBody] PostCreateGeneralDTO createDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -152,7 +152,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Posts an account question
 		/// </summary>
 		[HttpPost("post_question_a/{pid}")]
-		public async Task<IActionResult> PostAccountQuestion(int pid, [FromForm] PostCreateAccountDTO createDTO) {
+		public async Task<IActionResult> PostAccountQuestion(int pid, [FromBody] PostCreateAccountDTO createDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -182,7 +182,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Adds an answer to the question
 		/// </summary>
 		[HttpPut("set_answer/{id}")]
-		public async Task<IActionResult> SetAnswer(int id, [FromForm] PostSetAnswerDTO answerDTO) {
+		public async Task<IActionResult> SetAnswer(int id, [FromBody] PostSetAnswerDTO answerDTO) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
 				return BadRequest("Question not found");
@@ -210,7 +210,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Edits the question
 		/// </summary>
 		[HttpPut("edit/{id}")]
-		public async Task<IActionResult> EditQuestion(int id, [FromForm] PostCreateDTO editDTO) {
+		public async Task<IActionResult> EditQuestion(int id, [FromBody] PostEditDTO editDTO) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
 				return BadRequest("Question not found");
@@ -241,8 +241,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Sets the approval status of questions
 		/// </summary>
-		[HttpPut("set_approval_q/{pid}/{approve}")]
-		public async Task<IActionResult> SetPostsApprovalQ(int pid, bool approve, [FromForm] PostSetApproveDTO approveDTO) {
+		[HttpPut("set_approval_q/{pid}")]
+		public async Task<IActionResult> SetPostsApprovalQ(int pid, [FromBody] PostSetApproveDTO approveDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -262,7 +262,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var time = DateTime.Now;
 
 			foreach (var i in questions) {
-				if (approve) {
+				if (approveDTO.Approve) {
 					i.QuestionApprovedById = _access.GetUserID();
 					i.DateQuestionApproved = time;
 				}
@@ -284,7 +284,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Sets the approval status of answers to questions
 		/// </summary>
 		[HttpPut("set_approval_a/{pid}/{approve}")]
-		public async Task<IActionResult> SetPostsApprovalA(int pid, bool approve, [FromForm] PostSetApproveDTO approveDTO) {
+		public async Task<IActionResult> SetPostsApprovalA(int pid, bool approve, [FromBody] PostSetApproveDTO approveDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
