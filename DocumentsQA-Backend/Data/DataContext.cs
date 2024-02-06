@@ -119,7 +119,7 @@ namespace DocumentsQA_Backend.Data {
 				// Map Account:Tranche as N:1
 				modelBuilder.Entity<Account>()
 					.HasOne(e => e.Tranche)
-					.WithMany()
+					.WithMany(e => e.Accounts)
 					.HasForeignKey(e => e.TrancheId)
 					.OnDelete(DeleteBehavior.Restrict)
 					.IsRequired();

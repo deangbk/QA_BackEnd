@@ -48,6 +48,7 @@ namespace DocumentsQA_Backend.Models {
 		[MaxLength(16)]
 		public string Name { get; set; } = null!;
 
+		public virtual List<Account> Accounts { get; set; } = new();			// One-to-many with Account
 		public virtual List<AppUser> UserAccesses { get; set; } = new();		// Reference navigation for many-to-many FK
 	}
 
