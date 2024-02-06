@@ -82,4 +82,22 @@ namespace DocumentsQA_Backend.DTO {
 	public class PostCreateMultipleDTO {
 		public List<PostCreateDTO> Posts { get; set; } = null!;
 	}
+	public class PostEditMultipleDTO {
+		public class Inner {
+			public int Id { get; set; }
+			public string Text { get; set; } = null!;
+			public QuestionCategory? Category { get; set; } = null;
+		}
+
+		public List<Inner> Posts { get; set; } = null!;
+	}
+
+	public class PostSetAnswerMultipleDTO {
+		public class Inner {
+			public int Id { get; set; }
+			public string Answer { get; set; } = null!;
+		}
+
+		public List<Inner> Answers { get; set; } = null!;
+	}
 }

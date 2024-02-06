@@ -31,6 +31,11 @@ namespace DocumentsQA_Backend.Data {
 				.Where(x => ids.Contains(x.Id))
 				.ToDictionaryAsync(x => x.Id, x => x);
 		}
+		public static async Task<Dictionary<int, Question>?> GetQuestionsMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
+			return await dataContext.Questions
+				.Where(x => ids.Contains(x.Id))
+				.ToDictionaryAsync(x => x.Id, x => x);
+		}
 
 		/// <summary>
 		/// Gets query of all approved questions in the project

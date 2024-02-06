@@ -414,5 +414,97 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok(questionIds);
 		}
+
+		/// <summary>
+		/// Edit questions in bulk
+		/// </summary>
+		[HttpPost("edit_question_multiple/{pid}")]
+		public async Task<IActionResult> EditQuestionMultiple(int pid, [FromBody] PostEditMultipleDTO dto) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			if (!_access.AllowToProject(project))
+				return Unauthorized();
+
+			var ids = dto.Posts.Select(x => x.Id);
+			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
+
+			{
+				// Detect invalid questions + check access
+
+				foreach (var (_, i) in mapQuestions!) {
+					if (!PostHelpers.AllowUserEditPost(_access, i))
+						return Unauthorized();
+				}
+
+				if (mapQuestions!.Count != dto.Posts.Count) {
+					var invalidIds = ids.Except(mapQuestions.Keys);
+					return BadRequest("Question not found: " + ValueHelpers.PrintEnumerable(invalidIds));
+				}
+			}
+
+			var userId = _access.GetUserID();
+
+			foreach (var i in dto.Posts) {
+				var question = mapQuestions[i.Id];
+				PostHelpers.EditQuestion(question,
+					i.Text, i.Category ?? question.Category,
+					userId);
+			}
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+
+		/// <summary>
+		/// Adds answers to questions in bulk
+		/// </summary>
+		[HttpPut("set_answer_multiple/{pid}")]
+		public async Task<IActionResult> SetAnswerMultiple(int pid, [FromBody] PostSetAnswerMultipleDTO dto) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			if (!_access.AllowManageProject(project))
+				return Unauthorized();
+
+			var ids = dto.Answers.Select(x => x.Id);
+			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
+
+			{
+				// Detect invalid questions + check access
+
+				foreach (var (_, i) in mapQuestions!) {
+					// Only staff can add answer
+					if (!PostHelpers.AllowUserManagePost(_access, i))
+						return Unauthorized();
+				}
+
+				if (mapQuestions!.Count != dto.Answers.Count) {
+					var invalidIds = ids.Except(mapQuestions.Keys);
+					return BadRequest("Question not found: " + ValueHelpers.PrintEnumerable(invalidIds));
+				}
+			}
+
+			var time = DateTime.Now;
+			var userId = _access.GetUserID();
+
+			foreach (var i in dto.Answers) {
+				var question = mapQuestions[i.Id];
+
+				question.QuestionAnswer = i.Answer;
+				question.AnsweredById = userId;
+				question.DateAnswered = time;
+				question.DateLastEdited = time;
+
+				// Don't auto-approve on bulk answer
+				question.AnswerApprovedById = null;
+				question.DateAnswerApproved = null;
+			}
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
 	}
 }
