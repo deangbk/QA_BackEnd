@@ -13,14 +13,7 @@ namespace DocumentsQA_Backend.DTO {
 
 		public DateTime DateEnd { get; set; }
 
-		[BindProperty(Name = "Tranches")]
+		[BindProperty(Name = "tranches")]
 		public string InitialTranches { get; set; } = null!;
-	}
-
-	public class CreateAccountDTO {
-		public string Tranche { get; set; } = null!;
-
-		public int Number { get; set; }
-		public string Name { get; set; } = null!;
 	}
 }
