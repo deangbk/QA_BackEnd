@@ -139,5 +139,15 @@ namespace DocumentsQA_Backend.Data {
 
 			return table;
 		}
+
+		public static JsonTable FromAccount(Account obj, int detailsLevel = 0) {
+			var table = new JsonTable() {
+				["id"] = obj.GetIdentifierName(),
+				["no"] = obj.AccountNo,
+				["name"] = obj.AccountName ?? "",
+			};
+
+			return table;
+		}
 	}
 }

@@ -48,25 +48,24 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		[HttpPost("create")]
-		public async Task<IActionResult> CreateUser([FromForm] UserCredentials uc) {
+		public async Task<IActionResult> CreateUser([FromBody] UserCredentials uc) {
 			var user = new AppUser() {
 				UserName = uc.Email,
 				Email = uc.Email,
 				DisplayName = uc.DisplayName,
+				Company = uc.Company,
 				DateCreated = DateTime.Now,
 			};
 			if (uc.DisplayName.Length == 0)
 				return BadRequest("DisplayName must not be empty");
+			if (uc.Company.Length == 0)
+				return BadRequest("Company must not be empty");
 
 			var result = await _userManager.CreateAsync(user, uc.Password);
 
 			if (result.Succeeded) {
 				// Set user role
-				{
-					string role = AppRole.User.Name;
-					await _userManager.AddClaimAsync(user, new Claim("role", role));
-					await _userManager.AddToRoleAsync(user, role);
-				}
+				await AppRole.AddRoleToUser(_userManager, user, AppRole.User);
 
 				var token = await _CreateUserToken(uc);
 				return Ok(token);
@@ -112,7 +111,7 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPost("login")]
-		public async Task<IActionResult> LogIn([FromForm] UserCredentials uc) {
+		public async Task<IActionResult> LogIn([FromBody] UserCredentials uc) {
 			// _signinManager.SignInAsync creates a cookie under the hood so don't use that
 			var user = await _userManager.FindByNameAsync(uc.Email);
 			if (user != null) {

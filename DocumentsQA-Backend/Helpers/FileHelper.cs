@@ -11,26 +11,22 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Data;
-using System.IO;
 
 namespace DocumentsQA_Backend.Helpers {
 	public static class FileHelpers {
-		public static List<int> ReadIntListFromFile(Stream stream) {
-			List<int> res = new();
-			using (var reader = new StreamReader(stream, Encoding.ASCII)) {
-				var lines = new List<string>();
-				while (!reader.EndOfStream) {
-					var line = reader.ReadLine();
-					if (line != null && line.Length > 0)
-						lines.Add(line);
-				}
-
-				foreach (var line in lines) {
-					var data = line.Split(',').Select(x => int.Parse(x.Trim()));
-					res.AddRange(data);
-				}
+		public static async Task<string> ReadIFormFile(IFormFile file) {
+			using var stream = new MemoryStream();
+			{
+				await file.CopyToAsync(stream);
+				stream.Position = 0;
 			}
-			return res;
+
+			string contents;
+			using (var reader = new StreamReader(stream)) {
+				contents = reader.ReadToEnd();
+			}
+
+			return contents;
 		}
 	}
 }

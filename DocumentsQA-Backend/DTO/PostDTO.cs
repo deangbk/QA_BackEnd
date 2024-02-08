@@ -1,38 +1,38 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.ComponentModel.DataAnnotations;
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
+
+using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend.DTO {
 	public class PaginateDTO {
-		[BindProperty(Name = "Count")]
+		[BindProperty(Name = "per.page")]
 		public int CountPerPage { get; set; } = 16;
 
-		[BindProperty(Name = "Page")]
+		[BindProperty(Name = "page")]
 		public int Page { get; set; }
 	}
 
 	public class PostGetFilterDTO {
-		[BindProperty(Name = "Search")]
+		[BindProperty(Name = "search")]
 		public string? SearchTerm { get; set; }
 
-		[BindProperty(Name = "Tranche")]
 		public string? Tranche { get; set; }
 
-		[BindProperty(Name = "Account")]
 		public int? Account { get; set; }
 
-		[BindProperty(Name = "Ticket")]
 		public int? TicketID { get; set; }
 
-		[BindProperty(Name = "Poster")]
+		[BindProperty(Name = "post.by")]
 		public int? PosterID { get; set; }
 
-		[BindProperty(Name = "DateFrom")]
+		[BindProperty(Name = "date.from")]
 		public DateTime? PostedFrom { get; set; }
-		[BindProperty(Name = "DateTo")]
+		[BindProperty(Name = "date.to")]
 		public DateTime? PostedTo { get; set; }
 
-		[BindProperty(Name = "Answered")]
+		[BindProperty(Name = "has.answer")]
 		public bool? OnlyAnswered { get; set; }
 
 		/// <summary>
@@ -52,12 +52,21 @@ namespace DocumentsQA_Backend.DTO {
 		/// </list>
 		/// </summary>
 		public string? Type { get; set; } = null;
+
+		public QuestionCategory? Category { get; set; } = null;
 	}
 
 	public class PostCreateDTO {
+		[BindProperty(Name = "account")]
+		public int? AccountId { get; set; } = null;
 		public string Text { get; set; } = null!;
+		public QuestionCategory? Category { get; set; } = null;
 	}
 
+	public class PostEditDTO {
+		public string Text { get; set; } = null!;
+		public QuestionCategory? Category { get; set; } = null;
+	}
 	public class PostSetAnswerDTO {
 		public string Answer { get; set; } = null!;
 	}
@@ -65,5 +74,27 @@ namespace DocumentsQA_Backend.DTO {
 	public class PostSetApproveDTO {
 		public bool Approve { get; set; }
 		public List<int> Questions { get; set; } = new();
+	}
+
+	public class PostCreateMultipleDTO {
+		public List<PostCreateDTO> Posts { get; set; } = null!;
+	}
+	public class PostEditMultipleDTO {
+		public class Inner {
+			public int Id { get; set; }
+			public string Text { get; set; } = null!;
+			public QuestionCategory? Category { get; set; } = null;
+		}
+
+		public List<Inner> Posts { get; set; } = null!;
+	}
+
+	public class PostSetAnswerMultipleDTO {
+		public class Inner {
+			public int Id { get; set; }
+			public string Answer { get; set; } = null!;
+		}
+
+		public List<Inner> Answers { get; set; } = null!;
 	}
 }

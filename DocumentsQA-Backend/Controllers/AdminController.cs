@@ -141,7 +141,7 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		[HttpPost("create_project")]
-		public async Task<IActionResult> CreateProject([FromForm] CreateProjectDTO dto) {
+		public async Task<IActionResult> CreateProject([FromBody] CreateProjectDTO dto) {
 			Project project = new Project {
 				Name = dto.Name,
 				DisplayName = dto.Name,
@@ -252,8 +252,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 			List<int> userIds = new();
 			try {
-				using var stream = file.OpenReadStream();
-				userIds = FileHelpers.ReadIntListFromFile(stream);
+				string contents = await FileHelpers.ReadIFormFile(file);
+				userIds = ValueHelpers.SplitIntString(contents).ToList();
 			}
 			catch (Exception e) {
 				return BadRequest("File parse error: " + e.Message);
@@ -324,8 +324,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 			List<int> userIds = new();
 			try {
-				using var stream = file.OpenReadStream();
-				userIds = FileHelpers.ReadIntListFromFile(stream);
+				string contents = await FileHelpers.ReadIFormFile(file);
+				userIds = ValueHelpers.SplitIntString(contents).ToList();
 			}
 			catch (Exception e) {
 				return BadRequest("File parse error: " + e.Message);

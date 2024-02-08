@@ -130,7 +130,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Posts a general question
 		/// </summary>
 		[HttpPost("post_question_g/{pid}")]
-		public async Task<IActionResult> PostGeneralQuestion(int pid, [FromForm] PostCreateDTO createDTO) {
+		public async Task<IActionResult> PostGeneralQuestion(int pid, [FromBody] PostCreateDTO createDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -138,25 +138,10 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
-			var time = DateTime.Now;
-			var userId = _access.GetUserID();
-
-			Question question = new Question {
-				QuestionNum = 0,
-				Type = QuestionType.General,
-
-				ProjectId = project.Id,
-				AccountId = null,
-
-				QuestionText = createDTO.Text,
-
-				PostedById = userId,
-
-				LastEditorId = userId,
-
-				DatePosted = time,
-				DateLastEdited = time,
-			};
+			var question = PostHelpers.CreateQuestion(
+				QuestionType.General, project.Id, 
+				createDTO.Text, createDTO.Category ?? QuestionCategory.General, 
+				_access.GetUserID());
 
 			project.Questions.Add(question);
 
@@ -167,39 +152,36 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Posts an account question
 		/// </summary>
-		[HttpPost("post_question_a/{id}")]
-		public async Task<IActionResult> PostAccountQuestion(int id, [FromForm] PostCreateDTO createDTO) {
-			Account? account = await Queries.GetAccountFromId(_dataContext, id);
-			if (account == null)
-				return BadRequest("Account not found");
-			Tranche tranche = account.Tranche;
+		[HttpPost("post_question_a/{pid}")]
+		public async Task<IActionResult> PostAccountQuestion(int pid, [FromBody] PostCreateDTO createDTO) {
+			if (createDTO.AccountId == null) {
+				ModelState.AddModelError("AccountId", "AccountId cannot be null");
+				return BadRequest(new ValidationProblemDetails(ModelState));
+			}
 
-			if (!_access.AllowToTranche(tranche))
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
-			var time = DateTime.Now;
-			var userId = _access.GetUserID();
+			Account? account = await Queries.GetAccountFromId(_dataContext, createDTO.AccountId.Value);
+			if (account == null)
+				return BadRequest("Account not found");
 
-			Question question = new Question {
-				QuestionNum = 0,
-				Type = QuestionType.General,
+			if (!_access.AllowToTranche(account.Tranche))
+				return Unauthorized();
 
-				ProjectId = tranche.ProjectId,
-				AccountId = account.Id,
+			var question = PostHelpers.CreateQuestion(
+				QuestionType.Account, project.Id,
+				createDTO.Text, createDTO.Category ?? QuestionCategory.General,
+				_access.GetUserID());
+			question.AccountId = account.Id;
 
-				QuestionText = createDTO.Text,
-
-				PostedById = userId,
-
-				LastEditorId = userId,
-
-				DatePosted = time,
-				DateLastEdited = time,
-			};
-
-			tranche.Project.Questions.Add(question);
-
+			account.Project.Questions.Add(question);
 			await _dataContext.SaveChangesAsync();
+
 			return Ok(question.Id);
 		}
 
@@ -207,7 +189,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Adds an answer to the question
 		/// </summary>
 		[HttpPut("set_answer/{id}")]
-		public async Task<IActionResult> SetAnswer(int id, [FromForm] PostSetAnswerDTO answerDTO) {
+		public async Task<IActionResult> SetAnswer(int id, [FromBody] PostSetAnswerDTO answerDTO) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
 				return BadRequest("Question not found");
@@ -235,7 +217,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Edits the question
 		/// </summary>
 		[HttpPut("edit/{id}")]
-		public async Task<IActionResult> EditQuestion(int id, [FromForm] PostCreateDTO editDTO) {
+		public async Task<IActionResult> EditQuestion(int id, [FromBody] PostEditDTO editDTO) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
 				return BadRequest("Question not found");
@@ -243,19 +225,9 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!PostHelpers.AllowUserEditPost(_access, question))
 				return Unauthorized();
 
-			var time = DateTime.Now;
-			var userId = _access.GetUserID();
-
-			question.QuestionText = editDTO.Text;
-
-			question.LastEditorId = userId;
-			question.DateLastEdited = time;
-
-			// Editing should also invalidate previous approval status
-			question.QuestionApprovedById = null;
-			question.DateQuestionApproved = null;
-			question.AnswerApprovedById = null;
-			question.DateAnswerApproved = null;
+			PostHelpers.EditQuestion(question, 
+				editDTO.Text, editDTO.Category ?? question.Category, 
+				_access.GetUserID());
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
@@ -266,8 +238,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Sets the approval status of questions
 		/// </summary>
-		[HttpPut("set_approval_q/{pid}/{approve}")]
-		public async Task<IActionResult> SetPostsApprovalQ(int pid, bool approve, [FromForm] PostSetApproveDTO approveDTO) {
+		[HttpPut("set_approval_q/{pid}")]
+		public async Task<IActionResult> SetPostsApprovalQ(int pid, [FromBody] PostSetApproveDTO approveDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -281,13 +253,13 @@ namespace DocumentsQA_Backend.Controllers {
 			if (questions.Count != approveDTO.Questions.Count) {
 				var invalidIds = approveDTO.Questions
 					.Except(questions.Select(x => x.Id));
-				return BadRequest("Questions not found: " + string.Join(", ", invalidIds));
+				return BadRequest("Questions not found: " + ValueHelpers.PrintEnumerable(invalidIds));
 			}
 
 			var time = DateTime.Now;
 
 			foreach (var i in questions) {
-				if (approve) {
+				if (approveDTO.Approve) {
 					i.QuestionApprovedById = _access.GetUserID();
 					i.DateQuestionApproved = time;
 				}
@@ -309,7 +281,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Sets the approval status of answers to questions
 		/// </summary>
 		[HttpPut("set_approval_a/{pid}/{approve}")]
-		public async Task<IActionResult> SetPostsApprovalA(int pid, bool approve, [FromForm] PostSetApproveDTO approveDTO) {
+		public async Task<IActionResult> SetPostsApprovalA(int pid, bool approve, [FromBody] PostSetApproveDTO approveDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -323,7 +295,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (questions.Count != approveDTO.Questions.Count) {
 				var invalidIds = approveDTO.Questions
 					.Except(questions.Select(x => x.Id));
-				return BadRequest("Questions not found: " + string.Join(", ", invalidIds));
+				return BadRequest("Questions not found: " + ValueHelpers.PrintEnumerable(invalidIds));
 			}
 
 			{
@@ -332,7 +304,7 @@ namespace DocumentsQA_Backend.Controllers {
 					.Select(x => x.Id)
 					.ToList();
 				if (unanswered.Count > 0) {
-					return BadRequest("Unanswered questions: " + string.Join(", ", unanswered));
+					return BadRequest("Unanswered questions: " + ValueHelpers.PrintEnumerable(unanswered));
 				}
 			}
 
@@ -354,27 +326,185 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok();
 		}
 
+		// -----------------------------------------------------
 
-        /// <summary>
-        /// test api request to get questions with no apis needed
-        /// </summary>
-        [HttpGet("get_q/{id}")]
-        public async Task<IActionResult> Getqs(int id)
-        {
-           List<Question>? question = Queries.GetApprovedQuestionsQuery(_dataContext, id).ToList();
-            //if (question == null)
-            //    return BadRequest("Question not found");
+		/// <summary>
+		/// Posts general questions in bulk
+		/// </summary>
+		[HttpPost("post_question_g_multiple/{pid}")]
+		public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] PostCreateMultipleDTO dto) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
 
-            //if (!PostHelpers.AllowUserReadPost(_access, question))
-            //    return Unauthorized();
+			if (!_access.AllowToProject(project))
+				return Unauthorized();
 
-            //var listComments = await _dataContext.Comments
-            //    .Where(x => x.QuestionId == id)
-            //    .OrderBy(x => x.CommentNum)
-            //    .ToListAsync();
-            //var listCommentTables = listComments.Select(x => Mapper.FromComment(x));
+			List<Question> listQuestions = new();
 
-            return Ok(question);
-        }
-    }
+			foreach (var i in dto.Posts) {
+				var question = PostHelpers.CreateQuestion(
+					QuestionType.Account, project.Id,
+					i.Text, i.Category ?? QuestionCategory.General,
+					_access.GetUserID());
+
+				listQuestions.Add(question);
+			}
+
+			project.Questions.AddRange(listQuestions);
+			await _dataContext.SaveChangesAsync();
+
+			// Return IDs of all created questions
+			var questionIds = listQuestions.Select(x => x.Id).ToList();
+
+			return Ok(questionIds);
+		}
+
+		/// <summary>
+		/// Posts account questions in bulk
+		/// </summary>
+		[HttpPost("post_account_a_multiple/{pid}")]
+		public async Task<IActionResult> PostAccountQuestionMultiple(int pid, [FromBody] PostCreateMultipleDTO dto) {
+			if (dto.Posts.Any(x => x.AccountId == null)) {
+				ModelState.AddModelError("AccountId", "AccountId cannot be null");
+				return BadRequest(new ValidationProblemDetails(ModelState));
+			}
+
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			if (!_access.AllowToProject(project))
+				return Unauthorized();
+
+			{
+				// Detect invalid accounts + check access
+
+				var accountIds = dto.Posts.Select(x => x.AccountId!.Value);
+				var mapAccounts = await Queries.GetAccountsMapFromIds(_dataContext, accountIds);
+
+				foreach (var (_, i) in mapAccounts!) {
+					if (!_access.AllowToTranche(i.Tranche))
+						return Unauthorized();
+				}
+
+				if (mapAccounts!.Count != dto.Posts.Count) {
+					var invalidAccounts = accountIds.Except(mapAccounts.Keys);
+					return BadRequest("Account not found: " + ValueHelpers.PrintEnumerable(invalidAccounts));
+				}
+			}
+
+			List<Question> listQuestions = new();
+
+			foreach (var i in dto.Posts) {
+				var question = PostHelpers.CreateQuestion(
+					QuestionType.Account, project.Id,
+					i.Text, i.Category ?? QuestionCategory.General,
+					_access.GetUserID());
+				question.AccountId = i.AccountId;
+
+				listQuestions.Add(question);
+			}
+
+			project.Questions.AddRange(listQuestions);
+			await _dataContext.SaveChangesAsync();
+
+			// Return IDs of all created questions
+			var questionIds = listQuestions.Select(x => x.Id).ToList();
+
+			return Ok(questionIds);
+		}
+
+		/// <summary>
+		/// Edit questions in bulk
+		/// </summary>
+		[HttpPost("edit_question_multiple/{pid}")]
+		public async Task<IActionResult> EditQuestionMultiple(int pid, [FromBody] PostEditMultipleDTO dto) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			if (!_access.AllowToProject(project))
+				return Unauthorized();
+
+			var ids = dto.Posts.Select(x => x.Id);
+			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
+
+			{
+				// Detect invalid questions + check access
+
+				foreach (var (_, i) in mapQuestions!) {
+					if (!PostHelpers.AllowUserEditPost(_access, i))
+						return Unauthorized();
+				}
+
+				if (mapQuestions!.Count != dto.Posts.Count) {
+					var invalidIds = ids.Except(mapQuestions.Keys);
+					return BadRequest("Question not found: " + ValueHelpers.PrintEnumerable(invalidIds));
+				}
+			}
+
+			var userId = _access.GetUserID();
+
+			foreach (var i in dto.Posts) {
+				var question = mapQuestions[i.Id];
+				PostHelpers.EditQuestion(question,
+					i.Text, i.Category ?? question.Category,
+					userId);
+			}
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+
+		/// <summary>
+		/// Adds answers to questions in bulk
+		/// </summary>
+		[HttpPut("set_answer_multiple/{pid}")]
+		public async Task<IActionResult> SetAnswerMultiple(int pid, [FromBody] PostSetAnswerMultipleDTO dto) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			if (!_access.AllowManageProject(project))
+				return Unauthorized();
+
+			var ids = dto.Answers.Select(x => x.Id);
+			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
+
+			{
+				// Detect invalid questions + check access
+
+				foreach (var (_, i) in mapQuestions!) {
+					// Only staff can add answer
+					if (!PostHelpers.AllowUserManagePost(_access, i))
+						return Unauthorized();
+				}
+
+				if (mapQuestions!.Count != dto.Answers.Count) {
+					var invalidIds = ids.Except(mapQuestions.Keys);
+					return BadRequest("Question not found: " + ValueHelpers.PrintEnumerable(invalidIds));
+				}
+			}
+
+			var time = DateTime.Now;
+			var userId = _access.GetUserID();
+
+			foreach (var i in dto.Answers) {
+				var question = mapQuestions[i.Id];
+
+				question.QuestionAnswer = i.Answer;
+				question.AnsweredById = userId;
+				question.DateAnswered = time;
+				question.DateLastEdited = time;
+
+				// Don't auto-approve on bulk answer
+				question.AnswerApprovedById = null;
+				question.DateAnswerApproved = null;
+			}
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+	}
 }
