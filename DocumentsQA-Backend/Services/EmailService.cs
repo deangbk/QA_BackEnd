@@ -266,7 +266,8 @@ namespace DocumentsQA_Backend.Services {
 				.Where(x => x.LastEmailSentDate < now)
 				.ToListAsync();
 
-			foreach (var project in projects) {
+			foreach (var project in projects)
+			{
 				// Base query: check if they were updated/added after the previous daily email operation
 				var queryQuestions = _dataContext.Questions
 					.Where(x => x.ProjectId == project.Id && x.DateLastEdited > project.LastEmailSentDate);
@@ -281,7 +282,7 @@ namespace DocumentsQA_Backend.Services {
 					var questions = await queryQuestions
 						.Where(x => x.Type == QuestionType.General)
 						.ToListAsync();
-					
+
 					// Get general documents
 					var documents = await queryDocuments
 						.Where(x => x.Type == DocumentType.General)
@@ -291,7 +292,7 @@ namespace DocumentsQA_Backend.Services {
 						var questionIds = questions.Select(x => x.Id);
 						var add = await queryDocuments
 							.Where(x => x.Type == DocumentType.Question)
-							.Where(x => questionIds.Any(y => y == (x.AssocQuestionId ?? -1)))	// Coalesce nullable
+							.Where(x => questionIds.Any(y => y == (x.AssocQuestionId ?? -1)))   // Coalesce nullable
 							.ToListAsync();
 						documents.AddRange(add);
 					}
@@ -302,7 +303,8 @@ namespace DocumentsQA_Backend.Services {
 						.Where(x => followers.Any(y => y == x.Id))
 						.Select(x => new { x.Id, x.Email })
 						.ToListAsync();
-					foreach (var x in followersEx) {
+					foreach (var x in followersEx)
+					{
 						mapUserData[x.Id] = new(questions, documents, x.Email);
 					}
 				}
@@ -313,7 +315,8 @@ namespace DocumentsQA_Backend.Services {
 						.Where(x => x.Type == QuestionType.Account)
 						.GroupBy(x => x.Account!)
 						.ToListAsync();
-					foreach (var group in questionsByAccount) {
+					foreach (var group in questionsByAccount)
+					{
 						var account = group.Key;
 						var tranche = account.Tranche;
 
@@ -331,14 +334,15 @@ namespace DocumentsQA_Backend.Services {
 							// Get documents attached to questions in this tranche
 							var add = await queryDocuments
 								.Where(x => x.Type == DocumentType.Question)
-								.Where(x => questionIds.Any(y => y == (x.AssocQuestionId ?? -1)))	// Coalesce nullable
+								.Where(x => questionIds.Any(y => y == (x.AssocQuestionId ?? -1)))   // Coalesce nullable
 								.ToListAsync();
 							documents.AddRange(add);
 						}
 
 						// Add to all users with access to this tranche
 						var followers = ProjectHelpers.GetTrancheUserAccesses(tranche);
-						foreach (var id in followers) {
+						foreach (var id in followers)
+						{
 							var userData = mapUserData[id];
 							userData.Questions.AddRange(questions);
 							userData.Documents.AddRange(documents);
@@ -351,7 +355,8 @@ namespace DocumentsQA_Backend.Services {
 
 					List<Task<bool>> sendRes = new();
 
-					foreach (var (id, data) in mapUserData) {
+					foreach (var (id, data) in mapUserData)
+					{
 						// Some entries may be repeated, get only unique ids
 						// Less code than using HashMap
 						var questions = data.Questions.DistinctBy(x => x.Id);
@@ -362,7 +367,8 @@ namespace DocumentsQA_Backend.Services {
 					}
 
 					var listRes = await Task.WhenAll(sendRes);
-					if (!listRes.All(x => x)) {
+					if (!listRes.All(x => x))
+					{
 						_logger.LogInformation("EmailService: Failed to send some emails");
 						res = false;
 					}
@@ -370,12 +376,13 @@ namespace DocumentsQA_Backend.Services {
 			}
 
 			_logger.LogInformation("EmailService: Updating projects LastEmailSentDate");
-			foreach (var project in projects) {
+			foreach (var project in projects)
+			{
 				project.LastEmailSentDate = now;
 			}
 			await _dataContext.SaveChangesAsync();
 
-			return res;
+			return true; // res;
 		}
 
 		public async Task<bool> SendNewUserEmail(AppUser user) {

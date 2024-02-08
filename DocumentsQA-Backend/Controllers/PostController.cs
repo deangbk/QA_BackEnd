@@ -353,5 +353,28 @@ namespace DocumentsQA_Backend.Controllers {
 			await _dataContext.SaveChangesAsync();
 			return Ok();
 		}
-	}
+
+
+        /// <summary>
+        /// test api request to get questions with no apis needed
+        /// </summary>
+        [HttpGet("get_q/{id}")]
+        public async Task<IActionResult> Getqs(int id)
+        {
+           List<Question>? question = Queries.GetApprovedQuestionsQuery(_dataContext, id).ToList();
+            //if (question == null)
+            //    return BadRequest("Question not found");
+
+            //if (!PostHelpers.AllowUserReadPost(_access, question))
+            //    return Unauthorized();
+
+            //var listComments = await _dataContext.Comments
+            //    .Where(x => x.QuestionId == id)
+            //    .OrderBy(x => x.CommentNum)
+            //    .ToListAsync();
+            //var listCommentTables = listComments.Select(x => Mapper.FromComment(x));
+
+            return Ok(question);
+        }
+    }
 }
