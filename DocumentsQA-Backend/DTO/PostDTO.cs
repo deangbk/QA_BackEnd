@@ -53,19 +53,19 @@ namespace DocumentsQA_Backend.DTO {
 		/// </summary>
 		public string? Type { get; set; } = null;
 
-		public QuestionCategory? Category { get; set; } = null;
+		public string? Category { get; set; } = null;
 	}
 
 	public class PostCreateDTO {
 		[BindProperty(Name = "account")]
 		public int? AccountId { get; set; } = null;
 		public string Text { get; set; } = null!;
-		public QuestionCategory? Category { get; set; } = null;
+		public string? Category { get; set; } = null;
 	}
 
 	public class PostEditDTO {
 		public string Text { get; set; } = null!;
-		public QuestionCategory? Category { get; set; } = null;
+		public string? Category { get; set; } = null;
 	}
 	public class PostSetAnswerDTO {
 		public string Answer { get; set; } = null!;
@@ -83,7 +83,7 @@ namespace DocumentsQA_Backend.DTO {
 		public class Inner {
 			public int Id { get; set; }
 			public string Text { get; set; } = null!;
-			public QuestionCategory? Category { get; set; } = null;
+			public string? Category { get; set; } = null;
 		}
 
 		public List<Inner> Posts { get; set; } = null!;

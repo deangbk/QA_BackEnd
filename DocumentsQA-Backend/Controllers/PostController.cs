@@ -140,7 +140,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var question = PostHelpers.CreateQuestion(
 				QuestionType.General, project.Id, 
-				createDTO.Text, createDTO.Category ?? QuestionCategory.General, 
+				createDTO.Text, createDTO.Category ?? "general", 
 				_access.GetUserID());
 
 			project.Questions.Add(question);
@@ -175,7 +175,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var question = PostHelpers.CreateQuestion(
 				QuestionType.Account, project.Id,
-				createDTO.Text, createDTO.Category ?? QuestionCategory.General,
+				createDTO.Text, createDTO.Category ?? "general",
 				_access.GetUserID());
 			question.AccountId = account.Id;
 
@@ -345,7 +345,7 @@ namespace DocumentsQA_Backend.Controllers {
 			foreach (var i in dto.Posts) {
 				var question = PostHelpers.CreateQuestion(
 					QuestionType.Account, project.Id,
-					i.Text, i.Category ?? QuestionCategory.General,
+					i.Text, i.Category ?? "general",
 					_access.GetUserID());
 
 				listQuestions.Add(question);
@@ -399,7 +399,7 @@ namespace DocumentsQA_Backend.Controllers {
 			foreach (var i in dto.Posts) {
 				var question = PostHelpers.CreateQuestion(
 					QuestionType.Account, project.Id,
-					i.Text, i.Category ?? QuestionCategory.General,
+					i.Text, i.Category ?? "general",
 					_access.GetUserID());
 				question.AccountId = i.AccountId;
 

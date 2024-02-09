@@ -16,7 +16,7 @@ using DocumentsQA_Backend.Services;
 
 namespace DocumentsQA_Backend.Helpers {
 	public class PostHelpers {
-		public static Question CreateQuestion(QuestionType type, int projectId, string text, QuestionCategory category, int userId) {
+		public static Question CreateQuestion(QuestionType type, int projectId, string text, string category, int userId) {
 			var time = DateTime.Now;
 			Question question = new Question {
 				QuestionNum = 0,
@@ -36,7 +36,7 @@ namespace DocumentsQA_Backend.Helpers {
 			};
 			return question;
 		}
-		public static void EditQuestion(Question question, string text, QuestionCategory category, int userId) {
+		public static void EditQuestion(Question question, string text, string category, int userId) {
 			var time = DateTime.Now;
 
 			question.QuestionText = text;
