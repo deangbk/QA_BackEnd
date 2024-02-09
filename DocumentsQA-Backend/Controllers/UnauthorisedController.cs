@@ -1,14 +1,23 @@
-﻿using DocumentsQA_Backend.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Net;
+using System.Text;
+
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+
+using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Services;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 
 namespace DocumentsQA_Backend.Controllers
 {
-
+    [Route("api/unauth")]
     /// <summary>
     /// This controller is responsible to handling requests outside of the normal scope of the application. Mostly through no code solutions.
     /// Will will add security, but for now it is just a placeholder. security will handled within the http request as needed.
@@ -24,12 +33,17 @@ namespace DocumentsQA_Backend.Controllers
 
          
         }
+        [HttpGet("get_stuff/{pid}")]
+        public async Task<IActionResult> GetPosts(int pid)
+        {
 
+            return Ok(pid);
+        }
         /// <summary>
         /// Posts general questions in bulk
         /// </summary>
         [HttpPost("post_question_g_multiple/{pid}")]
-        public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dto)
+        public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] PostCreateMultipleDTO dto)
         {
             Project? project = await Queries.GetProjectFromId(_dataContext, pid);
             if (project == null)
@@ -42,7 +56,7 @@ namespace DocumentsQA_Backend.Controllers
 
             ///placeholder, will get the user identity from the request details.
             var userId = 1;
-            foreach (var i in dto)
+            foreach (var i in dto.Posts)
             {
                 var question = PostHelpers.CreateQuestion(
                     QuestionType.Account, project.Id,
