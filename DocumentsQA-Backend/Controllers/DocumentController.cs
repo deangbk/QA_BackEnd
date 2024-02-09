@@ -16,7 +16,6 @@ using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Services;
-using System.Collections;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
@@ -83,7 +82,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Data error");
 			}
 
-			return Ok(Mapper.FromDocument(document, details));
+			return Ok(document.ToJsonTable(details));
 		}
 
 		/// <summary>
@@ -154,7 +153,7 @@ namespace DocumentsQA_Backend.Controllers {
 				.Where(x => x.Type == DocumentType.General)
 				.OrderBy(x => x.DateUploaded)
 				.ToListAsync();
-			var listDocumentTables = listDocuments.Select(x => Mapper.FromDocument(x, details));
+			var listDocumentTables = listDocuments.Select(x => x.ToJsonTable(details));
 
 			return Ok(listDocumentTables);
 		}
@@ -171,7 +170,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var listDocuments = question.Attachments
 				.OrderBy(x => x.DateUploaded);
-			var listDocumentTables = listDocuments.Select(x => Mapper.FromDocument(x, details));
+			var listDocumentTables = listDocuments.Select(x => x.ToJsonTable(details));
 
 			return Ok(listDocumentTables);
 		}
@@ -188,7 +187,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var listDocuments = account.Documents
 				.OrderBy(x => x.DateUploaded);
-			var listDocumentTables = listDocuments.Select(x => Mapper.FromDocument(x, details));
+			var listDocumentTables = listDocuments.Select(x => x.ToJsonTable(details));
 
 			return Ok(listDocumentTables);
 		}

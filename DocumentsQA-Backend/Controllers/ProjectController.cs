@@ -53,7 +53,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
-			return Ok(Mapper.FromProject(project, 2));
+			return Ok(project.ToJsonTable(2));
 		}
 
 		/// <summary>

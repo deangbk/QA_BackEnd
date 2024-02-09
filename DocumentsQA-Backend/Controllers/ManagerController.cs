@@ -92,7 +92,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
-			List<int> userIdsGrant = new();
+			List<int> userIdsGrant;
 			try {
 				string contents = await FileHelpers.ReadIFormFile(file);
 				userIdsGrant = ValueHelpers.SplitIntString(contents).ToList();
@@ -202,7 +202,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			DateTime date = DateTime.Now;
 
-			var fileLines = new List<string>();
+			List<string> fileLines;
 			{
 				try {
 					string contents = await FileHelpers.ReadIFormFile(file);
@@ -383,7 +383,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var listPosts = (await query.ToListAsync())
 				.Where(x => PostHelpers.AllowUserReadPost(_access, x))
 				.ToList();
-			var listPostTables = listPosts.Select(x => Mapper.FromPost(x, details));
+			var listPostTables = listPosts.Select(x => x.ToJsonTable(details));
 
 			return Ok(listPostTables);
 		}

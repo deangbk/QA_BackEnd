@@ -79,7 +79,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var listPosts = (await query.ToListAsync())
 				.Where(x => PostHelpers.AllowUserReadPost(_access, x))
 				.ToList();
-			int countTotal = listPosts.Count();
+			int countTotal = listPosts.Count;
 
 			// Paginate result; but return everything if Page is less than 0
 			{
@@ -95,7 +95,7 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 			}
 
-			var listPostTables = listPosts.Select(x => Mapper.FromPost(x, details));
+			var listPostTables = listPosts.Select(x => x.ToJsonTable(details));
 
 			return Ok(new JsonTable() {
 				["count_total"] = countTotal,
@@ -119,7 +119,7 @@ namespace DocumentsQA_Backend.Controllers {
 				.Where(x => x.QuestionId == id)
 				.OrderBy(x => x.CommentNum)
 				.ToListAsync();
-			var listCommentTables = listComments.Select(x => Mapper.FromComment(x));
+			var listCommentTables = listComments.Select(x => x.ToJsonTable(0));
 
 			return Ok(listCommentTables);
 		}

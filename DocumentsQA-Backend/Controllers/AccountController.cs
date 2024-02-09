@@ -46,7 +46,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowToTranche(account.Tranche))
 				return Unauthorized();
 
-			return Ok(Mapper.FromAccount(account, details));
+			return Ok(account.ToJsonTable(details));
 		}
 
 		[HttpPost("create/{pid}")]
