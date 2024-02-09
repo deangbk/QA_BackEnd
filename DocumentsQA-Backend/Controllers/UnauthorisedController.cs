@@ -60,7 +60,7 @@ namespace DocumentsQA_Backend.Controllers
             {
                 var question = PostHelpers.CreateQuestion(
                     QuestionType.Account, project.Id,
-                    i.Text, i.Category ?? QuestionCategory.General,
+                    i.Text, i.Category ?? "general",
                     userId);
 
                 listQuestions.Add(question);
