@@ -185,6 +185,14 @@ namespace DocumentsQA_Backend.Data {
 					.HasForeignKey(e => e.QuestionId)
 					.OnDelete(DeleteBehavior.Cascade)
 					.IsRequired();
+
+				// Map Comment:User as N:1
+				modelBuilder.Entity<Comment>()
+					.HasOne(e => e.PostedBy)
+					.WithMany()
+					.HasForeignKey(e => e.PostedById)
+					.OnDelete(DeleteBehavior.Restrict)
+					.IsRequired();
 			}
 
 			// Model: Document
