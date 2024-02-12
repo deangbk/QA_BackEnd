@@ -36,6 +36,14 @@ namespace DocumentsQA_Backend.Helpers {
 			};
 			return question;
 		}
+
+		/// <summary>
+		/// Gets the highest QuestionNum out of all questions in the project
+		/// </summary>
+		public static int GetHighestQuestionNo(Project project) {
+			return project.Questions.Max(x => x.QuestionNum);
+		}
+
 		public static void EditQuestion(Question question, string text, string category, int userId) {
 			var time = DateTime.Now;
 

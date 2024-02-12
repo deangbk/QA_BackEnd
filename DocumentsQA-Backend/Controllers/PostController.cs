@@ -143,6 +143,10 @@ namespace DocumentsQA_Backend.Controllers {
 				createDTO.Text, createDTO.Category ?? "general", 
 				_access.GetUserID());
 
+			// Set the question number to 1 more than the current highest
+			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
+			question.QuestionNum = maxQuestionNo + 1;
+
 			project.Questions.Add(question);
 
 			await _dataContext.SaveChangesAsync();
@@ -177,9 +181,14 @@ namespace DocumentsQA_Backend.Controllers {
 				QuestionType.Account, project.Id,
 				createDTO.Text, createDTO.Category ?? "general",
 				_access.GetUserID());
+
 			question.AccountId = account.Id;
 
-			account.Project.Questions.Add(question);
+			// Set the question number to 1 more than the current highest
+			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
+			question.QuestionNum = maxQuestionNo + 1;
+
+			project.Questions.Add(question);
 			await _dataContext.SaveChangesAsync();
 
 			return Ok(question.Id);
@@ -325,6 +334,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
+			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
+
 			List<Question> listQuestions = new();
 
 			foreach (var i in dto.Posts) {
@@ -332,6 +343,9 @@ namespace DocumentsQA_Backend.Controllers {
 					QuestionType.General, project.Id,
 					i.Text, i.Category ?? "general",
 					_access.GetUserID());
+
+				// Increment num with each question added
+				question.QuestionNum = ++maxQuestionNo;
 
 				listQuestions.Add(question);
 			}
@@ -379,6 +393,8 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 			}
 
+			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
+
 			List<Question> listQuestions = new();
 
 			foreach (var i in dto.Posts) {
@@ -386,7 +402,11 @@ namespace DocumentsQA_Backend.Controllers {
 					QuestionType.Account, project.Id,
 					i.Text, i.Category ?? "general",
 					_access.GetUserID());
+
 				question.AccountId = i.AccountId;
+
+				// Increment num with each question added
+				question.QuestionNum = ++maxQuestionNo;
 
 				listQuestions.Add(question);
 			}
