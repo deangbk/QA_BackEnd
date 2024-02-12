@@ -33,6 +33,7 @@ namespace DocumentsQA_Backend.Models {
 
 		public virtual List<Tranche> Tranches { get; set; } = new();			// One-to-many with Tranche
 		public virtual List<Question> Questions { get; set; } = new();			// One-to-many with Question
+		public virtual List<Note> Notes { get; set; } = new();					// One-to-many with Note
 
 		public virtual List<AppUser> UserManagers { get; set; } = new();		// Reference navigation for many-to-many FK
 	}
