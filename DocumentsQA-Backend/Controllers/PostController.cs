@@ -348,7 +348,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Posts account questions in bulk
 		/// </summary>
-		[HttpPost("post_account_a_multiple/{pid}")]
+		[HttpPost("post_question_a_multiple/{pid}")]
 		public async Task<IActionResult> PostAccountQuestionMultiple(int pid, [FromBody] PostCreateMultipleDTO dto) {
 			if (dto.Posts.Any(x => x.AccountId == null)) {
 				ModelState.AddModelError("AccountId", "AccountId cannot be null");
