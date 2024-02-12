@@ -259,8 +259,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Sets the approval status of answers to questions
 		/// </summary>
-		[HttpPut("set_approval_a/{pid}/{approve}")]
-		public async Task<IActionResult> SetPostsApprovalA(int pid, bool approve, [FromBody] PostSetApproveDTO approveDTO) {
+		[HttpPut("set_approval_a/{pid}")]
+		public async Task<IActionResult> SetPostsApprovalA(int pid, [FromBody] PostSetApproveDTO approveDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
