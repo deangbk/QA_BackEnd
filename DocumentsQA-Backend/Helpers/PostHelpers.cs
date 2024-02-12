@@ -42,8 +42,20 @@ namespace DocumentsQA_Backend.Helpers {
 		/// </summary>
 		public static int GetHighestQuestionNo(Project project) {
 			try {
-			return project.Questions.Max(x => x.QuestionNum);
+				return project.Questions.Max(x => x.QuestionNum);
+			}
+			catch (InvalidOperationException) {
+				return 0;
+			}
 		}
+
+		/// <summary>
+		/// Gets the highest CommentNum out of all comments in the question
+		/// </summary>
+		public static int GetHighestCommentNo(Question question) {
+			try {
+				return question.Comments.Max(x => x.CommentNum);
+			}
 			catch (InvalidOperationException) {
 				return 0;
 			}

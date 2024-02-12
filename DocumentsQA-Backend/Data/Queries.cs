@@ -21,6 +21,10 @@ namespace DocumentsQA_Backend.Data {
 			var res = await dataContext.Questions.FindAsync(id);
 			return res;
 		}
+		public static async Task<Comment?> GetCommentFromId(DataContext dataContext, int id) {
+			var res = await dataContext.Comments.FindAsync(id);
+			return res;
+		}
 		public static async Task<Document?> GetDocumentFromId(DataContext dataContext, int id) {
 			var res = await dataContext.Documents.FindAsync(id);
 			return res;

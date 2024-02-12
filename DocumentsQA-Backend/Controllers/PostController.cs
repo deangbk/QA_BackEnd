@@ -103,27 +103,6 @@ namespace DocumentsQA_Backend.Controllers {
 			});
 		}
 
-		/// <summary>
-		/// Gets all comments on a question
-		/// </summary>
-		[HttpGet("get_comments/{id}")]
-		public async Task<IActionResult> GetPostComments(int id) {
-			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
-			if (question == null)
-				return BadRequest("Question not found");
-
-			if (!PostHelpers.AllowUserReadPost(_access, question))
-				return Unauthorized();
-
-			var listComments = await _dataContext.Comments
-				.Where(x => x.QuestionId == id)
-				.OrderBy(x => x.CommentNum)
-				.ToListAsync();
-			var listCommentTables = listComments.Select(x => x.ToJsonTable(0));
-
-			return Ok(listCommentTables);
-		}
-
 		// -----------------------------------------------------
 
 		/// <summary>
@@ -139,8 +118,8 @@ namespace DocumentsQA_Backend.Controllers {
 				return Unauthorized();
 
 			var question = PostHelpers.CreateQuestion(
-				QuestionType.General, project.Id, 
-				createDTO.Text, createDTO.Category ?? "general", 
+				QuestionType.General, project.Id,
+				createDTO.Text, createDTO.Category ?? "general",
 				_access.GetUserID());
 
 			// Set the question number to 1 more than the current highest
@@ -234,8 +213,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!PostHelpers.AllowUserEditPost(_access, question))
 				return Unauthorized();
 
-			PostHelpers.EditQuestion(question, 
-				editDTO.Text, editDTO.Category ?? question.Category, 
+			PostHelpers.EditQuestion(question,
+				editDTO.Text, editDTO.Category ?? question.Category,
 				_access.GetUserID());
 
 			await _dataContext.SaveChangesAsync();
@@ -513,6 +492,80 @@ namespace DocumentsQA_Backend.Controllers {
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
+		}
+
+		// -----------------------------------------------------
+
+		/// <summary>
+		/// Get question comments, ordered by number
+		/// </summary>
+		[HttpGet("get_comments/{id}")]
+		public async Task<IActionResult> GetComments(int id) {
+			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
+			if (question == null)
+				return BadRequest("Question not found");
+
+			if (!PostHelpers.AllowUserReadPost(_access, question))
+				return Unauthorized();
+
+			var listComments = question.Comments;
+			var listCommentTables = listComments
+				.OrderBy(x => x.CommentNum)
+				.Select(x => x.ToJsonTable(1));
+
+			return Ok(listCommentTables);
+		}
+
+		/// <summary>
+		/// Add comment to question
+		/// </summary>
+		[HttpPost("add_comment/{id}")]
+		public async Task<IActionResult> AddComment(int id, [FromBody] PostAddCommentDTO dto) {
+			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
+			if (question == null)
+				return BadRequest("Question not found");
+
+			if (!PostHelpers.AllowUserReadPost(_access, question))
+				return Unauthorized();
+
+			var comment = new Comment {
+				CommentText = dto.Text,
+				DatePosted = DateTime.Now,
+
+				QuestionId = id,
+				PostedById = _access.GetUserID(),
+			};
+
+			var maxCommentNo = PostHelpers.GetHighestCommentNo(question);
+			comment.CommentNum = maxCommentNo + 1;
+
+			question.Comments.Add(comment);
+			await _dataContext.SaveChangesAsync();
+
+			return Ok(comment.Id);
+		}
+
+		/// <summary>
+		/// Remove comment question
+		/// </summary>
+		[HttpDelete("delete_comment/{id}")]
+		public async Task<IActionResult> DeleteComment(int id, [FromQuery] int num) {
+			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
+			if (question == null)
+				return BadRequest("Question not found");
+
+			// Only staff can do this
+			if (!_access.AllowManageProject(question.Project))
+				return Unauthorized();
+
+			Comment? comment = question.Comments.Find(x => x.CommentNum == num);
+			if (comment == null)
+				return BadRequest("Comment not found");
+
+			question.Comments.Remove(comment);
+			await _dataContext.SaveChangesAsync();
+
+			return Ok(question.Comments.Count);
 		}
 	}
 }

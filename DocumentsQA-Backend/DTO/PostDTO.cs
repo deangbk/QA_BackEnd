@@ -98,4 +98,8 @@ namespace DocumentsQA_Backend.DTO {
 
 		public List<Inner> Answers { get; set; } = null!;
 	}
+
+	public class PostAddCommentDTO {
+		public string Text { get; set; } = null!;
+	}
 }
