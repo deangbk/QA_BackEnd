@@ -45,11 +45,42 @@ namespace DocumentsQA_Backend.Helpers {
 			question.LastEditorId = userId;
 			question.DateLastEdited = time;
 
-			// Editing should also invalidate previous approval status
-			question.QuestionApprovedById = null;
-			question.DateQuestionApproved = null;
-			question.AnswerApprovedById = null;
-			question.DateAnswerApproved = null;
+			// Editing should also invalidate existing approval status
+			ApproveQuestion(question, userId, false);
+		}
+
+		public static void ApproveQuestion(Question question, int userId, bool approve) {
+			var time = DateTime.Now;
+
+			if (approve) {
+				question.QuestionApprovedById = userId;
+				question.DateQuestionApproved = time;
+			}
+			else {
+				question.QuestionApprovedById = null;
+				question.DateQuestionApproved = null;
+
+				// Unapproving a question also unapproves its answer
+				question.AnswerApprovedById = null;
+				question.DateAnswerApproved = null;
+			}
+		}
+		public static void ApproveAnswer(Question question, int userId, bool approve) {
+			var time = DateTime.Now;
+
+			if (approve) {
+				// Also approve the question if it was unapproved before
+				if (question.QuestionApprovedById == null) {
+					ApproveQuestion(question, userId, true);
+				}
+
+				question.AnswerApprovedById = userId;
+				question.DateAnswerApproved = time;
+			}
+			else {
+				question.AnswerApprovedById = null;
+				question.DateAnswerApproved = null;
+			}
 		}
 
 		public static IQueryable<Question> FilterQuery(IQueryable<Question> baseQuery, PostGetFilterDTO filter) {

@@ -199,15 +199,15 @@ namespace DocumentsQA_Backend.Controllers {
 				return Unauthorized();
 
 			var time = DateTime.Now;
+			var userId = _access.GetUserID();
 
 			question.QuestionAnswer = answerDTO.Answer;
-			question.AnsweredById = _access.GetUserID();
+			question.AnsweredById = userId;
 			question.DateAnswered = time;
 			question.DateLastEdited = time;
 
 			// Automatically approve
-			question.AnswerApprovedById = _access.GetUserID();
-			question.DateAnswerApproved = time;
+			PostHelpers.ApproveAnswer(question, userId, true);
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
@@ -257,19 +257,10 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			var time = DateTime.Now;
+			var userId = _access.GetUserID();
 
 			foreach (var i in questions) {
-				if (approveDTO.Approve) {
-					i.QuestionApprovedById = _access.GetUserID();
-					i.DateQuestionApproved = time;
-				}
-				else {
-					// Unapproving the question also unapproves its answer
-					i.QuestionApprovedById = null;
-					i.DateQuestionApproved = null;
-					i.AnswerApprovedById = null;
-					i.DateAnswerApproved = null;
-				}
+				PostHelpers.ApproveQuestion(i, userId, approveDTO.Approve);
 				i.DateLastEdited = time;
 			}
 
@@ -309,16 +300,10 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			var time = DateTime.Now;
+			var userId = _access.GetUserID();
 
 			foreach (var i in questions) {
-				if (approve) {
-					i.AnswerApprovedById = _access.GetUserID();
-					i.DateAnswerApproved = time;
-				}
-				else {
-					i.AnswerApprovedById = null;
-					i.DateAnswerApproved = null;
-				}
+				PostHelpers.ApproveAnswer(i, userId, approveDTO.Approve);
 				i.DateLastEdited = time;
 			}
 
@@ -466,6 +451,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (project == null)
 				return BadRequest("Project not found");
 
+			// Only staff can add answers
 			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
@@ -475,11 +461,13 @@ namespace DocumentsQA_Backend.Controllers {
 			{
 				// Detect invalid questions + check access
 
+				// No need to check for per-question access; a staff always has management rights to the whole project
+				/*
 				foreach (var (_, i) in mapQuestions!) {
-					// Only staff can add answer
 					if (!PostHelpers.AllowUserManagePost(_access, i))
 						return Unauthorized();
 				}
+				*/
 
 				if (mapQuestions!.Count != dto.Answers.Count) {
 					var invalidIds = ids.Except(mapQuestions.Keys);
@@ -499,8 +487,8 @@ namespace DocumentsQA_Backend.Controllers {
 				question.DateLastEdited = time;
 
 				// Don't auto-approve on bulk answer
-				question.AnswerApprovedById = null;
-				question.DateAnswerApproved = null;
+				PostHelpers.ApproveQuestion(question, userId, true);
+				PostHelpers.ApproveAnswer(question, userId, false);
 			}
 
 			await _dataContext.SaveChangesAsync();
