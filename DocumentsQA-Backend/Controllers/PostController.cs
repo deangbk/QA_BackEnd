@@ -344,7 +344,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			foreach (var i in dto.Posts) {
 				var question = PostHelpers.CreateQuestion(
-					QuestionType.Account, project.Id,
+					QuestionType.General, project.Id,
 					i.Text, i.Category ?? "general",
 					_access.GetUserID());
 
