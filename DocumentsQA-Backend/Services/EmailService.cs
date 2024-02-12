@@ -312,7 +312,7 @@ namespace DocumentsQA_Backend.Services {
 				// Handle account questions
 				{
 					var questionsByAccount = await queryQuestions
-						.Where(x => x.Type == QuestionType.Account)
+						.Where(x => x.Type == QuestionType.Account && x.AccountId != null)
 						.GroupBy(x => x.Account!)
 						.ToListAsync();
 					foreach (var group in questionsByAccount)
@@ -417,7 +417,7 @@ namespace DocumentsQA_Backend.Services {
 				{
 					// Get all account questions the user has access to
 					var add = await queryQuestions
-						.Where(x => x.Type == QuestionType.Account)
+						.Where(x => x.Type == QuestionType.Account && x.AccountId != null)
 						.Where(x => tranches.Any(y => y == x.Account.TrancheId))
 						.ToListAsync();
 					questions.AddRange(add);
