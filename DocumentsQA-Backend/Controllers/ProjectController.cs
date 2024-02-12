@@ -105,6 +105,29 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		
+		[HttpGet("count_content/{pid}")]
+		public async Task<IActionResult> CountContent(int pid) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+			if (!_access.AllowToProject(project))
+				return Unauthorized();
+
+			int countGeneralPosts = project.Questions
+				.Where(x => x.Type == QuestionType.General)
+				.Count();
+			int countAccountPosts = project.Questions
+				.Where(x => x.Type == QuestionType.Account)
+				.Count();
+			int countDocuments = await _dataContext.Documents
+				.Where(x => x.ProjectId == pid)
+				.CountAsync();
+
+			return Ok(new JsonTable {
+				["gen_posts"] = countGeneralPosts,
+				["acc_posts"] = countAccountPosts,
+				["documents"] = countDocuments,
+			});
+		}
 	}
 }
