@@ -19,7 +19,6 @@ using DocumentsQA_Backend.Helpers;
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
-
 	[Route("api/project")]
 	[Authorize]
 	public class ProjectController : Controller {
@@ -128,6 +127,79 @@ namespace DocumentsQA_Backend.Controllers {
 				["acc_posts"] = countAccountPosts,
 				["documents"] = countDocuments,
 			});
+		}
+
+		// -----------------------------------------------------
+
+		/// <summary>
+		/// Gets project nodes, ordered by number
+		/// </summary>
+		[HttpGet("get_notes/{pid}")]
+		public async Task<IActionResult> GetComments(int pid) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+			if (!_access.AllowToProject(project))
+				return Unauthorized();
+
+			var listNotesTables = project.Notes
+				.OrderBy(x => x.Num)
+				.Select(x => x.ToJsonTable(0));
+
+			return Ok(listNotesTables);
+		}
+
+		/// <summary>
+		/// Adds a project note
+		/// </summary>
+		[HttpPost("add_note/{pid}")]
+		public async Task<IActionResult> AddNote(int pid, [FromBody] AddNoteDTO dto) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+			if (!_access.AllowManageProject(project))
+				return Unauthorized();
+
+			var note = new Note {
+				ProjectId = pid,
+				PostedById = _access.GetUserID(),
+
+				Text = dto.Text,
+				Description = dto.Description ?? "",
+				Category = dto.Category ?? "general",
+				Sticky = dto.Sticky ?? false,
+
+				DatePosted = DateTime.Now,
+			};
+
+			var maxCommentNo = PostHelpers.GetHighestNoteNo(project);
+			note.Num = maxCommentNo + 1;
+
+			project.Notes.Add(note);
+			await _dataContext.SaveChangesAsync();
+
+			return Ok(note.Id);
+		}
+
+		/// <summary>
+		/// Removes a project note
+		/// </summary>
+		[HttpDelete("delete_note/{pid}")]
+		public async Task<IActionResult> DeleteNote(int pid, [FromQuery] int num) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+			if (!_access.AllowManageProject(project))
+				return Unauthorized();
+
+			Note? note = project.Notes.Find(x => x.Num == num);
+			if (note == null)
+				return BadRequest("Note not found");
+
+			project.Notes.Remove(note);
+			await _dataContext.SaveChangesAsync();
+
+			return Ok(project.Notes.Count);
 		}
 	}
 }

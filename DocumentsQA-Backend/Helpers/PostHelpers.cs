@@ -61,6 +61,18 @@ namespace DocumentsQA_Backend.Helpers {
 			}
 		}
 
+		/// <summary>
+		/// Gets the highest Num out of all project notes
+		/// </summary>
+		public static int GetHighestNoteNo(Project project) {
+			try {
+				return project.Notes.Max(x => x.Num);
+			}
+			catch (InvalidOperationException) {
+				return 0;
+			}
+		}
+
 		public static void EditQuestion(Question question, string text, string category, int userId) {
 			var time = DateTime.Now;
 
