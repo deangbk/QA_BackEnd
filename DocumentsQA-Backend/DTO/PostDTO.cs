@@ -77,29 +77,27 @@ namespace DocumentsQA_Backend.DTO {
 		public List<int> Questions { get; set; } = new();
 	}
 
-	public class PostCreateMultipleDTO {
-		public List<PostCreateDTO> Posts { get; set; } = null!;
-	}
 	public class PostEditMultipleDTO {
-		public class Inner {
-			public int Id { get; set; }
-			public string Text { get; set; } = null!;
-			public string? Category { get; set; }
-		}
-
-		public List<Inner> Posts { get; set; } = null!;
+		public int Id { get; set; }
+		public string Text { get; set; } = null!;
+		public string? Category { get; set; }
 	}
 
 	public class PostSetAnswerMultipleDTO {
-		public class Inner {
-			public int Id { get; set; }
-			public string Answer { get; set; } = null!;
-		}
-
-		public List<Inner> Answers { get; set; } = null!;
+		public int Id { get; set; }
+		public string Answer { get; set; } = null!;
 	}
 
 	public class PostAddCommentDTO {
 		public string Text { get; set; } = null!;
+	}
+
+	// -----------------------------------------------------
+
+	public class Unauth_PostCreateDTO : PostCreateDTO {
+		[JsonPropertyName("user.id")]
+		public int ProjectID { get; set; }
+
+		public string Email { get; set; } = null!;
 	}
 }

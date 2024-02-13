@@ -305,7 +305,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Posts general questions in bulk
 		/// </summary>
 		[HttpPost("post_question_g_multiple/{pid}")]
-		public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] PostCreateMultipleDTO dto) {
+		public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -317,7 +317,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			List<Question> listQuestions = new();
 
-			foreach (var i in dto.Posts) {
+			foreach (var i in dtos) {
 				var question = PostHelpers.CreateQuestion(
 					QuestionType.General, project.Id,
 					i.Text, i.Category ?? "general",
@@ -342,8 +342,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Posts account questions in bulk
 		/// </summary>
 		[HttpPost("post_question_a_multiple/{pid}")]
-		public async Task<IActionResult> PostAccountQuestionMultiple(int pid, [FromBody] PostCreateMultipleDTO dto) {
-			if (dto.Posts.Any(x => x.AccountId == null)) {
+		public async Task<IActionResult> PostAccountQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos) {
+			if (dtos.Any(x => x.AccountId == null)) {
 				ModelState.AddModelError("AccountId", "AccountId cannot be null");
 				return BadRequest(new ValidationProblemDetails(ModelState));
 			}
@@ -358,7 +358,7 @@ namespace DocumentsQA_Backend.Controllers {
 			{
 				// Detect invalid accounts + check access
 
-				var accountIds = dto.Posts.Select(x => x.AccountId!.Value);
+				var accountIds = dtos.Select(x => x.AccountId!.Value);
 				var mapAccounts = await Queries.GetAccountsMapFromIds(_dataContext, accountIds);
 
 				foreach (var (_, i) in mapAccounts!) {
@@ -366,7 +366,7 @@ namespace DocumentsQA_Backend.Controllers {
 						return Unauthorized();
 				}
 
-				if (mapAccounts!.Count != dto.Posts.Count) {
+				if (mapAccounts!.Count != dtos.Count) {
 					var invalidAccounts = accountIds.Except(mapAccounts.Keys);
 					return BadRequest("Account not found: " + ValueHelpers.PrintEnumerable(invalidAccounts));
 				}
@@ -376,7 +376,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			List<Question> listQuestions = new();
 
-			foreach (var i in dto.Posts) {
+			foreach (var i in dtos) {
 				var question = PostHelpers.CreateQuestion(
 					QuestionType.Account, project.Id,
 					i.Text, i.Category ?? "general",
@@ -403,7 +403,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Edit questions in bulk
 		/// </summary>
 		[HttpPost("edit_question_multiple/{pid}")]
-		public async Task<IActionResult> EditQuestionMultiple(int pid, [FromBody] PostEditMultipleDTO dto) {
+		public async Task<IActionResult> EditQuestionMultiple(int pid, [FromBody] List<PostEditMultipleDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -411,7 +411,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
-			var ids = dto.Posts.Select(x => x.Id);
+			var ids = dtos.Select(x => x.Id);
 			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
 
 			{
@@ -422,7 +422,7 @@ namespace DocumentsQA_Backend.Controllers {
 						return Unauthorized();
 				}
 
-				if (mapQuestions!.Count != dto.Posts.Count) {
+				if (mapQuestions!.Count != dtos.Count) {
 					var invalidIds = ids.Except(mapQuestions.Keys);
 					return BadRequest("Question not found: " + ValueHelpers.PrintEnumerable(invalidIds));
 				}
@@ -430,7 +430,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var userId = _access.GetUserID();
 
-			foreach (var i in dto.Posts) {
+			foreach (var i in dtos) {
 				var question = mapQuestions[i.Id];
 				PostHelpers.EditQuestion(question,
 					i.Text, i.Category ?? question.Category,
@@ -445,7 +445,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Adds answers to questions in bulk
 		/// </summary>
 		[HttpPut("set_answer_multiple/{pid}")]
-		public async Task<IActionResult> SetAnswerMultiple(int pid, [FromBody] PostSetAnswerMultipleDTO dto) {
+		public async Task<IActionResult> SetAnswerMultiple(int pid, [FromBody] List<PostSetAnswerMultipleDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -454,7 +454,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
-			var ids = dto.Answers.Select(x => x.Id);
+			var ids = dtos.Select(x => x.Id);
 			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
 
 			{
@@ -468,7 +468,7 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 				*/
 
-				if (mapQuestions!.Count != dto.Answers.Count) {
+				if (mapQuestions!.Count != dtos.Count) {
 					var invalidIds = ids.Except(mapQuestions.Keys);
 					return BadRequest("Question not found: " + ValueHelpers.PrintEnumerable(invalidIds));
 				}
@@ -477,7 +477,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var time = DateTime.Now;
 			var userId = _access.GetUserID();
 
-			foreach (var i in dto.Answers) {
+			foreach (var i in dtos) {
 				var question = mapQuestions[i.Id];
 
 				question.QuestionAnswer = i.Answer;
@@ -508,8 +508,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!PostHelpers.AllowUserReadPost(_access, question))
 				return Unauthorized();
 
-			var listComments = question.Comments;
-			var listCommentTables = listComments
+			var listCommentTables = question.Comments
 				.OrderBy(x => x.CommentNum)
 				.Select(x => x.ToJsonTable(1));
 
