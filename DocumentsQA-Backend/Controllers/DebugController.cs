@@ -33,7 +33,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 		public DebugController(DataContext dataContext, ILogger<DebugController> logger,
 			UserManager<AppUser> userManager, SignInManager<AppUser> signinManager, RoleManager<AppRole> roleManager,
-			IEmailService emailService) {
+			IEmailService emailService)
+		{
 
 			_dataContext = dataContext;
 			_logger = logger;
@@ -48,15 +49,19 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		[HttpPost("create_users")]
-		public async Task<IActionResult> CreateUsers() {
-			var rolesMap = new Dictionary<AppRole, AppRole[]> {
+		public async Task<IActionResult> CreateUsers()
+		{
+			var rolesMap = new Dictionary<AppRole, AppRole[]>
+			{
 				[AppRole.Admin] = new[] { AppRole.Admin, AppRole.User },
 				[AppRole.Manager] = new[] { AppRole.Manager, AppRole.User },
 				[AppRole.User] = new[] { AppRole.User },
 			};
 
-			var _NewUser = async (string name, string email, string pass, AppRole role) => {
-				var user = new AppUser() {
+			var _NewUser = async (string name, string email, string pass, AppRole role) =>
+			{
+				var user = new AppUser()
+				{
 					UserName = email,
 					Email = email,
 					DisplayName = name,
@@ -65,10 +70,12 @@ namespace DocumentsQA_Backend.Controllers {
 				};
 
 				var result = await _userManager.CreateAsync(user, pass);
-				if (result.Succeeded) {
+				if (result.Succeeded)
+				{
 					// Set user role
 					var roles = rolesMap[role];
-					foreach (var iRole in roles) {
+					foreach (var iRole in roles)
+					{
 						await _userManager.AddClaimAsync(user, new Claim("role", iRole.Name));
 						await _userManager.AddToRoleAsync(user, iRole.Name);
 					}
@@ -91,8 +98,10 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPost("create_project/{name}")]
-		public async Task<IActionResult> CreateProject(string name) {
-			Project project = new Project {
+		public async Task<IActionResult> CreateProject(string name)
+		{
+			Project project = new Project
+			{
 				Name = name,
 				DisplayName = name,
 				CompanyName = "Holy Roman Empire",
@@ -107,7 +116,8 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPost("create_tranches/{pid}")]
-		public async Task<IActionResult> CreateProjectTranches(int pid) {
+		public async Task<IActionResult> CreateProjectTranches(int pid)
+		{
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -123,7 +133,8 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPost("send_test_mail")]
-		public async Task<IActionResult> TestSendEmail([FromQuery] string email) {
+		public async Task<IActionResult> TestSendEmail([FromQuery] string email)
+		{
 			var res = await _emailService.SendTestEmail(email);
 			if (res)
 				return Ok();
@@ -132,16 +143,19 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPut("create_accounts/{tid}/{count}")]
-		public async Task<IActionResult> CreateAccounts(int tid, int count) {
+		public async Task<IActionResult> CreateAccounts(int tid, int count)
+		{
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
 
 			Random rnd = new Random(DateTime.Now.GetHashCode());
-			var _RandString = (int len) => {
+			var _RandString = (int len) =>
+			{
 				const string chars = "abcde fghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ";
 				string s = "";
-				for (int i = 0; i < len; ++i) {
+				for (int i = 0; i < len; ++i)
+				{
 					s += chars[rnd.Next(0, chars.Length)];
 				}
 				return s;
@@ -151,7 +165,8 @@ namespace DocumentsQA_Backend.Controllers {
 				.Select(x => _RandString(rnd.Next(8, 32)))
 				.ToArray();
 			var accounts = names.Select(
-				(x, i) => new Account() {
+				(x, i) => new Account()
+				{
 					TrancheId = tranche.Id,
 					AccountNo = i + 1,
 					AccountName = x,
@@ -159,7 +174,8 @@ namespace DocumentsQA_Backend.Controllers {
 				.ToList();
 
 			// Wrap all operations in a transaction so failure would revert the entire thing
-			using (var transaction = _dataContext.Database.BeginTransaction()) {
+			using (var transaction = _dataContext.Database.BeginTransaction())
+			{
 				_dataContext.Accounts.Where(x => x.TrancheId == tid).ExecuteDelete();
 				await _dataContext.SaveChangesAsync();
 
@@ -173,31 +189,36 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPost("create_questions/{tid}/{postBy}/{count}")]
-		public async Task<IActionResult> CreateQuestions(int tid, int postBy, int count) {
+		public async Task<IActionResult> CreateQuestions(int tid, int postBy, int count)
+		{
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
 
 			Random rnd = new Random(DateTime.Now.GetHashCode());
-			var _RandString = (int len) => {
+			var _RandString = (int len) =>
+			{
 				string s = "";
-				for (int i = 0; i < len; ++i) {
+				for (int i = 0; i < len; ++i)
+				{
 					if (rnd.NextDouble() < 0.5)
-						s += (char)rnd.Next(0x20, 0x7e + 1);		// English chars
+						s += (char)rnd.Next(0x20, 0x7e + 1);        // English chars
 					else
-						s += (char)rnd.Next(0x0e01, 0x0e33 + 1);	// Thai chars
+						s += (char)rnd.Next(0x0e01, 0x0e33 + 1);    // Thai chars
 				}
 				return s;
 			};
 
 			int maxQuestionNum = 1;
-			try {
+			try
+			{
 				maxQuestionNum = await _dataContext.Questions
 					.Where(x => x.ProjectId == tranche.ProjectId)
 					.Select(x => x.QuestionNum)
 					.MaxAsync();
 			}
-			catch (Exception) {
+			catch (Exception)
+			{
 				maxQuestionNum = 1;
 			}
 
@@ -207,7 +228,8 @@ namespace DocumentsQA_Backend.Controllers {
 				.ToListAsync();
 
 			var now = DateTime.Now;
-			var questions = Enumerable.Range(1, count).Select(x => new Question {
+			var questions = Enumerable.Range(1, count).Select(x => new Question
+			{
 				QuestionNum = maxQuestionNum + x,
 				Type = QuestionType.Account,
 
