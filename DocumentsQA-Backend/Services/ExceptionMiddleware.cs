@@ -3,14 +3,25 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Runtime.Serialization;
 using System.Net;
-using DocumentsQA_Backend.Helpers;
+
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+
+using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Services {
 	public class AccessUnauthorizedException : Exception {
 		public AccessUnauthorizedException() : base("Unauthorized") { }
 		public AccessUnauthorizedException(string message) : base(message) { }
-		public AccessUnauthorizedException(string message, Exception inner) : base(message, inner) { }
+		public AccessUnauthorizedException(string message, Exception inner) 
+			: base(message, inner) { }
+	}
+	public class InvalidModelStateException : Exception {
+		public ModelStateDictionary ModelState { get; set; }
+
+		public InvalidModelStateException(ModelStateDictionary model) : base(model.ToString()) {
+			ModelState = model;
+		}
 	}
 
 	public class ExceptionMiddleware {
@@ -31,6 +42,8 @@ namespace DocumentsQA_Backend.Services {
 				switch (e) {
 					case AccessUnauthorizedException _:
 						code = HttpStatusCode.Unauthorized;		break;
+					case InvalidModelStateException _:
+						code = HttpStatusCode.BadRequest;		break;
 				}
 				context.Response.StatusCode = (int)code;
 

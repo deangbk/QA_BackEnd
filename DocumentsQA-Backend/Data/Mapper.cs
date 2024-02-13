@@ -173,5 +173,22 @@ namespace DocumentsQA_Backend.Data {
 
 			return table;
 		}
+
+		public static JsonTable ToJsonTable(this Note obj, int detail) {
+			var table = new JsonTable() {
+				["num"] = obj.Num,
+				["text"] = obj.Text,
+				["description"] = obj.Description,
+				["category"] = obj.Category,
+				["date_post"] = obj.DatePosted,
+				["sticky"] = obj.Sticky,
+			};
+
+			if (detail >= 1) {
+				table["post_by"] = obj.PostedBy.ToJsonTable(detail >= 2 ? 1 : 0);
+			}
+
+			return table;
+		}
 	}
 }

@@ -14,6 +14,7 @@ namespace DocumentsQA_Backend.Data {
 		public DbSet<Question> Questions { get; set; }
 		public DbSet<Document> Documents { get; set; }
 		public DbSet<Comment> Comments { get; set; }
+		public DbSet<Note> Notes { get; set; }
 
 		/*
 		/// <summary>
@@ -184,6 +185,33 @@ namespace DocumentsQA_Backend.Data {
 					.WithMany(e => e.Comments)
 					.HasForeignKey(e => e.QuestionId)
 					.OnDelete(DeleteBehavior.Cascade)
+					.IsRequired();
+
+				// Map Comment:User as N:1
+				modelBuilder.Entity<Comment>()
+					.HasOne(e => e.PostedBy)
+					.WithMany()
+					.HasForeignKey(e => e.PostedById)
+					.OnDelete(DeleteBehavior.Restrict)
+					.IsRequired();
+			}
+
+			// Model: Note
+			{
+				// Map Note:Project as N:1
+				modelBuilder.Entity<Note>()
+					.HasOne(e => e.Project)
+					.WithMany(e => e.Notes)
+					.HasForeignKey(e => e.ProjectId)
+					.OnDelete(DeleteBehavior.Cascade)
+					.IsRequired();
+
+				// Map Note:User as N:1
+				modelBuilder.Entity<Note>()
+					.HasOne(e => e.PostedBy)
+					.WithMany()
+					.HasForeignKey(e => e.PostedById)
+					.OnDelete(DeleteBehavior.Restrict)
 					.IsRequired();
 			}
 

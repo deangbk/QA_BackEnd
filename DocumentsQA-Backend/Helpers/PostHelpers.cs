@@ -36,6 +36,43 @@ namespace DocumentsQA_Backend.Helpers {
 			};
 			return question;
 		}
+
+		/// <summary>
+		/// Gets the highest QuestionNum out of all questions in the project
+		/// </summary>
+		public static int GetHighestQuestionNo(Project project) {
+			try {
+				return project.Questions.Max(x => x.QuestionNum);
+			}
+			catch (InvalidOperationException) {
+				return 0;
+			}
+		}
+
+		/// <summary>
+		/// Gets the highest CommentNum out of all comments in the question
+		/// </summary>
+		public static int GetHighestCommentNo(Question question) {
+			try {
+				return question.Comments.Max(x => x.CommentNum);
+			}
+			catch (InvalidOperationException) {
+				return 0;
+			}
+		}
+
+		/// <summary>
+		/// Gets the highest Num out of all project notes
+		/// </summary>
+		public static int GetHighestNoteNo(Project project) {
+			try {
+				return project.Notes.Max(x => x.Num);
+			}
+			catch (InvalidOperationException) {
+				return 0;
+			}
+		}
+
 		public static void EditQuestion(Question question, string text, string category, int userId) {
 			var time = DateTime.Now;
 
@@ -45,11 +82,42 @@ namespace DocumentsQA_Backend.Helpers {
 			question.LastEditorId = userId;
 			question.DateLastEdited = time;
 
-			// Editing should also invalidate previous approval status
-			question.QuestionApprovedById = null;
-			question.DateQuestionApproved = null;
-			question.AnswerApprovedById = null;
-			question.DateAnswerApproved = null;
+			// Editing should also invalidate existing approval status
+			ApproveQuestion(question, userId, false);
+		}
+
+		public static void ApproveQuestion(Question question, int userId, bool approve) {
+			var time = DateTime.Now;
+
+			if (approve) {
+				question.QuestionApprovedById = userId;
+				question.DateQuestionApproved = time;
+			}
+			else {
+				question.QuestionApprovedById = null;
+				question.DateQuestionApproved = null;
+
+				// Unapproving a question also unapproves its answer
+				question.AnswerApprovedById = null;
+				question.DateAnswerApproved = null;
+			}
+		}
+		public static void ApproveAnswer(Question question, int userId, bool approve) {
+			var time = DateTime.Now;
+
+			if (approve) {
+				// Also approve the question if it was unapproved before
+				if (question.QuestionApprovedById == null) {
+					ApproveQuestion(question, userId, true);
+				}
+
+				question.AnswerApprovedById = userId;
+				question.DateAnswerApproved = time;
+			}
+			else {
+				question.AnswerApprovedById = null;
+				question.DateAnswerApproved = null;
+			}
 		}
 
 		public static IQueryable<Question> FilterQuery(IQueryable<Question> baseQuery, PostGetFilterDTO filter) {

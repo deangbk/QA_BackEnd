@@ -43,7 +43,7 @@ namespace DocumentsQA_Backend.Controllers
         /// Posts general questions in bulk
         /// </summary>
         [HttpPost("post_question_g_multiple/{pid}")]
-        public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] PostCreateMultipleDTO dto)
+        public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos)
         {
             Project? project = await Queries.GetProjectFromId(_dataContext, pid);
             if (project == null)
@@ -56,7 +56,7 @@ namespace DocumentsQA_Backend.Controllers
 
             ///placeholder, will get the user identity from the request details.
             var userId = 1;
-            foreach (var i in dto.Posts)
+            foreach (var i in dtos)
             {
                 var question = PostHelpers.CreateQuestion(
                     QuestionType.Account, project.Id,

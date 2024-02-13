@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +15,7 @@ namespace DocumentsQA_Backend.DTO {
 
 		public DateTime DateEnd { get; set; }
 
-		[BindProperty(Name = "tranches")]
+		[JsonPropertyName("tranches")]
 		public string InitialTranches { get; set; } = null!;
 	}
 }

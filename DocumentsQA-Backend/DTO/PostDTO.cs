@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,15 +8,15 @@ using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend.DTO {
 	public class PaginateDTO {
-		[BindProperty(Name = "per.page")]
+		[JsonPropertyName("per.page")]
 		public int CountPerPage { get; set; } = 16;
 
-		[BindProperty(Name = "page")]
+		[JsonPropertyName("page")]
 		public int Page { get; set; }
 	}
 
 	public class PostGetFilterDTO {
-		[BindProperty(Name = "search")]
+		[JsonPropertyName("search")]
 		public string? SearchTerm { get; set; }
 
 		public string? Tranche { get; set; }
@@ -24,15 +25,15 @@ namespace DocumentsQA_Backend.DTO {
 
 		public int? TicketID { get; set; }
 
-		[BindProperty(Name = "post.by")]
+		[JsonPropertyName("post.by")]
 		public int? PosterID { get; set; }
 
-		[BindProperty(Name = "date.from")]
+		[JsonPropertyName("date.from")]
 		public DateTime? PostedFrom { get; set; }
-		[BindProperty(Name = "date.to")]
+		[JsonPropertyName("date.to")]
 		public DateTime? PostedTo { get; set; }
 
-		[BindProperty(Name = "has.answer")]
+		[JsonPropertyName("has.answer")]
 		public bool? OnlyAnswered { get; set; }
 
 		/// <summary>
@@ -42,7 +43,7 @@ namespace DocumentsQA_Backend.DTO {
 		/// <item>false: gets only unapproved</item>
 		/// </list>
 		/// </summary>
-		public bool? Approved { get; set; } = null;
+		public bool? Approved { get; set; }
 
 		/// <summary>
 		/// <list type="bullet">
@@ -51,21 +52,21 @@ namespace DocumentsQA_Backend.DTO {
 		/// <item>account: gets only questions tied to a specific account, Account must then not be null</item>
 		/// </list>
 		/// </summary>
-		public string? Type { get; set; } = null;
+		public string? Type { get; set; }
 
-		public string? Category { get; set; } = null;
+		public string? Category { get; set; }
 	}
 
 	public class PostCreateDTO {
-		[BindProperty(Name = "account")]
-		public int? AccountId { get; set; } = null;
+		[JsonPropertyName("account")]
+		public int? AccountId { get; set; }
 		public string Text { get; set; } = null!;
-		public string? Category { get; set; } = null;
+		public string? Category { get; set; }
 	}
 
 	public class PostEditDTO {
 		public string Text { get; set; } = null!;
-		public string? Category { get; set; } = null;
+		public string? Category { get; set; }
 	}
 	public class PostSetAnswerDTO {
 		public string Answer { get; set; } = null!;
@@ -76,25 +77,27 @@ namespace DocumentsQA_Backend.DTO {
 		public List<int> Questions { get; set; } = new();
 	}
 
-	public class PostCreateMultipleDTO {
-		public List<PostCreateDTO> Posts { get; set; } = null!;
-	}
 	public class PostEditMultipleDTO {
-		public class Inner {
-			public int Id { get; set; }
-			public string Text { get; set; } = null!;
-			public string? Category { get; set; } = null;
-		}
-
-		public List<Inner> Posts { get; set; } = null!;
+		public int Id { get; set; }
+		public string Text { get; set; } = null!;
+		public string? Category { get; set; }
 	}
 
 	public class PostSetAnswerMultipleDTO {
-		public class Inner {
-			public int Id { get; set; }
-			public string Answer { get; set; } = null!;
-		}
+		public int Id { get; set; }
+		public string Answer { get; set; } = null!;
+	}
 
-		public List<Inner> Answers { get; set; } = null!;
+	public class PostAddCommentDTO {
+		public string Text { get; set; } = null!;
+	}
+
+	// -----------------------------------------------------
+
+	public class Unauth_PostCreateDTO : PostCreateDTO {
+		[JsonPropertyName("user.id")]
+		public int ProjectID { get; set; }
+
+		public string Email { get; set; } = null!;
 	}
 }
