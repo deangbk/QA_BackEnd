@@ -41,32 +41,13 @@ namespace DocumentsQA_Backend.Helpers {
 		/// <param name="source">The logger.</param>
 		/// <param name="modelState">The model state.</param>
 		public static void LogInvalidModelState(this ILogger source, ModelStateDictionary modelState) {
-			var modelStateEntries = new List<ModelStateEntry>();
-			var errorMessages = new List<string>();
+			var errorMessages = modelState.GetErrors();
 
-			Visit(modelState.Root, modelStateEntries);
-
-			foreach (var modelStateEntry in modelStateEntries) {
-				foreach (var error in modelStateEntry.Errors)
-					errorMessages.Add(error.ErrorMessage);
+			if (errorMessages.Count > 0) {
+				string msg = "Invalid model state: " 
+					+ ValueHelpers.PrintEnumerable(errorMessages);
+				source.LogError(msg);
 			}
-
-			source.LogError("Invalid model state: {ErrorMessages}", errorMessages);
-		}
-
-		/// <summary>
-		/// Adds all non-container nodes of an <see cref="ModelStateEntry"/> to the provided collection.
-		/// </summary>
-		/// <param name="modelStateEntry">The current model state entry.</param>
-		/// <param name="modelStateEntries">A collection of model state entries.</param>
-		private static void Visit(ModelStateEntry modelStateEntry, ICollection<ModelStateEntry> modelStateEntries) {
-			if (modelStateEntry.Children != null) {
-				foreach (var child in modelStateEntry.Children)
-					Visit(child, modelStateEntries);
-			}
-
-			if (!modelStateEntry.IsContainerNode)
-				modelStateEntries.Add(modelStateEntry);
 		}
 	}
 }
