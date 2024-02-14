@@ -13,26 +13,31 @@ using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Services {
-	internal interface IMailMessageComposer {
+	internal interface IMailMessageComposer
+	{
 		public string GetSubject();
 		public string GetMessage();
 	}
-	internal class MailMessageComposerDaily : IMailMessageComposer {
+	internal class MailMessageComposerDaily : IMailMessageComposer
+	{
 		public IEnumerable<Question> Questions { get; private set; }
 		public IEnumerable<Document> Documents { get; private set; }
 
-		public MailMessageComposerDaily(IEnumerable<Question> questions, IEnumerable<Document> documents) {
+		public MailMessageComposerDaily(IEnumerable<Question> questions, IEnumerable<Document> documents)
+		{
 			Questions = questions;
 			Documents = documents;
 		}
 
 		public string GetSubject() => "Situation Log Updated";
-		public string GetMessage() {
+		public string GetMessage()
+		{
 			string message =
 				  "<p>Investor Dearie,</p><br>"
 				+ "<p>Situation log updated, let us take ibuprofen and explore xeno biology together.</p><br>";
 
-			if (Questions.Any()) {
+			if (Questions.Any())
+			{
 				// Split into chunks of 6 ticket IDs per line
 				List<string> lines = Questions
 					.Select(x => x.Id)
@@ -44,7 +49,8 @@ namespace DocumentsQA_Backend.Services {
 					  "<p>Thouse questiones thou'rt followeth, updaethe'd they've. Lay thine eyes upon them, prithee thee.</p>"
 					+ "<br><p>" + string.Join("</br>", lines) + "<p><br>";
 			}
-			if (Documents.Any()) {
+			if (Documents.Any())
+			{
 				List<string> lines = Documents
 					.OrderBy(x => x.DateUploaded)
 					.Select(x => x.FileName)
@@ -65,22 +71,26 @@ namespace DocumentsQA_Backend.Services {
 			return messageHtml;
 		}
 	}
-	internal class MailMessageComposerRetroactive : IMailMessageComposer {
+	internal class MailMessageComposerRetroactive : IMailMessageComposer
+	{
 		public IEnumerable<Question> Questions { get; private set; }
 		public IEnumerable<Document> Documents { get; private set; }
 
-		public MailMessageComposerRetroactive(IEnumerable<Question> questions, IEnumerable<Document> documents) {
+		public MailMessageComposerRetroactive(IEnumerable<Question> questions, IEnumerable<Document> documents)
+		{
 			Questions = questions;
 			Documents = documents;
 		}
 
 		public string GetSubject() => "Welcome";
-		public string GetMessage() {
+		public string GetMessage()
+		{
 			string message =
 				  "<p>Investor Dearie,</p><br>"
 				+ "<p>You were late to the party. While you were existn't, these things happened:</p><br>";
 
-			if (Questions.Any()) {
+			if (Questions.Any())
+			{
 				// Split into chunks of 6 ticket IDs per line
 				List<string> lines = Questions
 					.Select(x => x.Id)
@@ -92,7 +102,8 @@ namespace DocumentsQA_Backend.Services {
 					  "<p>These stuff happened:</p>"
 					+ "<br><p>" + string.Join("</br>", lines) + "<p><br>";
 			}
-			if (Documents.Any()) {
+			if (Documents.Any())
+			{
 				List<string> lines = Documents
 					.OrderBy(x => x.DateUploaded)
 					.Select(x => x.FileName)
@@ -113,12 +124,15 @@ namespace DocumentsQA_Backend.Services {
 			return messageHtml;
 		}
 	}
-	internal class MailMessageComposerTest : IMailMessageComposer {
-		public MailMessageComposerTest() {
+	internal class MailMessageComposerTest : IMailMessageComposer
+	{
+		public MailMessageComposerTest()
+		{
 		}
 
 		public string GetSubject() => "Test Test Test";
-		public string GetMessage() {
+		public string GetMessage()
+		{
 			string message =
 				  "<p>Investor Dearie,</p><br>"
 				+ "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent euismod, sem quis ultrices auctor, "
@@ -157,26 +171,30 @@ namespace DocumentsQA_Backend.Services {
 
 	// --------------------------------------------------------------------------
 
-	public class MailData {
+	public class MailData
+	{
 		public string Subject { get; set; } = null!;
 		public List<string> Recipients { get; set; } = null!;
 		public string Message { get; set; } = null!;
 	}
 
-	public interface IEmailService {
+	public interface IEmailService
+	{
 		public Task<bool> SendDailyEmails();
 		public Task<bool> SendNewUserEmail(AppUser user);
 		public Task<bool> SendTestEmail(string email);
 	}
-	public class EmailService : IScopedProcessingService, IEmailService {
+	public class EmailService : IScopedProcessingService, IEmailService
+	{
 		private readonly DataContext _dataContext;
 		private readonly ILogger<EmailService> _logger;
 
 		private readonly UserManager<AppUser> _userManager;
 
-		private readonly int _dailyEmailSchedule = 6;		// hour value -> 6:00
+		private readonly int _dailyEmailSchedule = 6;       // hour value -> 6:00
 
-		public EmailService(DataContext dataContext, ILogger<EmailService> logger, UserManager<AppUser> userManager) {
+		public EmailService(DataContext dataContext, ILogger<EmailService> logger, UserManager<AppUser> userManager)
+		{
 			_dataContext = dataContext;
 			_logger = logger;
 
@@ -185,7 +203,8 @@ namespace DocumentsQA_Backend.Services {
 
 		// -----------------------------------------------------
 
-		private async Task<bool> _SendMail(MailData data) {
+		private async Task<bool> _SendMail(MailData data)
+		{
 			/*
 			var (host, from, pass, port, ssl) = (
 				"smtp.gmail.com",
@@ -197,7 +216,8 @@ namespace DocumentsQA_Backend.Services {
 				new MailAddress("eximadmin@thainpl.com", "Dragon"),
 				"annie111", 25, false);
 
-			using SmtpClient smtp = new() {
+			using SmtpClient smtp = new()
+			{
 				Host = host,
 				Port = port,
 				Credentials = new NetworkCredential(from.Address, pass),
@@ -205,7 +225,8 @@ namespace DocumentsQA_Backend.Services {
 				EnableSsl = ssl,
 			};
 
-			MailMessage message = new() {
+			MailMessage message = new()
+			{
 				From = from,
 				Subject = data.Subject,
 				Body = data.Message,
@@ -214,11 +235,13 @@ namespace DocumentsQA_Backend.Services {
 			foreach (var i in data.Recipients)
 				message.To.Add(i);
 
-			try {
+			try
+			{
 				await smtp.SendMailAsync(message);
 				return true;
 			}
-			catch (Exception e) {
+			catch (Exception e)
+			{
 				_logger.LogError(e, "Failed to send email");
 				return false;
 			}
@@ -226,14 +249,18 @@ namespace DocumentsQA_Backend.Services {
 
 		// -----------------------------------------------------
 
-		public async Task Work(CancellationToken stoppingToken) {
-			while (!stoppingToken.IsCancellationRequested) {
+		public async Task Work(CancellationToken stoppingToken)
+		{
+
+			return;
+			while (!stoppingToken.IsCancellationRequested)
+			{
 				await SendDailyEmails();
 
 				DateTime now = DateTime.Now;
 				DateTime tomorrow = now.AddDays(1);
 				DateTime nextTaskTime = new DateTime(
-					tomorrow.Year, tomorrow.Month, tomorrow.Day, 
+					tomorrow.Year, tomorrow.Month, tomorrow.Day,
 					_dailyEmailSchedule, 0, 0);
 
 				await Task.Delay(nextTaskTime - now, stoppingToken);
@@ -242,18 +269,21 @@ namespace DocumentsQA_Backend.Services {
 
 		// -----------------------------------------------------
 
-		internal class _SendDailyEmails_UData {
+		internal class _SendDailyEmails_UData
+		{
 			public string Email { get; set; }
 			public List<Question> Questions { get; set; }
 			public List<Document> Documents { get; set; }
 
-			public _SendDailyEmails_UData(List<Question> q, List<Document> d, string email) {
+			public _SendDailyEmails_UData(List<Question> q, List<Document> d, string email)
+			{
 				Questions = q;
 				Documents = d;
 				Email = email;
 			}
 		};
-		public async Task<bool> SendDailyEmails() {
+		public async Task<bool> SendDailyEmails()
+		{
 			_logger.LogInformation("EmailService: Sending daily emails");
 
 			// TODO: Untested, probably doesn't work properly
@@ -385,7 +415,8 @@ namespace DocumentsQA_Backend.Services {
 			return true; // res;
 		}
 
-		public async Task<bool> SendNewUserEmail(AppUser user) {
+		public async Task<bool> SendNewUserEmail(AppUser user)
+		{
 			_logger.LogInformation("EmailService: Sending retroactive updates to new user");
 
 			// TODO: Untested, probably doesn't work properly
@@ -399,7 +430,8 @@ namespace DocumentsQA_Backend.Services {
 				.ToList();
 
 			// Group by projects
-			foreach (var project in projects) {
+			foreach (var project in projects)
+			{
 				var tranches = ProjectHelpers.GetUserTrancheAccessesInProject(user, project.Id)
 					.Select(x => x.Id)
 					.ToList();
@@ -451,7 +483,7 @@ namespace DocumentsQA_Backend.Services {
 					documents.AddRange(add);
 				}
 
-				var res = await _SendEmailsSub(new MailMessageComposerRetroactive(questions, documents), 
+				var res = await _SendEmailsSub(new MailMessageComposerRetroactive(questions, documents),
 					new List<string>() { user.Email });
 				if (!res)
 					return res;
@@ -459,12 +491,14 @@ namespace DocumentsQA_Backend.Services {
 
 			return true;
 		}
-		public Task<bool> SendTestEmail(string email) {
+		public Task<bool> SendTestEmail(string email)
+		{
 			return _SendEmailsSub(new MailMessageComposerTest(), new List<string>() { email });
 		}
 
 		// Maybe function overloading was a mistake
-		private async Task<bool> _SendEmailsSub(IMailMessageComposer composer, List<int> userIds) {
+		private async Task<bool> _SendEmailsSub(IMailMessageComposer composer, List<int> userIds)
+		{
 			var emails = await _dataContext.Users
 				.Join(userIds,
 					u => u.Id,
@@ -473,12 +507,15 @@ namespace DocumentsQA_Backend.Services {
 				.ToListAsync();
 			return await _SendEmailsSub(composer, emails);
 		}
-		private Task<bool> _SendEmailsSub(IMailMessageComposer composer, List<AppUser> users) {
+		private Task<bool> _SendEmailsSub(IMailMessageComposer composer, List<AppUser> users)
+		{
 			var emails = users.Select(x => x.Email).ToList();
 			return _SendEmailsSub(composer, emails);
 		}
-		private async Task<bool> _SendEmailsSub(IMailMessageComposer composer, List<string> sendEmails) {
-			MailData mailData = new() {
+		private async Task<bool> _SendEmailsSub(IMailMessageComposer composer, List<string> sendEmails)
+		{
+			MailData mailData = new()
+			{
 				Subject = composer.GetSubject(),
 				Recipients = sendEmails,
 				Message = composer.GetMessage(),
