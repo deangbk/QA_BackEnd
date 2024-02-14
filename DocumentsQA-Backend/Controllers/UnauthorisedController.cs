@@ -8,12 +8,15 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
+using Microsoft.AspNetCore.Identity;
 
+using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Data;
+using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
-using DocumentsQA_Backend.Models;
-using DocumentsQA_Backend.Services;
+using DocumentsQA_Backend.Extensions;
 
 namespace DocumentsQA_Backend.Controllers
 {
@@ -25,48 +28,94 @@ namespace DocumentsQA_Backend.Controllers
     public class UnauthorisedController : Controller
     {
         private readonly DataContext _dataContext;
-        public UnauthorisedController(DataContext dataContext)
-        {
+		private readonly ILogger<PostController> _logger;
+
+		private readonly UserManager<AppUser> _userManager;
+
+		public UnauthorisedController(DataContext dataContext, ILogger<PostController> logger,
+			UserManager<AppUser> userManager) {
 
             _dataContext = dataContext;
-           
+			_logger = logger;
 
-         
-        }
-        [HttpGet("get_stuff/{pid}")]
+			_userManager = userManager;
+		}
+
+		// -----------------------------------------------------
+
+		[HttpGet("get_stuff/{pid}")]
         public async Task<IActionResult> GetPosts(int pid)
         {
 
             return Ok(pid);
         }
+
         /// <summary>
         /// Posts general questions in bulk
         /// </summary>
-        [HttpPost("post_question_g_multiple/{pid}")]
-        public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos)
+        [HttpPost("post_question_g_multiple")]
+        public async Task<IActionResult> PostGeneralQuestionMultiple([FromBody] List<Unauth_PostCreateDTO> dtos)
         {
-            Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-            if (project == null)
-                return BadRequest("Project not found");
+			Dictionary<int, Project> mapProject;
+			Dictionary<string, AppUser> mapUsers;
 
-            //if (!_access.AllowToProject(project))
-            //    return Unauthorized();
+			{
+				// Collect and validate project IDs
 
-            List<Question> listQuestions = new();
+				var projectIds = dtos
+					.Select(x => x.ProjectID)
+					.Distinct()
+					.ToList();
 
-            ///placeholder, will get the user identity from the request details.
-            var userId = 1;
-            foreach (var i in dtos)
-            {
+				mapProject = await _dataContext.Projects
+					.Where(x => projectIds.Any(y => x.Id == y))
+					.ToDictionaryAsync(x => x.Id, x => x);
+
+				if (mapProject!.Count != projectIds.Count) {
+					var invalidProjects = projectIds.Except(mapProject.Keys);
+					return BadRequest("Project ID not found: " + invalidProjects.ToStringEx());
+				}
+			}
+
+			{
+				// Collect and validate user IDs
+
+				var userEmails = dtos
+					.Select(x => x.Email)
+					.Distinct()
+					.ToList();
+
+				mapUsers = new();
+				foreach (var email in userEmails) {
+					var user = await _userManager.FindByEmailAsync(email);
+
+					// TODO: Verify user project access
+
+					if (user != null) {
+						mapUsers[email] = user;
+					}
+				}
+
+				if (mapUsers!.Count != userEmails.Count) {
+					var invalidEmails = userEmails.Except(mapUsers.Keys);
+					return BadRequest("User not found: " + invalidEmails.ToStringEx());
+				}
+			}
+
+			List<Question> listQuestions = new();
+
+            foreach (var i in dtos) {
+				var user = mapUsers[i.Email];
+
                 var question = PostHelpers.CreateQuestion(
-                    QuestionType.Account, project.Id,
+                    QuestionType.General, i.ProjectID,
                     i.Text, i.Category ?? "general",
-                    userId);
+					user.Id);
 
                 listQuestions.Add(question);
             }
 
-            project.Questions.AddRange(listQuestions);
+            _dataContext.Questions.AddRange(listQuestions);
             await _dataContext.SaveChangesAsync();
 
             // Return IDs of all created questions
