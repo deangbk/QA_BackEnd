@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Runtime.Serialization;
 using System.Net;
-using System.Text.Json;
 
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-using DocumentsQA_Backend.Helpers;
+using Newtonsoft.Json;
+
+using DocumentsQA_Backend.Extensions;
 
 namespace DocumentsQA_Backend.Services {
 	using JsonTable = Dictionary<string, object>;
@@ -79,7 +80,7 @@ namespace DocumentsQA_Backend.Services {
 					var resp = ece.GetFormattedResponse();
 					resp["status"] = (int)code;
 
-					await context.Response.WriteAsync(JsonSerializer.Serialize(resp));
+					await context.Response.WriteAsync(JsonConvert.SerializeObject(resp));
 				}
 				else {
 					await context.Response.WriteAsync(e.Message);
@@ -96,24 +97,6 @@ namespace DocumentsQA_Backend.Services {
 			return new() {
 				[Key] = Errors,
 			};
-		}
-	}
-	public static class ModelStateExt {
-		public static List<ModelValidationError> GetErrors(this ModelStateDictionary modelState) {
-			var errors = new List<ModelValidationError>();
-
-			foreach (var key in modelState.Keys) {
-				var stateValue = modelState[key]!;
-
-				if (stateValue.Errors.Count > 0) {
-					errors.Add(new ModelValidationError {
-						Key = key,
-						Errors = stateValue.Errors.Select(x => x.ErrorMessage).ToList(),
-					});
-				}
-			}
-
-			return errors;
 		}
 	}
 }

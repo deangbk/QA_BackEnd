@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 
+using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
+
 using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Models;
@@ -34,7 +36,13 @@ namespace DocumentsQA_Backend {
 
 		// Called by runtime
 		public void ConfigureServices(IServiceCollection services) {
-			services.AddControllers();
+			services
+				.AddControllers(options => {
+					options.Filters.Add<ModelValidationActionFilter>();
+				})
+				.AddNewtonsoftJson(options => {
+					options.SerializerSettings.ContractResolver = new RequiredPropertiesContractResolver();
+				});
 
 			{
 				services.AddDbContext<DataContext>(options => {
@@ -149,27 +157,5 @@ namespace DocumentsQA_Backend {
 				endpoints.MapControllers();
 			});
 		}
-	}
-
-	public class AuthorizationAllowAnonymous : IAuthorizationHandler {
-		public Task HandleAsync(AuthorizationHandlerContext context) {
-			foreach (var requirement in context.PendingRequirements.ToList())
-				context.Succeed(requirement);
-			return Task.CompletedTask;
-		}
-	}
-	public class AccessAllowAll : IAccessService {
-		public int GetUserID() => -1;
-		public bool UserHasRole(AppRole role) => true;
-
-		public bool IsValidUser() => true;
-		public bool IsNormalUser() => true;
-		public bool IsSuperUser() => true;
-		public bool IsAdmin() => true;
-
-		public bool AllowToProject(Project project) => true;
-		public bool AllowToTranche(Tranche tranche) => true;
-		public bool AllowManageProject(Project project) => true;
-		public bool AllowManageTranche(Tranche tranche) => true;
 	}
 }

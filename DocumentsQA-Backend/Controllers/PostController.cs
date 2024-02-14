@@ -9,11 +9,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
+using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Data;
+using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
-using DocumentsQA_Backend.Models;
-using DocumentsQA_Backend.Services;
+using DocumentsQA_Backend.Extensions;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
@@ -241,7 +242,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (questions.Count != approveDTO.Questions.Count) {
 				var invalidIds = approveDTO.Questions
 					.Except(questions.Select(x => x.Id));
-				return BadRequest("Questions not found: " + ValueHelpers.PrintEnumerable(invalidIds));
+				return BadRequest("Questions not found: " + invalidIds.ToStringEx());
 			}
 
 			var time = DateTime.Now;
@@ -274,7 +275,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (questions.Count != approveDTO.Questions.Count) {
 				var invalidIds = approveDTO.Questions
 					.Except(questions.Select(x => x.Id));
-				return BadRequest("Questions not found: " + ValueHelpers.PrintEnumerable(invalidIds));
+				return BadRequest("Questions not found: " + invalidIds.ToStringEx());
 			}
 
 			{
@@ -283,7 +284,7 @@ namespace DocumentsQA_Backend.Controllers {
 					.Select(x => x.Id)
 					.ToList();
 				if (unanswered.Count > 0) {
-					return BadRequest("Unanswered questions: " + ValueHelpers.PrintEnumerable(unanswered));
+					return BadRequest("Unanswered questions: " + unanswered.ToStringEx());
 				}
 			}
 
@@ -368,7 +369,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 				if (mapAccounts!.Count != dtos.Count) {
 					var invalidAccounts = accountIds.Except(mapAccounts.Keys);
-					return BadRequest("Account not found: " + ValueHelpers.PrintEnumerable(invalidAccounts));
+					return BadRequest("Account not found: " + invalidAccounts.ToStringEx());
 				}
 			}
 
@@ -424,7 +425,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 				if (mapQuestions!.Count != dtos.Count) {
 					var invalidIds = ids.Except(mapQuestions.Keys);
-					return BadRequest("Question not found: " + ValueHelpers.PrintEnumerable(invalidIds));
+					return BadRequest("Question not found: " + invalidIds.ToStringEx());
 				}
 			}
 
@@ -470,7 +471,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 				if (mapQuestions!.Count != dtos.Count) {
 					var invalidIds = ids.Except(mapQuestions.Keys);
-					return BadRequest("Question not found: " + ValueHelpers.PrintEnumerable(invalidIds));
+					return BadRequest("Question not found: " + invalidIds.ToStringEx());
 				}
 			}
 

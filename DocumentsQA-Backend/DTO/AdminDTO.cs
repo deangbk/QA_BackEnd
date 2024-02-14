@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
+
+using Newtonsoft.Json;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
 
 namespace DocumentsQA_Backend.DTO {
 	public class CreateProjectDTO {
@@ -15,7 +17,7 @@ namespace DocumentsQA_Backend.DTO {
 
 		public DateTime DateEnd { get; set; }
 
-		[JsonPropertyName("tranches")]
+		[JsonProperty("tranches")]
 		public string InitialTranches { get; set; } = null!;
 	}
 }

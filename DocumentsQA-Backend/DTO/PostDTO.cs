@@ -1,22 +1,25 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
+using Newtonsoft.Json;
 
 using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend.DTO {
 	public class PaginateDTO {
-		[JsonPropertyName("per.page")]
+		[JsonProperty("per.page")]
+		[Required]
 		public int CountPerPage { get; set; } = 16;
 
-		[JsonPropertyName("page")]
+		[JsonProperty("page")]
+		[Required]
 		public int Page { get; set; }
 	}
 
 	public class PostGetFilterDTO {
-		[JsonPropertyName("search")]
+		[JsonProperty("search")]
 		public string? SearchTerm { get; set; }
 
 		public string? Tranche { get; set; }
@@ -25,15 +28,15 @@ namespace DocumentsQA_Backend.DTO {
 
 		public int? TicketID { get; set; }
 
-		[JsonPropertyName("post.by")]
+		[JsonProperty("post.by")]
 		public int? PosterID { get; set; }
 
-		[JsonPropertyName("date.from")]
+		[JsonProperty("date.from")]
 		public DateTime? PostedFrom { get; set; }
-		[JsonPropertyName("date.to")]
+		[JsonProperty("date.to")]
 		public DateTime? PostedTo { get; set; }
 
-		[JsonPropertyName("has.answer")]
+		[JsonProperty("has.answer")]
 		public bool? OnlyAnswered { get; set; }
 
 		/// <summary>
@@ -58,8 +61,9 @@ namespace DocumentsQA_Backend.DTO {
 	}
 
 	public class PostCreateDTO {
-		[JsonPropertyName("account")]
+		[JsonProperty("account")]
 		public int? AccountId { get; set; }
+
 		public string Text { get; set; } = null!;
 		public string? Category { get; set; }
 	}
@@ -73,18 +77,24 @@ namespace DocumentsQA_Backend.DTO {
 	}
 
 	public class PostSetApproveDTO {
+		[Required]
 		public bool Approve { get; set; }
+
 		public List<int> Questions { get; set; } = new();
 	}
 
 	public class PostEditMultipleDTO {
+		[Required]
 		public int Id { get; set; }
+
 		public string Text { get; set; } = null!;
 		public string? Category { get; set; }
 	}
 
 	public class PostSetAnswerMultipleDTO {
+		[Required]
 		public int Id { get; set; }
+
 		public string Answer { get; set; } = null!;
 	}
 
@@ -95,7 +105,7 @@ namespace DocumentsQA_Backend.DTO {
 	// -----------------------------------------------------
 
 	public class Unauth_PostCreateDTO : PostCreateDTO {
-		[JsonPropertyName("user.id")]
+		[Required]
 		public int ProjectID { get; set; }
 
 		public string Email { get; set; } = null!;

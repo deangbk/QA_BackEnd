@@ -119,4 +119,27 @@ namespace DocumentsQA_Backend.Services {
 			return AllowManageProject(tranche.Project);
 		}
 	}
+
+	public class AccessAllowAll : IAccessService {
+		public int GetUserID() => -1;
+		public bool UserHasRole(AppRole role) => true;
+
+		public bool IsValidUser() => true;
+		public bool IsNormalUser() => true;
+		public bool IsSuperUser() => true;
+		public bool IsAdmin() => true;
+
+		public bool AllowToProject(Project project) => true;
+		public bool AllowToTranche(Tranche tranche) => true;
+		public bool AllowManageProject(Project project) => true;
+		public bool AllowManageTranche(Tranche tranche) => true;
+	}
+
+	public class AuthorizationAllowAnonymous : IAuthorizationHandler {
+		public Task HandleAsync(AuthorizationHandlerContext context) {
+			foreach (var requirement in context.PendingRequirements.ToList())
+				context.Succeed(requirement);
+			return Task.CompletedTask;
+		}
+	}
 }

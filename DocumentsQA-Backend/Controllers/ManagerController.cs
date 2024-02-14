@@ -17,6 +17,7 @@ using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Helpers;
+using DocumentsQA_Backend.Extensions;
 
 namespace DocumentsQA_Backend.Controllers {
 	[Route("api/manage")]
