@@ -49,8 +49,9 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
+		/*
 		[HttpPost("create")]
-		public async Task<IActionResult> CreateUser([FromBody] UserCredentials uc) {
+		public async Task<IActionResult> CreateUser([FromBody] UserCreateDTO uc) {
 			var user = new AppUser() {
 				UserName = uc.Email,
 				Email = uc.Email,
@@ -69,21 +70,22 @@ namespace DocumentsQA_Backend.Controllers {
 				// Set user role
 				await AppRole.AddRoleToUser(_userManager, user, AppRole.User);
 
-				var token = await _CreateUserToken(uc);
+				var token = await _CreateUserToken(uc.Email);
 				return Ok(token);
 			}
 			else {
 				return BadRequest(result.Errors);
 			}
 		}
+		*/
 
-		private async Task<AuthResponse> _CreateUserToken(UserCredentials uc) {
+		private async Task<AuthResponse> _CreateUserToken(string email) {
 			var claims = new List<Claim> {
 				//new Claim("email", uc.Email),
 			};
 
 			{
-				var user = await _userManager.FindByEmailAsync(uc.Email);
+				var user = await _userManager.FindByEmailAsync(email);
 				if (user != null) {
 					claims.Add(new Claim("id", user.Id.ToString()));
 					claims.Add(new Claim("name", user.DisplayName));
@@ -113,14 +115,14 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPost("login")]
-		public async Task<IActionResult> LogIn([FromBody] UserCredentials uc) {
+		public async Task<IActionResult> Login([FromBody] LoginDTO uc) {
 			// _signinManager.SignInAsync creates a cookie under the hood so don't use that
 			var user = await _userManager.FindByNameAsync(uc.Email);
 			if (user != null) {
 				var result = await _signinManager.CheckPasswordSignInAsync(user, uc.Password, false);
 
 				if (result.Succeeded) {
-					var token = await _CreateUserToken(uc);
+					var token = await _CreateUserToken(uc.Email);
 					return Ok(token);
 				}
 				else if (result.IsLockedOut) {

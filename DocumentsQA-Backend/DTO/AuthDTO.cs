@@ -1,5 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations;
+
+using Microsoft.EntityFrameworkCore;
 
 namespace DocumentsQA_Backend.DTO {
 	public class AuthResponse {
@@ -7,15 +10,21 @@ namespace DocumentsQA_Backend.DTO {
 		public DateTime Expiration { get; set; }
 	}
 
-	public class UserCredentials {
-		[Required]
+	/*
+	public class UserCreateDTO {
 		[EmailAddress]
-		public string Email { get; set; } = string.Empty;
+		public string Email { get; set; } = null!;
 
-		[Required]
-		public string Password { get; set; } = string.Empty;
+		public string Password { get; set; } = null!;
 
-		public string DisplayName { get; set; } = string.Empty;
-		public string Company { get; set; } = string.Empty;
+		public string DisplayName { get; set; } = null!;
+		public string Company { get; set; } = null!;
+	}
+	*/
+
+	public class LoginDTO {
+		public string Email { get; set; } = null!;
+
+		public string Password { get; set; } = null!;
 	}
 }

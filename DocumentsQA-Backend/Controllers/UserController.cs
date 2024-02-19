@@ -40,13 +40,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		[HttpPost("logout")]
-		public async Task<IActionResult> LogOut() {
-			await _signinManager.SignOutAsync();
-
-			_logger.LogInformation("User Logout");
-
-			return Ok();
-		}
+		
 	}
 }
