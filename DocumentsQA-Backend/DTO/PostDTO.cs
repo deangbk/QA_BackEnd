@@ -10,7 +10,7 @@ namespace DocumentsQA_Backend.DTO {
 	// Required properties must be nullable otherwise they'll be default-initialized if missing when used with FromBody
 
 	public class PaginateDTO {
-		[JsonPropertyName("per.page")]
+		[JsonPropertyName("per_page")]
 		[Required] public int? CountPerPage { get; set; } = 16;
 
 		[JsonPropertyName("page")]
@@ -25,17 +25,18 @@ namespace DocumentsQA_Backend.DTO {
 
 		public int? Account { get; set; }
 
+		[JsonPropertyName("id")]
 		public int? TicketID { get; set; }
 
-		[JsonPropertyName("post.by")]
+		[JsonPropertyName("post_by")]
 		public int? PosterID { get; set; }
 
-		[JsonPropertyName("date.from")]
+		[JsonPropertyName("date_from")]
 		public DateTime? PostedFrom { get; set; }
-		[JsonPropertyName("date.to")]
+		[JsonPropertyName("date_to")]
 		public DateTime? PostedTo { get; set; }
 
-		[JsonPropertyName("has.answer")]
+		[JsonPropertyName("has_answer")]
 		public bool? OnlyAnswered { get; set; }
 
 		/// <summary>
