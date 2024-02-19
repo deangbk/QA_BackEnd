@@ -11,9 +11,11 @@ namespace DocumentsQA_Backend.DTO {
 
 	public class PaginateDTO {
 		[JsonPropertyName("per_page")]
-		[Required] public int? CountPerPage { get; set; } = 16;
+		[Range(1, int.MaxValue)]
+		public int CountPerPage { get; set; } = 16;
 
 		[JsonPropertyName("page")]
+		[Range(0, int.MaxValue)]
 		[Required] public int? Page { get; set; }
 	}
 
@@ -58,6 +60,10 @@ namespace DocumentsQA_Backend.DTO {
 		public string? Type { get; set; }
 
 		public string? Category { get; set; }
+	}
+	public class PostGetFilterAndPaginateDTO {
+		public PostGetFilterDTO Filter { get; set; } = null!;
+		public PaginateDTO? Paginate { get; set; }
 	}
 
 	public class PostCreateDTO {

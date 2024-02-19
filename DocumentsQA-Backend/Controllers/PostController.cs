@@ -35,30 +35,34 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.IsValidUser())
 				throw new AccessUnauthorizedException();
+
+			//if (!ModelState.IsValid)
+			//	throw new InvalidModelStateException(ModelState);
 		}
 
-        // -----------------------------------------------------
+		// -----------------------------------------------------
 
-        /// <summary>
-        /// Gets project questions as paginated list
-        /// <para>Valid filters for filterDTO:</para>
-        /// <list type="bullet">
-        ///		<item>TicketID</item>
-        ///		<item>PosterID</item>
-        ///		<item>Tranche</item>
-        ///		<item>Account</item>
-        ///		<item>PostedFrom</item>
-        ///		<item>PostedTo</item>
-        ///		<item>OnlyAnswered</item>
-        ///		<item>SearchTerm</item>
-        ///		set ReqBodyPaginate.page to -1 for no pagination
-		///		In the ReqBodyGetPosts body, set "type" to either "general" or "account"
-        /// </list>
-        /// <para>Will only return approved questions.</para>
-        /// </summary>
-        [HttpPost("page/{pid}")]
-		public async Task<IActionResult> GetPosts(int pid, [FromBody] PostGetFilterDTO filterDTO,
-			[FromBody] PaginateDTO pageDTO, [FromQuery] int details = 0) {
+		/// <summary>
+		/// Gets project questions as paginated list
+		/// <para>Valid filters for filterDTO:</para>
+		/// <list type="bullet">
+		///		<item>TicketID</item>
+		///		<item>PosterID</item>
+		///		<item>Tranche</item>
+		///		<item>Account</item>
+		///		<item>PostedFrom</item>
+		///		<item>PostedTo</item>
+		///		<item>OnlyAnswered</item>
+		///		<item>SearchTerm</item>
+		/// </list>
+		/// <para>Will only return approved questions.</para>
+		/// </summary>
+		[HttpPost("page/{pid}")]
+		public async Task<IActionResult> GetPosts(int pid, [FromBody] PostGetFilterAndPaginateDTO dto,
+			[FromQuery] int details = 0) {
+
+			var filterDTO = dto.Filter;
+			var pageDTO = dto.Paginate;
 
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -85,17 +89,15 @@ namespace DocumentsQA_Backend.Controllers {
 			int countTotal = listPosts.Count;
 
 			// Paginate result; but return everything if Page is less than 0
-			{
-				int countPerPage = pageDTO.CountPerPage!.Value;
+			if (pageDTO != null) {
+				int countPerPage = pageDTO.CountPerPage;
 
-				if (pageDTO.Page >= 0 && pageDTO.CountPerPage >= 1) {
-					int maxPages = (int)Math.Ceiling(countTotal / (double)countPerPage);
+				int maxPages = (int)Math.Ceiling(countTotal / (double)countPerPage);
 
-					listPosts = listPosts
-						.Skip(pageDTO.Page!.Value * countPerPage)
-						.Take(countPerPage)
-						.ToList();
-				}
+				listPosts = listPosts
+					.Skip(pageDTO.Page!.Value * countPerPage)
+					.Take(countPerPage)
+					.ToList();
 			}
 
 			var listPostTables = listPosts.Select(x => x.ToJsonTable(details));
