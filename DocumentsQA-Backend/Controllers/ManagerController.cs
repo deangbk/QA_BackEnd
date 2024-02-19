@@ -348,8 +348,8 @@ namespace DocumentsQA_Backend.Controllers {
 		///		<item>SearchTerm</item>
 		/// </list>
 		/// </summary>
-		[HttpGet("post/{pid}")]
-		public async Task<IActionResult> GetPosts(int pid, [FromQuery] PostGetFilterDTO filterDTO, [FromQuery] int details = 0) {
+		[HttpPost("post/{pid}")]
+		public async Task<IActionResult> GetPosts(int pid, [FromBody] PostGetFilterDTO filterDTO, [FromQuery] int details = 0) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");

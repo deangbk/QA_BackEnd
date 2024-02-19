@@ -54,9 +54,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </list>
 		/// <para>Will only return approved questions.</para>
 		/// </summary>
-		[HttpGet("page/{pid}")]
-		public async Task<IActionResult> GetPosts(int pid, [FromQuery] PostGetFilterDTO filterDTO,
-			[FromQuery] PaginateDTO pageDTO, [FromQuery] int details = 0) {
+		[HttpPost("page/{pid}")]
+		public async Task<IActionResult> GetPosts(int pid, [FromBody] PostGetFilterDTO filterDTO,
+			[FromBody] PaginateDTO pageDTO, [FromQuery] int details = 0) {
 
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
