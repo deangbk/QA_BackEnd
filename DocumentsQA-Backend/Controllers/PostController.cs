@@ -37,24 +37,26 @@ namespace DocumentsQA_Backend.Controllers {
 				throw new AccessUnauthorizedException();
 		}
 
-		// -----------------------------------------------------
+        // -----------------------------------------------------
 
-		/// <summary>
-		/// Gets project questions as paginated list
-		/// <para>Valid filters for filterDTO:</para>
-		/// <list type="bullet">
-		///		<item>TicketID</item>
-		///		<item>PosterID</item>
-		///		<item>Tranche</item>
-		///		<item>Account</item>
-		///		<item>PostedFrom</item>
-		///		<item>PostedTo</item>
-		///		<item>OnlyAnswered</item>
-		///		<item>SearchTerm</item>
-		/// </list>
-		/// <para>Will only return approved questions.</para>
-		/// </summary>
-		[HttpPost("page/{pid}")]
+        /// <summary>
+        /// Gets project questions as paginated list
+        /// <para>Valid filters for filterDTO:</para>
+        /// <list type="bullet">
+        ///		<item>TicketID</item>
+        ///		<item>PosterID</item>
+        ///		<item>Tranche</item>
+        ///		<item>Account</item>
+        ///		<item>PostedFrom</item>
+        ///		<item>PostedTo</item>
+        ///		<item>OnlyAnswered</item>
+        ///		<item>SearchTerm</item>
+        ///		set ReqBodyPaginate.page to -1 for no pagination
+		///		In the ReqBodyGetPosts body, set "type" to either "general" or "account"
+        /// </list>
+        /// <para>Will only return approved questions.</para>
+        /// </summary>
+        [HttpPost("page/{pid}")]
 		public async Task<IActionResult> GetPosts(int pid, [FromBody] PostGetFilterDTO filterDTO,
 			[FromBody] PaginateDTO pageDTO, [FromQuery] int details = 0) {
 
