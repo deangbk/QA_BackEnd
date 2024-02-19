@@ -9,13 +9,12 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 
-using DocumentsQA_Backend.Data;
-using DocumentsQA_Backend.DTO;
-using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Services;
+using DocumentsQA_Backend.Data;
+using DocumentsQA_Backend.Models;
+using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Extensions;
 
@@ -48,7 +47,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Grants tranche read access for a user to a project
 		/// <para>To grant management rights, see <see cref="AdminController.GrantProjectManagement"/></para>
 		/// </summary>
-		[HttpPut("grant_access/{tid}/{uid}")]
+		[HttpPut("grant/access/{tid}/{uid}")]
 		public async Task<IActionResult> GrantTrancheAccess(int tid, int uid) {
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
 			if (tranche == null)
@@ -82,7 +81,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </code>
 		/// </example>
 		/// </summary>
-		[HttpPut("grant_access_withfile/{tid}")]
+		[HttpPut("grant/access/file/{tid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]  // 4MB
 		public async Task<IActionResult> GrantTrancheAccessFromFile(int tid, [FromForm] IFormFile file) {
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
@@ -114,7 +113,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Removes user tranche read access
 		/// <para>To remove management rights, see <see cref="AdminController.RemoveProjectManagement"/></para>
 		/// </summary>
-		[HttpDelete("remove_access/{tid}/{uid}")]
+		[HttpDelete("ungrant/access/{tid}/{uid}")]
 		public async Task<IActionResult> RemoveTrancheAccess(int tid, int uid) {
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
 			if (tranche == null)
@@ -134,7 +133,7 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(rows);
 		}
 		/*
-		[HttpDelete("remove_access_withfile/{tid}")]
+		[HttpDelete("ungrant/access/file/{tid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]  // 4MB
 		public async Task<IActionResult> RemoveTrancheAccessFromFile(int tid, [FromForm] IFormFile file) {
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
@@ -192,7 +191,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </code>
 		/// </example>
 		/// </summary>
-		[HttpPost("add_project_users/{pid}")]
+		[HttpPost("bulk/create_user/{pid}")]
 		[RequestSizeLimit(bytes: 16 * 1024 * 1024)]  // 16MB
 		public async Task<IActionResult> AddUsersFromFile(int pid, [FromForm] IFormFile file) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
@@ -349,7 +348,7 @@ namespace DocumentsQA_Backend.Controllers {
 		///		<item>SearchTerm</item>
 		/// </list>
 		/// </summary>
-		[HttpGet("get_posts/{pid}")]
+		[HttpGet("post/{pid}")]
 		public async Task<IActionResult> GetPosts(int pid, [FromQuery] PostGetFilterDTO filterDTO, [FromQuery] int details = 0) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)

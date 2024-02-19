@@ -7,14 +7,14 @@ using System.Text;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 
-using DocumentsQA_Backend.Data;
-using DocumentsQA_Backend.DTO;
-using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Services;
+using DocumentsQA_Backend.Data;
+using DocumentsQA_Backend.Models;
+using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
+using DocumentsQA_Backend.Extensions;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
@@ -44,7 +44,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Gets project information
 		/// </summary>
-		[HttpGet("get/{pid}")]
+		[HttpGet("info/{pid}")]
 		public async Task<IActionResult> GetProjectInfo(int pid) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -102,9 +102,7 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(listManagerIds);
 		}
 
-		// -----------------------------------------------------
-
-		[HttpGet("count_content/{pid}")]
+		[HttpGet("content/{pid}")]
 		public async Task<IActionResult> CountContent(int pid) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -131,75 +129,44 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		/// <summary>
-		/// Gets project nodes, ordered by number
-		/// </summary>
-		[HttpGet("get_notes/{pid}")]
-		public async Task<IActionResult> GetComments(int pid) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-			if (!_access.AllowToProject(project))
-				return Unauthorized();
-
-			var listNotesTables = project.Notes
-				.OrderBy(x => x.Num)
-				.Select(x => x.ToJsonTable(0));
-
-			return Ok(listNotesTables);
-		}
-
-		/// <summary>
-		/// Adds a project note
-		/// </summary>
-		[HttpPost("add_note/{pid}")]
-		public async Task<IActionResult> AddNote(int pid, [FromBody] AddNoteDTO dto) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-			if (!_access.AllowManageProject(project))
-				return Unauthorized();
-
-			var note = new Note {
-				ProjectId = pid,
-				PostedById = _access.GetUserID(),
-
-				Text = dto.Text,
-				Description = dto.Description ?? "",
-				Category = dto.Category ?? "general",
-				Sticky = dto.Sticky ?? false,
-
-				DatePosted = DateTime.Now,
+		[HttpPost("create")]
+		public async Task<IActionResult> CreateProject([FromBody] CreateProjectDTO dto) {
+			Project project = new Project {
+				Name = dto.Name,
+				DisplayName = dto.Name,
+				CompanyName = dto.Company,
+				ProjectStartDate = dto.DateStart!.Value,
+				ProjectEndDate = dto.DateEnd!.Value,
+				LastEmailSentDate = DateTime.MinValue,
 			};
 
-			var maxCommentNo = PostHelpers.GetHighestNoteNo(project);
-			note.Num = maxCommentNo + 1;
+			List<string> tranches;
+			try {
+				tranches = dto.InitialTranches
+					.Split(",")
+					.Select(x => x.Trim().Truncate(16))
+					.Where(x => x.Length > 0)
+					.ToList();
+			}
+			catch (Exception) {
+				return BadRequest("Tranches: incorrect input format");
+			}
 
-			project.Notes.Add(note);
-			await _dataContext.SaveChangesAsync();
+			// Wrap all operations in a transaction so failure would revert the entire thing
+			using (var transaction = _dataContext.Database.BeginTransaction()) {
+				_dataContext.Projects.Add(project);
+				await _dataContext.SaveChangesAsync();
 
-			return Ok(note.Id);
-		}
+				project.Tranches = tranches.Select(x => new Tranche {
+					ProjectId = project.Id,
+					Name = x,
+				}).ToList();
+				await _dataContext.SaveChangesAsync();
 
-		/// <summary>
-		/// Removes a project note
-		/// </summary>
-		[HttpDelete("delete_note/{pid}")]
-		public async Task<IActionResult> DeleteNote(int pid, [FromQuery] int num) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				await transaction.CommitAsync();
+			}
 
-			Note? note = project.Notes.Find(x => x.Num == num);
-			if (note == null)
-				return BadRequest("Note not found");
-
-			project.Notes.Remove(note);
-			await _dataContext.SaveChangesAsync();
-
-			return Ok(project.Notes.Count);
+			return Ok(project.Id);
 		}
 	}
 }

@@ -54,7 +54,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </list>
 		/// <para>Will only return approved questions.</para>
 		/// </summary>
-		[HttpGet("get_posts/{pid}")]
+		[HttpGet("page/{pid}")]
 		public async Task<IActionResult> GetPosts(int pid, [FromQuery] PostGetFilterDTO filterDTO,
 			[FromQuery] PaginateDTO pageDTO, [FromQuery] int details = 0) {
 
@@ -109,7 +109,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Posts a general question
 		/// </summary>
-		[HttpPost("post_question_g/{pid}")]
+		[HttpPost("general/{pid}")]
 		public async Task<IActionResult> PostGeneralQuestion(int pid, [FromBody] PostCreateDTO createDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -136,7 +136,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Posts an account question
 		/// </summary>
-		[HttpPost("post_question_a/{pid}")]
+		[HttpPost("account/{pid}")]
 		public async Task<IActionResult> PostAccountQuestion(int pid, [FromBody] PostCreateDTO createDTO) {
 			if (createDTO.AccountId == null) {
 				ModelState.AddModelError("AccountId", "AccountId cannot be null");
@@ -177,7 +177,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Adds an answer to the question
 		/// </summary>
-		[HttpPut("set_answer/{id}")]
+		[HttpPut("answer/{id}")]
 		public async Task<IActionResult> SetAnswer(int id, [FromBody] PostSetAnswerDTO answerDTO) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
@@ -227,7 +227,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Sets the approval status of questions
 		/// </summary>
-		[HttpPut("set_approval_q/{pid}")]
+		[HttpPut("approve/q/{pid}")]
 		public async Task<IActionResult> SetPostsApprovalQ(int pid, [FromBody] PostSetApproveDTO approveDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -260,7 +260,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Sets the approval status of answers to questions
 		/// </summary>
-		[HttpPut("set_approval_a/{pid}")]
+		[HttpPut("approve/a/{pid}")]
 		public async Task<IActionResult> SetPostsApprovalA(int pid, [FromBody] PostSetApproveDTO approveDTO) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -305,7 +305,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Posts general questions in bulk
 		/// </summary>
-		[HttpPost("post_question_g_multiple/{pid}")]
+		[HttpPost("bulk/general/{pid}")]
 		public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -342,7 +342,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Posts account questions in bulk
 		/// </summary>
-		[HttpPost("post_question_a_multiple/{pid}")]
+		[HttpPost("bulk/account/{pid}")]
 		public async Task<IActionResult> PostAccountQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos) {
 			if (dtos.Any(x => x.AccountId == null)) {
 				ModelState.AddModelError("AccountId", "AccountId cannot be null");
@@ -403,7 +403,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Edit questions in bulk
 		/// </summary>
-		[HttpPost("edit_question_multiple/{pid}")]
+		[HttpPut("bulk/edit/{pid}")]
 		public async Task<IActionResult> EditQuestionMultiple(int pid, [FromBody] List<PostEditMultipleDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -445,7 +445,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Adds answers to questions in bulk
 		/// </summary>
-		[HttpPut("set_answer_multiple/{pid}")]
+		[HttpPut("bulk/answer/{pid}")]
 		public async Task<IActionResult> SetAnswerMultiple(int pid, [FromBody] List<PostSetAnswerMultipleDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -493,79 +493,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
-		}
-
-		// -----------------------------------------------------
-
-		/// <summary>
-		/// Get question comments, ordered by number
-		/// </summary>
-		[HttpGet("get_comments/{id}")]
-		public async Task<IActionResult> GetComments(int id) {
-			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
-			if (question == null)
-				return BadRequest("Question not found");
-
-			if (!PostHelpers.AllowUserReadPost(_access, question))
-				return Unauthorized();
-
-			var listCommentTables = question.Comments
-				.OrderBy(x => x.CommentNum)
-				.Select(x => x.ToJsonTable(1));
-
-			return Ok(listCommentTables);
-		}
-
-		/// <summary>
-		/// Add comment to question
-		/// </summary>
-		[HttpPost("add_comment/{id}")]
-		public async Task<IActionResult> AddComment(int id, [FromBody] PostAddCommentDTO dto) {
-			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
-			if (question == null)
-				return BadRequest("Question not found");
-
-			if (!PostHelpers.AllowUserReadPost(_access, question))
-				return Unauthorized();
-
-			var comment = new Comment {
-				CommentText = dto.Text,
-				DatePosted = DateTime.Now,
-
-				QuestionId = id,
-				PostedById = _access.GetUserID(),
-			};
-
-			var maxCommentNo = PostHelpers.GetHighestCommentNo(question);
-			comment.CommentNum = maxCommentNo + 1;
-
-			question.Comments.Add(comment);
-			await _dataContext.SaveChangesAsync();
-
-			return Ok(comment.Id);
-		}
-
-		/// <summary>
-		/// Remove comment question
-		/// </summary>
-		[HttpDelete("delete_comment/{id}")]
-		public async Task<IActionResult> DeleteComment(int id, [FromQuery] int num) {
-			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
-			if (question == null)
-				return BadRequest("Question not found");
-
-			// Only staff can do this
-			if (!_access.AllowManageProject(question.Project))
-				return Unauthorized();
-
-			Comment? comment = question.Comments.Find(x => x.CommentNum == num);
-			if (comment == null)
-				return BadRequest("Comment not found");
-
-			question.Comments.Remove(comment);
-			await _dataContext.SaveChangesAsync();
-
-			return Ok(question.Comments.Count);
 		}
 	}
 }

@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using System.IO;
-using System.Text;
 using System.Security.Claims;
 
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Services;
@@ -20,8 +16,6 @@ using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Extensions;
 
 namespace DocumentsQA_Backend.Controllers {
-	using JsonTable = Dictionary<string, object>;
-
 	[Route("api/admin")]
 	[ApiController]
 	[Authorize]
@@ -34,7 +28,7 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly UserManager<AppUser> _userManager;
 		private readonly RoleManager<AppRole> _roleManager;
 
-		public AdminController(DataContext dataContext, ILogger<PostController> logger, IAccessService access, 
+		public AdminController(DataContext dataContext, ILogger<PostController> logger, IAccessService access,
 			UserManager<AppUser> userManager, RoleManager<AppRole> roleManager) {
 
 			_dataContext = dataContext;
@@ -93,9 +87,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Grants a role to a user
 		/// </summary>
-		[HttpPut("grant_role/{uid}/{role}")]
+		[HttpPut("grant/role/{uid}/{role}")]
 		public async Task<IActionResult> GrantUserRole(int uid, string role) {
-			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());	// Horrific
+			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());   // Horrific
 			if (user == null)
 				return BadRequest("User not found");
 
@@ -118,9 +112,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Removes a role from a user
 		/// </summary>
-		[HttpDelete("remove_role/{uid}/{role}")]
+		[HttpDelete("ungrant/role/{uid}/{role}")]
 		public async Task<IActionResult> RemoveUserRole(int uid, string role) {
-			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());	// Horrific
+			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());   // Horrific
 			if (user == null)
 				return BadRequest("User not found");
 
@@ -137,48 +131,6 @@ namespace DocumentsQA_Backend.Controllers {
 			await _userManager.RemoveFromRoleAsync(user, role);
 
 			return Ok();
-		}
-
-		// -----------------------------------------------------
-
-		[HttpPost("create_project")]
-		public async Task<IActionResult> CreateProject([FromBody] CreateProjectDTO dto) {
-			Project project = new Project {
-				Name = dto.Name,
-				DisplayName = dto.Name,
-				CompanyName = dto.Company,
-				ProjectStartDate = dto.DateStart!.Value,
-				ProjectEndDate = dto.DateEnd!.Value,
-				LastEmailSentDate = DateTime.MinValue,
-			};
-
-			List<string> tranches;
-			try {
-				tranches = dto.InitialTranches
-					.Split(",")
-					.Select(x => x.Trim().Truncate(16))
-					.Where(x => x.Length > 0)
-					.ToList();
-			}
-			catch (Exception) {
-				return BadRequest("Tranches: incorrect input format");
-			}
-
-			// Wrap all operations in a transaction so failure would revert the entire thing
-			using (var transaction = _dataContext.Database.BeginTransaction()) {
-				_dataContext.Projects.Add(project);
-				await _dataContext.SaveChangesAsync();
-
-				project.Tranches = tranches.Select(x => new Tranche {
-					ProjectId = project.Id,
-					Name = x,
-				}).ToList();
-				await _dataContext.SaveChangesAsync();
-
-				await transaction.CommitAsync();
-			}
-
-			return Ok(project.Id);
 		}
 
 		// -----------------------------------------------------
@@ -201,13 +153,13 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <para>Also grants the manager role to the user if they're not already one</para>
 		/// <para>To grant simply read access, see <see cref="ManagerController.GrantTrancheAccess"/></para>
 		/// </summary>
-		[HttpPut("grant_manage/{pid}/{uid}")]
+		[HttpPut("grant/manage/{pid}/{uid}")]
 		public async Task<IActionResult> GrantProjectManagement(int pid, int uid) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
 
-			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());	// Horrific
+			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());   // Horrific
 			if (user == null)
 				return BadRequest("User not found");
 
@@ -244,8 +196,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </code>
 		/// </example>
 		/// </summary>
-		[HttpPut("grant_manage_withfile/{pid}")]
-		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]	// 4MB
+		[HttpPut("grant/manage/file/{pid}")]
+		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]  // 4MB
 		public async Task<IActionResult> GrantProjectManagementFromFile(int pid, [FromForm] IFormFile file) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -274,7 +226,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Make the users managers if they're not already one
 			foreach (var id in userIds) {
-				AppUser? user = await _userManager.FindByIdAsync(id.ToString());	// Horrific
+				AppUser? user = await _userManager.FindByIdAsync(id.ToString());    // Horrific
 				await _GrantUserRole(user, AppRole.Manager);
 			}
 
@@ -299,7 +251,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Removes project management rights from a user, also removes all tranche read access
 		/// <para>Does not remove the user's manager role</para>
 		/// </summary>
-		[HttpDelete("remove_manage/{pid}/{uid}")]
+		[HttpDelete("ungrant/manage/{pid}/{uid}")]
 		public async Task<IActionResult> RemoveProjectManagement(int pid, int uid) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -316,7 +268,7 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(rows);
 		}
 		/*
-		[HttpDelete("remove_manage_withfile/{pid}")]
+		[HttpDelete("ungrant/manage/file/{pid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]	// 4MB
 		public async Task<IActionResult> RemoveProjectManagementFromFile(int pid, [FromForm] IFormFile file) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);

@@ -14,6 +14,7 @@ using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Services;
+using DocumentsQA_Backend.Extensions;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
@@ -38,7 +39,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		[HttpDelete("get/{aid}")]
+		[HttpGet("{aid}")]
 		public async Task<IActionResult> GetAccount(int aid, [FromQuery] int details = 0) {
 			Account? account = await Queries.GetAccountFromId(_dataContext, aid);
 			if (account == null)
@@ -49,7 +50,7 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(account.ToJsonTable(details));
 		}
 
-		[HttpPost("create/{pid}")]
+		[HttpPost("{pid}")]
 		public async Task<IActionResult> CreateAccount(int pid, [FromBody] CreateAccountDTO dto) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
@@ -125,7 +126,7 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok();
 		}
 
-		[HttpDelete("delete/{aid}")]
+		[HttpDelete("{aid}")]
 		public async Task<IActionResult> DeleteAccount(int aid) {
 			Account? account = await Queries.GetAccountFromId(_dataContext, aid);
 			if (account == null)

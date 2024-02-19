@@ -11,11 +11,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
+using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Data;
+using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
-using DocumentsQA_Backend.Models;
-using DocumentsQA_Backend.Services;
+using DocumentsQA_Backend.Extensions;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
@@ -68,7 +69,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Gets document information
 		/// </summary>
-		[HttpGet("get_info/{id}")]
+		[HttpGet("info/{id}")]
 		public async Task<IActionResult> GetDocumentInfo(int id, [FromQuery] int details = 0) {
 			Document? document = await Queries.GetDocumentFromId(_dataContext, id);
 			if (document == null)
@@ -88,7 +89,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Gets document file stream, encrypted with a basic, non-cryptographically-secure method
 		/// </summary>
-		[HttpGet("get/{id}")]
+		[HttpGet("stream/{id}")]
 		public async Task<IActionResult> GetDocument(int id) {
 			Document? document = await Queries.GetDocumentFromId(_dataContext, id);
 			if (document == null)
@@ -140,7 +141,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Get all general documents in the project
 		/// <para>Ordered by upload date</para>
 		/// </summary>
-		[HttpGet("with_proj/{id}")]
+		[HttpGet("with/project/{id}")]
 		public async Task<IActionResult> GetDocument_General(int id, [FromQuery] int details = 0) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
@@ -162,7 +163,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Get all documents attached to the post
 		/// <para>Ordered by upload date</para>
 		/// </summary>
-		[HttpGet("with_post/{id}")]
+		[HttpGet("with/post/{id}")]
 		public async Task<IActionResult> GetDocument_Post(int id, [FromQuery] int details = 0) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
@@ -179,7 +180,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Get all documents related to the account
 		/// <para>Ordered by upload date</para>
 		/// </summary>
-		[HttpGet("with_acc/{id}")]
+		[HttpGet("with/account/{id}")]
 		public async Task<IActionResult> GetDocument_Account(int id, [FromQuery] int details = 0) {
 			Account? account = await Queries.GetAccountFromId(_dataContext, id);
 			if (account == null)
@@ -226,7 +227,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Uploads a general document, attached to a project
 		/// </summary>
-		[HttpPost("upload_proj/{id}")]
+		[HttpPost("upload/project/{id}")]
 		public async Task<IActionResult> UploadDocument_General(int id, [FromBody] DocumentUploadDTO upload) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
@@ -249,7 +250,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Uploads a document, attached to a specific question
 		/// </summary>
-		[HttpPost("upload_post/{id}")]
+		[HttpPost("upload/post/{id}")]
 		public async Task<IActionResult> UploadDocument_Post(int id, [FromBody] DocumentUploadDTO upload) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
@@ -275,7 +276,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Uploads a document, attached to a specific account
 		/// </summary>
-		[HttpPost("upload_acc/{id}")]
+		[HttpPost("upload/account/{id}")]
 		public async Task<IActionResult> UploadDocument_Account(int id, [FromBody] DocumentUploadDTO upload) {
 			Account? account = await Queries.GetAccountFromId(_dataContext, id);
 			if (account == null)
