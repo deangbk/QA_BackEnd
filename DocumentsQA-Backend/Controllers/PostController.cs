@@ -84,13 +84,13 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Paginate result; but return everything if Page is less than 0
 			{
-				int countPerPage = pageDTO.CountPerPage;
+				int countPerPage = pageDTO.CountPerPage!.Value;
 
 				if (pageDTO.Page >= 0 && pageDTO.CountPerPage >= 1) {
 					int maxPages = (int)Math.Ceiling(countTotal / (double)countPerPage);
 
 					listPosts = listPosts
-						.Skip(pageDTO.Page * countPerPage)
+						.Skip(pageDTO.Page!.Value * countPerPage)
 						.Take(countPerPage)
 						.ToList();
 				}
@@ -249,7 +249,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var userId = _access.GetUserID();
 
 			foreach (var i in questions) {
-				PostHelpers.ApproveQuestion(i, userId, approveDTO.Approve);
+				PostHelpers.ApproveQuestion(i, userId, approveDTO.Approve!.Value);
 				i.DateLastEdited = time;
 			}
 
@@ -292,7 +292,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var userId = _access.GetUserID();
 
 			foreach (var i in questions) {
-				PostHelpers.ApproveAnswer(i, userId, approveDTO.Approve);
+				PostHelpers.ApproveAnswer(i, userId, approveDTO.Approve!.Value);
 				i.DateLastEdited = time;
 			}
 
@@ -412,7 +412,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowToProject(project))
 				return Unauthorized();
 
-			var ids = dtos.Select(x => x.Id);
+			var ids = dtos.Select(x => x.Id!.Value);
 			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
 
 			{
@@ -432,7 +432,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var userId = _access.GetUserID();
 
 			foreach (var i in dtos) {
-				var question = mapQuestions[i.Id];
+				var question = mapQuestions[i.Id!.Value];
 				PostHelpers.EditQuestion(question,
 					i.Text, i.Category ?? question.Category,
 					userId);
@@ -455,7 +455,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Unauthorized();
 
-			var ids = dtos.Select(x => x.Id);
+			var ids = dtos.Select(x => x.Id!.Value);
 			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
 
 			{
@@ -479,7 +479,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var userId = _access.GetUserID();
 
 			foreach (var i in dtos) {
-				var question = mapQuestions[i.Id];
+				var question = mapQuestions[i.Id!.Value];
 
 				question.QuestionAnswer = i.Answer;
 				question.AnsweredById = userId;

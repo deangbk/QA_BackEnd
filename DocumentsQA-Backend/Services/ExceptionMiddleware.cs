@@ -1,13 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Runtime.Serialization;
 using System.Net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
-
-using Newtonsoft.Json;
 
 using DocumentsQA_Backend.Extensions;
 
@@ -80,7 +79,7 @@ namespace DocumentsQA_Backend.Services {
 					var resp = ece.GetFormattedResponse();
 					resp["status"] = (int)code;
 
-					await context.Response.WriteAsync(JsonConvert.SerializeObject(resp));
+					await context.Response.WriteAsync(JsonSerializer.Serialize(resp));
 				}
 				else {
 					await context.Response.WriteAsync(e.Message);

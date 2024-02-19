@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using System.ComponentModel.DataAnnotations;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-using Newtonsoft.Json;
 
 namespace DocumentsQA_Backend.DTO {
 	public class AddNoteDTO {

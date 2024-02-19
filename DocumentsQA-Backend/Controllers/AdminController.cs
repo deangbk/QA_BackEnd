@@ -147,8 +147,8 @@ namespace DocumentsQA_Backend.Controllers {
 				Name = dto.Name,
 				DisplayName = dto.Name,
 				CompanyName = dto.Company,
-				ProjectStartDate = dto.DateStart,
-				ProjectEndDate = dto.DateEnd,
+				ProjectStartDate = dto.DateStart!.Value,
+				ProjectEndDate = dto.DateEnd!.Value,
 				LastEmailSentDate = DateTime.MinValue,
 			};
 

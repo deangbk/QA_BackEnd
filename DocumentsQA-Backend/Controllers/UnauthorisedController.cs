@@ -63,7 +63,7 @@ namespace DocumentsQA_Backend.Controllers
 				// Collect and validate project IDs
 
 				var projectIds = dtos
-					.Select(x => x.ProjectID)
+					.Select(x => x.ProjectID!.Value)
 					.Distinct()
 					.ToList();
 
@@ -108,7 +108,7 @@ namespace DocumentsQA_Backend.Controllers
 				var user = mapUsers[i.Email];
 
                 var question = PostHelpers.CreateQuestion(
-                    QuestionType.General, i.ProjectID,
+                    QuestionType.General, i.ProjectID!.Value,
                     i.Text, i.Category ?? "general",
 					user.Id);
 

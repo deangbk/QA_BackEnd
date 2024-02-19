@@ -1,25 +1,24 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Text.Json.Serialization;
+using System.ComponentModel.DataAnnotations;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-using Newtonsoft.Json;
-
 using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend.DTO {
-	public class PaginateDTO {
-		[JsonProperty("per.page")]
-		[Required]
-		public int CountPerPage { get; set; } = 16;
+	// Required properties must be nullable otherwise they'll be default-initialized if missing when used with FromBody
 
-		[JsonProperty("page")]
-		[Required]
-		public int Page { get; set; }
+	public class PaginateDTO {
+		[JsonPropertyName("per.page")]
+		[Required] public int? CountPerPage { get; set; } = 16;
+
+		[JsonPropertyName("page")]
+		[Required] public int? Page { get; set; }
 	}
 
 	public class PostGetFilterDTO {
-		[JsonProperty("search")]
+		[JsonPropertyName("search")]
 		public string? SearchTerm { get; set; }
 
 		public string? Tranche { get; set; }
@@ -28,15 +27,15 @@ namespace DocumentsQA_Backend.DTO {
 
 		public int? TicketID { get; set; }
 
-		[JsonProperty("post.by")]
+		[JsonPropertyName("post.by")]
 		public int? PosterID { get; set; }
 
-		[JsonProperty("date.from")]
+		[JsonPropertyName("date.from")]
 		public DateTime? PostedFrom { get; set; }
-		[JsonProperty("date.to")]
+		[JsonPropertyName("date.to")]
 		public DateTime? PostedTo { get; set; }
 
-		[JsonProperty("has.answer")]
+		[JsonPropertyName("has.answer")]
 		public bool? OnlyAnswered { get; set; }
 
 		/// <summary>
@@ -61,7 +60,7 @@ namespace DocumentsQA_Backend.DTO {
 	}
 
 	public class PostCreateDTO {
-		[JsonProperty("account")]
+		[JsonPropertyName("account")]
 		public int? AccountId { get; set; }
 
 		public string Text { get; set; } = null!;
@@ -77,23 +76,20 @@ namespace DocumentsQA_Backend.DTO {
 	}
 
 	public class PostSetApproveDTO {
-		[Required]
-		public bool Approve { get; set; }
+		[Required] public bool? Approve { get; set; }
 
 		public List<int> Questions { get; set; } = new();
 	}
 
 	public class PostEditMultipleDTO {
-		[Required]
-		public int Id { get; set; }
+		[Required] public int? Id { get; set; }
 
 		public string Text { get; set; } = null!;
 		public string? Category { get; set; }
 	}
 
 	public class PostSetAnswerMultipleDTO {
-		[Required]
-		public int Id { get; set; }
+		[Required] public int? Id { get; set; }
 
 		public string Answer { get; set; } = null!;
 	}
@@ -105,8 +101,7 @@ namespace DocumentsQA_Backend.DTO {
 	// -----------------------------------------------------
 
 	public class Unauth_PostCreateDTO : PostCreateDTO {
-		[Required]
-		public int ProjectID { get; set; }
+		[Required] public int? ProjectID { get; set; }
 
 		public string Email { get; set; } = null!;
 	}

@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 
-using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
-
 using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Models;
@@ -39,10 +37,12 @@ namespace DocumentsQA_Backend {
 			services
 				.AddControllers(options => {
 					options.Filters.Add<ModelValidationActionFilter>();
-				})
+				});
+				/*
 				.AddNewtonsoftJson(options => {
 					options.SerializerSettings.ContractResolver = new RequiredPropertiesContractResolver();
 				});
+				*/
 
 			{
 				services.AddDbContext<DataContext>(options => {

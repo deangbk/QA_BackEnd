@@ -69,7 +69,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			Account account = new() {
 				TrancheId = tranche.Id,
-				AccountNo = dto.Number,
+				AccountNo = dto.Number!.Value,
 				AccountName = dto.Name,
 			};
 
