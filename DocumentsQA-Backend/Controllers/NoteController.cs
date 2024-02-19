@@ -45,7 +45,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Gets project nodes, ordered by number
 		/// </summary>
 		[HttpGet("{pid}")]
-		public async Task<IActionResult> GetComments(int pid) {
+		public async Task<IActionResult> GetNotes(int pid) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
