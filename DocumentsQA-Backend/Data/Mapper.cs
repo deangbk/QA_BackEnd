@@ -143,7 +143,7 @@ namespace DocumentsQA_Backend.Data {
 				table["description"] = obj.Description ?? "";
 				table["file_type"] = obj.FileType ?? "";
 
-				table["upload_by"] = obj.UploadedById;
+				table["upload_by"] = obj.UploadedBy.ToJsonTable(0);
 			}
 
 			return table;
