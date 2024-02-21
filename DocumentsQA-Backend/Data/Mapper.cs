@@ -67,6 +67,7 @@ namespace DocumentsQA_Backend.Data {
 
 		public static JsonTable ToJsonTable(this Question obj, int detail) {
 			var table = new JsonTable() {
+				["id"] = obj.Id,
 				["q_num"] = obj.QuestionNum,
 				["type"] = obj.Type,
 				["category"] = obj.Category,
