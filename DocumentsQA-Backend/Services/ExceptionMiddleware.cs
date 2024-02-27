@@ -18,15 +18,30 @@ namespace DocumentsQA_Backend.Services {
 	}
 
 	public class AccessUnauthorizedException : Exception, IControllerException {
-		public AccessUnauthorizedException() : base("Unauthorized") { }
+		public AccessUnauthorizedException() : base("Unauthorized access, please add a valid credentials token.") { }
 		public AccessUnauthorizedException(string message) : base(message) { }
 		public AccessUnauthorizedException(string message, Exception inner) 
 			: base(message, inner) { }
 
 		public JsonTable GetFormattedResponse() {
 			return new() {
-				["title"] = Message,
-				["errors"] = new List<string> { "Invalid credentials for action." },
+				["status"] = HttpStatusCode.Unauthorized,
+				["title"] = "Unauthorized",
+				["errors"] = new List<string> { Message },
+			};
+		}
+	}
+	public class AccessForbiddenException : Exception, IControllerException {
+		public AccessForbiddenException() : base("Insufficient credentials for action.") { }
+		public AccessForbiddenException(string message) : base(message) { }
+		public AccessForbiddenException(string message, Exception inner)
+			: base(message, inner) { }
+
+		public JsonTable GetFormattedResponse() {
+			return new() {
+				["status"] = HttpStatusCode.Forbidden,
+				["title"] = "Forbidden",
+				["errors"] = new List<string> { Message },
 			};
 		}
 	}
@@ -69,6 +84,8 @@ namespace DocumentsQA_Backend.Services {
 				HttpStatusCode code = HttpStatusCode.InternalServerError;
 				switch (e) {
 					case AccessUnauthorizedException _:
+						code = HttpStatusCode.Unauthorized;		break;
+					case AccessForbiddenException _:
 						code = HttpStatusCode.Forbidden;		break;
 					case InvalidModelStateException _:
 						code = HttpStatusCode.BadRequest;		break;
@@ -77,7 +94,7 @@ namespace DocumentsQA_Backend.Services {
 
 				if (e is IControllerException ece) {
 					var resp = ece.GetFormattedResponse();
-					resp["status"] = (int)code;
+					//resp["status"] = (int)code;
 
 					await context.Response.WriteAsync(JsonSerializer.Serialize(resp));
 				}
