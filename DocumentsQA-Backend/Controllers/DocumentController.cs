@@ -253,8 +253,12 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		private async Task<(bool, Document)> _DocumentFromUploadDTO(int projectId, DocumentUploadDTO upload) {
-			string fileName = $"{projectId}_{Path.GetFileName(upload.Url)}";
-			string fileExt = Path.GetExtension(fileName)[1..];		// substr to remove the dot
+			string fileName;
+			if (upload.Name == null)
+				fileName = Path.GetFileName(upload.Url);
+			else fileName = upload.Name;
+
+			string fileExt = Path.GetExtension(upload.Url)[1..];		// substr to remove the dot
 
 			int uploaderId = _access.GetUserID();
 
@@ -366,18 +370,27 @@ namespace DocumentsQA_Backend.Controllers {
 			if (document == null)
 				return BadRequest("Document not found");
 
+			// Only staff can do this
 			if (!_access.AllowManageProject(document.Project))
 				return Unauthorized();
 
+			if (dto.Name != null) {
+				var bNameAlreadyExists = await _dataContext.Documents
+					.Where(x => x.ProjectId == document.ProjectId)
+					.Where(x => x.FileName == dto.Name)
+					.AnyAsync();
+				if (bNameAlreadyExists)
+					return BadRequest($"File {dto.Name} already exists");
+
+				document.FileName = dto.Name;
+			}
 			if (dto.Description != null) {
 				document.Description = dto.Description;
 			}
 			if (dto.Url != null) {
-				string fileName = $"{document.ProjectId}_{Path.GetFileName(dto.Url)}";
-				string fileExt = Path.GetExtension(fileName)[1..];		// substr to remove the dot
+				string fileExt = Path.GetExtension(dto.Url)[1..];		// substr to remove the dot
 
 				document.FileUrl = dto.Url;
-				document.FileName = fileName;
 				document.FileType = fileExt;
 			}
 			if (dto.Hidden != null) {
