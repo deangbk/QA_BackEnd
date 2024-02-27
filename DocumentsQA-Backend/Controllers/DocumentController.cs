@@ -142,7 +142,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <para>Ordered by upload date</para>
 		/// </summary>
 		[HttpGet("with/project/{id}")]
-		public async Task<IActionResult> GetDocument_General(int id, [FromQuery] int details = 0) {
+		public async Task<IActionResult> GetDocuments_General(int id, [FromQuery] int details = 0) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -164,10 +164,12 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <para>Ordered by upload date</para>
 		/// </summary>
 		[HttpGet("with/post/{id}")]
-		public async Task<IActionResult> GetDocument_Post(int id, [FromQuery] int details = 0) {
+		public async Task<IActionResult> GetDocuments_Post(int id, [FromQuery] int details = 0) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
 				return BadRequest("Question not found");
+			if (!_access.AllowToProject(question.Project))
+				return Unauthorized();
 
 			var listDocuments = question.Attachments
 				.OrderBy(x => x.DateUploaded);
@@ -181,13 +183,57 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <para>Ordered by upload date</para>
 		/// </summary>
 		[HttpGet("with/account/{id}")]
-		public async Task<IActionResult> GetDocument_Account(int id, [FromQuery] int details = 0) {
+		public async Task<IActionResult> GetDocuments_Account(int id, [FromQuery] int details = 0) {
 			Account? account = await Queries.GetAccountFromId(_dataContext, id);
 			if (account == null)
 				return BadRequest("Account not found");
+			if (!_access.AllowToProject(account.Project))
+				return Unauthorized();
 
 			var listDocuments = account.Documents
 				.OrderBy(x => x.DateUploaded);
+			var listDocumentTables = listDocuments.Select(x => x.ToJsonTable(details));
+
+			return Ok(listDocumentTables);
+		}
+
+		/// <summary>
+		/// Get all recently uploaded documents
+		/// <para>Ordered by upload date</para>
+		/// </summary>
+		[HttpGet("recent/{id}")]
+		public async Task<IActionResult> GetDocuments_Recent(int id, [FromQuery] int details = 0) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, id);
+			if (project == null)
+				return BadRequest("Project not found");
+			if (!_access.AllowToProject(project))
+				return Unauthorized();
+
+			var baseQuery = _dataContext.Documents
+				.Where(x => x.ProjectId == id)
+				.OrderBy(x => x.DateUploaded);
+			var listDocuments = await baseQuery.ToListAsync();
+
+			// Allow staff to everything, but filter based on access for regular users
+			if (!_access.IsSuperUser()) {
+				var mapAccounts = await baseQuery
+					.Where(x => x.AssocAccountId != null)
+					.GroupBy(x => (int)x.AssocAccountId!)
+					.ToDictionaryAsync(x => x.Key, x => _access.AllowToProject(x.First().Project));
+				var mapPosts = await baseQuery
+					.Where(x => x.AssocQuestionId != null)
+					.GroupBy(x => (int)x.AssocAccountId!)
+					.ToDictionaryAsync(x => x.Key, x => _access.AllowToProject(x.First().Project));
+
+				listDocuments = listDocuments
+					.Where(x => x.Type switch {
+						DocumentType.Question => mapAccounts[(int)x.AssocQuestionId!],
+						DocumentType.Account => mapPosts[(int)x.AssocAccountId!],
+						_ => true,
+					})
+					.ToList();
+			}
+
 			var listDocumentTables = listDocuments.Select(x => x.ToJsonTable(details));
 
 			return Ok(listDocumentTables);
