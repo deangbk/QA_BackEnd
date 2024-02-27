@@ -201,8 +201,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Get all recently uploaded documents
 		/// <para>Ordered by upload date</para>
 		/// </summary>
-		[HttpGet("recent/{id}")]
-		public async Task<IActionResult> GetDocuments_Recent(int id, [FromQuery] int details = 0) {
+		[HttpPost("recent/{id}")]
+		public async Task<IActionResult> GetDocuments_Recent(int id, [FromBody] PaginateDTO? paginate, [FromQuery] int details = 0) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -211,7 +211,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var baseQuery = _dataContext.Documents
 				.Where(x => x.ProjectId == id)
-				.OrderBy(x => x.DateUploaded);
+				.OrderByDescending(x => x.DateUploaded);
 			var listDocuments = await baseQuery.ToListAsync();
 
 			// Allow staff to everything, but filter based on access for regular users
@@ -231,6 +231,17 @@ namespace DocumentsQA_Backend.Controllers {
 						DocumentType.Account => mapPosts[(int)x.AssocAccountId!],
 						_ => true,
 					})
+					.ToList();
+			}
+
+			// Paginate result; but return everything if paginate DTO doesn't exist
+			if (paginate != null) {
+				int countPerPage = paginate.CountPerPage;
+				int maxPages = (int)Math.Ceiling(listDocuments.Count / (double)countPerPage);
+
+				listDocuments = listDocuments
+					.Skip(paginate.Page!.Value * countPerPage)
+					.Take(countPerPage)
 					.ToList();
 			}
 
