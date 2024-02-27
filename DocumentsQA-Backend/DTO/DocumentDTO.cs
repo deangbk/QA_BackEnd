@@ -13,5 +13,13 @@ namespace DocumentsQA_Backend.DTO {
 		public bool? Printable { get; set; } = false;
 	}
 
-	
+	public class DocumentEditDTO {
+		public string? Description { get; set; }
+
+		[Url]
+		public string? Url { get; set; }
+
+		public bool? Hidden { get; set; }
+		public bool? Printable { get; set; }
+	}
 }

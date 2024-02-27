@@ -242,8 +242,8 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		private async Task<(bool, Document)> _DocumentFromUploadDTO(int projectId, DocumentUploadDTO upload) {
-			string fileName = projectId.ToString() + "_" + Path.GetFileName(upload.Url);
-			string fileExt = Path.GetExtension(fileName).Substring(1);  // substr to remove the dot
+			string fileName = $"{projectId}_{Path.GetFileName(upload.Url)}";
+			string fileExt = Path.GetExtension(fileName)[1..];		// substr to remove the dot
 
 			int uploaderId = _access.GetUserID();
 
@@ -327,9 +327,8 @@ namespace DocumentsQA_Backend.Controllers {
 			Account? account = await Queries.GetAccountFromId(_dataContext, id);
 			if (account == null)
 				return BadRequest("Account not found");
-			Tranche tranche = account.Tranche;
 
-			if (!_access.AllowManageTranche(tranche))
+			if (!_access.AllowManageProject(account.Project))
 				return Unauthorized();
 
 			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
@@ -343,6 +342,41 @@ namespace DocumentsQA_Backend.Controllers {
 			await _dataContext.SaveChangesAsync();
 
 			return Ok(document.Id);
+		}
+
+		// -----------------------------------------------------
+
+		/// <summary>
+		/// Edits document info
+		/// </summary>
+		[HttpPut("edit/{id}")]
+		public async Task<IActionResult> EditDocument(int id, [FromBody] DocumentEditDTO dto) {
+			Document? document = await Queries.GetDocumentFromId(_dataContext, id);
+			if (document == null)
+				return BadRequest("Document not found");
+
+			if (!_access.AllowManageProject(document.Project))
+				return Unauthorized();
+
+			if (dto.Description != null) {
+				document.Description = dto.Description;
+			}
+			if (dto.Url != null) {
+				string fileName = $"{document.ProjectId}_{Path.GetFileName(dto.Url)}";
+				string fileExt = Path.GetExtension(fileName)[1..];		// substr to remove the dot
+
+				document.FileUrl = dto.Url;
+				document.FileName = fileName;
+				document.FileType = fileExt;
+			}
+			if (dto.Hidden != null) {
+				document.Hidden = dto.Hidden.Value;
+			}
+			if (dto.Printable != null) {
+				document.AllowPrint = dto.Printable.Value;
+			}
+
+			return Ok();
 		}
 	}
 }
