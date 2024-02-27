@@ -26,7 +26,7 @@ namespace DocumentsQA_Backend.Services {
 		public JsonTable GetFormattedResponse() {
 			return new() {
 				["title"] = Message,
-				["errors"] = new List<string> { "Unauthorized" },
+				["errors"] = new List<string> { "Invalid credentials for action." },
 			};
 		}
 	}
@@ -69,7 +69,7 @@ namespace DocumentsQA_Backend.Services {
 				HttpStatusCode code = HttpStatusCode.InternalServerError;
 				switch (e) {
 					case AccessUnauthorizedException _:
-						code = HttpStatusCode.Unauthorized;		break;
+						code = HttpStatusCode.Forbidden;		break;
 					case InvalidModelStateException _:
 						code = HttpStatusCode.BadRequest;		break;
 				}
