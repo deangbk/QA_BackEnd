@@ -49,8 +49,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			return Ok(project.ToJsonTable(2));
 		}
@@ -64,8 +65,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var listManagerIds = project.UserManagers
 				.Select(x => x.Id)
@@ -92,8 +94,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var listManagerIds = project.UserManagers
 				.Select(x => x.Id)
@@ -107,8 +110,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			int countGeneralPosts = project.Questions
 				.Where(x => x.Type == QuestionType.General)

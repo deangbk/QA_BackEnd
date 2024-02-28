@@ -77,7 +77,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			try {
 				if (!AllowDocumentAccess(document))
-					return Unauthorized();
+					return Forbid();
 			}
 			catch (NullReferenceException) {
 				return BadRequest("Data error");
@@ -97,7 +97,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			try {
 				if (!AllowDocumentAccess(document))
-					return Unauthorized();
+					return Forbid();
 			}
 			catch (NullReferenceException) {
 				return BadRequest("Data error");
@@ -146,8 +146,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var listDocuments = await _dataContext.Documents
 				.Where(x => x.ProjectId == id)
@@ -168,8 +169,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
 				return BadRequest("Question not found");
+
 			if (!_access.AllowToProject(question.Project))
-				return Unauthorized();
+				return Forbid();
 
 			var listDocuments = question.Attachments
 				.OrderBy(x => x.DateUploaded);
@@ -187,8 +189,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Account? account = await Queries.GetAccountFromId(_dataContext, id);
 			if (account == null)
 				return BadRequest("Account not found");
+
 			if (!_access.AllowToProject(account.Project))
-				return Unauthorized();
+				return Forbid();
 
 			var listDocuments = account.Documents
 				.OrderBy(x => x.DateUploaded);
@@ -206,8 +209,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var baseQuery = _dataContext.Documents
 				.Where(x => x.ProjectId == id)
@@ -293,8 +297,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
 			if (!bValid)
@@ -319,7 +324,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project project = question.Project;
 
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
 			if (!bValid)
@@ -344,7 +349,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Account not found");
 
 			if (!_access.AllowManageProject(account.Project))
-				return Unauthorized();
+				return Forbid();
 
 			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
 			if (!bValid)
@@ -372,7 +377,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Only staff can do this
 			if (!_access.AllowManageProject(document.Project))
-				return Unauthorized();
+				return Forbid();
 
 			if (dto.Name != null) {
 				var bNameAlreadyExists = await _dataContext.Documents

@@ -44,8 +44,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Account? account = await Queries.GetAccountFromId(_dataContext, aid);
 			if (account == null)
 				return BadRequest("Account not found");
+
 			if (!_access.AllowToTranche(account.Tranche))
-				return Unauthorized();
+				return Forbid();
 
 			return Ok(account.ToJsonTable(details));
 		}
@@ -55,8 +56,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.IsAdmin())
-				return Unauthorized();
+				return Forbid();
 
 			Tranche? tranche = project.Tranches.Find(x => x.Name == dto.Name);
 			if (tranche == null)
@@ -85,8 +87,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Account? account = await Queries.GetAccountFromId(_dataContext, aid);
 			if (account == null)
 				return BadRequest("Account not found");
+
 			if (!_access.IsAdmin())
-				return Unauthorized();
+				return Forbid();
 
 			Project project = account.Project;
 			Tranche tranche = account.Tranche;
@@ -131,8 +134,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Account? account = await Queries.GetAccountFromId(_dataContext, aid);
 			if (account == null)
 				return BadRequest("Account not found");
+
 			if (!_access.IsAdmin())
-				return Unauthorized();
+				return Forbid();
 
 			_dataContext.Accounts.Remove(account);
 

@@ -40,7 +40,7 @@ namespace DocumentsQA_Backend.Controllers {
 			_roleManager = roleManager;
 
 			if (!_access.IsAdmin())
-				throw new AccessUnauthorizedException("Admin status required");
+				throw new AccessForbiddenException("Admin access required");
 		}
 
 		// -----------------------------------------------------

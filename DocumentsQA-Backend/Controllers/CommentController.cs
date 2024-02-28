@@ -49,7 +49,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Question not found");
 
 			if (!PostHelpers.AllowUserReadPost(_access, question))
-				return Unauthorized();
+				return Forbid();
 
 			var listCommentTables = question.Comments
 				.OrderBy(x => x.CommentNum)
@@ -68,7 +68,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Question not found");
 
 			if (!PostHelpers.AllowUserReadPost(_access, question))
-				return Unauthorized();
+				return Forbid();
 
 			var comment = new Comment {
 				CommentText = dto.Text,
@@ -98,7 +98,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Only staff can do this
 			if (!_access.AllowManageProject(question.Project))
-				return Unauthorized();
+				return Forbid();
 
 			Comment? comment = question.Comments.Find(x => x.CommentNum == num);
 			if (comment == null)
@@ -121,7 +121,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Only staff can do this
 			if (!_access.AllowManageProject(question.Project))
-				return Unauthorized();
+				return Forbid();
 
 			question.Comments.Clear();
 			await _dataContext.SaveChangesAsync();
