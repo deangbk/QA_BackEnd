@@ -41,31 +41,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private bool AllowDocumentAccess(Document document) {
-			// NullReferenceException purposely not guarded against here, handle it in caller code
-			switch (document.Type) {
-				case DocumentType.General: {
-					var project = document.Project;
-					if (_access.AllowToProject(project!))
-						return true;
-					break;
-				}
-				case DocumentType.Question: {
-					var project = document.AssocQuestion!.Project;
-					if (_access.AllowToProject(project))
-						return true;
-					break;
-				}
-				case DocumentType.Account: {
-					var tranche = document.AssocAccount!.Tranche;
-					if (_access.AllowToTranche(tranche))
-						return true;
-					break;
-				}
-			}
-			return false;
-		}
-
 		/// <summary>
 		/// Gets document information
 		/// </summary>
@@ -75,13 +50,10 @@ namespace DocumentsQA_Backend.Controllers {
 			if (document == null)
 				return BadRequest("Document not found");
 
-			try {
-				if (!AllowDocumentAccess(document))
+			var project = document.Project;
+
+			if (!_access.AllowToProject(project))
 					return Forbid();
-			}
-			catch (NullReferenceException) {
-				return BadRequest("Data error");
-			}
 
 			return Ok(document.ToJsonTable(details));
 		}
@@ -95,13 +67,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (document == null)
 				return BadRequest("Document not found");
 
-			try {
-				if (!AllowDocumentAccess(document))
+			if (!_access.AllowToProject(document.Project))
 					return Forbid();
-			}
-			catch (NullReferenceException) {
-				return BadRequest("Data error");
-			}
 
 			byte[] fileBytes;
 			try {
