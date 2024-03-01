@@ -77,7 +77,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			try {
 				if (!AllowDocumentAccess(document))
-					return Unauthorized();
+					return Forbid();
 			}
 			catch (NullReferenceException) {
 				return BadRequest("Data error");
@@ -97,7 +97,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			try {
 				if (!AllowDocumentAccess(document))
-					return Unauthorized();
+					return Forbid();
 			}
 			catch (NullReferenceException) {
 				return BadRequest("Data error");
@@ -146,8 +146,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var listDocuments = await _dataContext.Documents
 				.Where(x => x.ProjectId == id)
@@ -168,8 +169,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
 				return BadRequest("Question not found");
+
 			if (!_access.AllowToProject(question.Project))
-				return Unauthorized();
+				return Forbid();
 
 			var listDocuments = question.Attachments
 				.OrderBy(x => x.DateUploaded);
@@ -187,8 +189,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Account? account = await Queries.GetAccountFromId(_dataContext, id);
 			if (account == null)
 				return BadRequest("Account not found");
+
 			if (!_access.AllowToProject(account.Project))
-				return Unauthorized();
+				return Forbid();
 
 			var listDocuments = account.Documents
 				.OrderBy(x => x.DateUploaded);
@@ -202,16 +205,70 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <para>Ordered by upload date</para>
 		/// </summary>
 		[HttpPost("recent/{id}")]
-		public async Task<IActionResult> GetDocuments_Recent(int id, [FromBody] PaginateDTO? paginate, [FromQuery] int details = 0) {
+		public async Task<IActionResult> GetDocuments_Recent(int id, [FromBody] DocumentGetDTO dto, [FromQuery] int details = 0) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var baseQuery = _dataContext.Documents
-				.Where(x => x.ProjectId == id)
-				.OrderByDescending(x => x.DateUploaded);
+				.Where(x => x.ProjectId == id);
+
+			var filterDTO = dto.Filter;
+			var pageDTO = dto.Paginate;
+
+			if (filterDTO != null) {
+				if (filterDTO.SearchTerm != null) {
+					baseQuery = baseQuery.Where(x => EF.Functions.Contains(x.FileName, filterDTO.SearchTerm));
+				}
+				if (filterDTO.UploaderID != null) {
+					baseQuery = baseQuery.Where(x => x.UploadedById == filterDTO.UploaderID);
+				}
+				if (filterDTO.PostedFrom is not null) {
+					baseQuery = baseQuery.Where(x => x.DateUploaded >= filterDTO.PostedFrom);
+				}
+				if (filterDTO.PostedTo is not null) {
+					baseQuery = baseQuery.Where(x => x.DateUploaded < filterDTO.PostedTo);
+				}
+				if (filterDTO.AllowPrint != null) {
+					baseQuery = baseQuery.Where(x => x.AllowPrint == filterDTO.AllowPrint);
+				}
+
+				if (filterDTO.Category != null) {
+					DocumentType typeMatch = filterDTO.Category.ToLower() switch {
+						"question" or "post"
+									=> DocumentType.Question,
+						"account"	=> DocumentType.Account,
+						_ => DocumentType.General,
+					};
+					baseQuery = baseQuery.Where(x => x.Type == typeMatch);
+				}
+				if (filterDTO.AssocQuestion != null) {
+					baseQuery = baseQuery.Where(x => x.Type == DocumentType.Question
+						&& x.AssocQuestionId == filterDTO.AssocQuestion);
+				}
+				if (filterDTO.AssocAccount != null) {
+					baseQuery = baseQuery.Where(x => x.Type == DocumentType.Account
+						&& x.AssocAccountId == filterDTO.AssocAccount);
+				}
+				if (filterDTO.AssocTranche != null) {
+					// TODO: Test this
+					try {
+						int trancheId = await _dataContext.Tranches
+							.Where(x => x.Name == filterDTO.AssocTranche)
+							.Select(x => x.Id)
+							.FirstAsync();
+						baseQuery = baseQuery.Where(x =>
+							(x.Type == DocumentType.Account && x.AssocAccount!.TrancheId == trancheId) ||
+							(x.Type == DocumentType.Question && x.AssocQuestion!.Account!.TrancheId == trancheId));
+					}
+					catch (InvalidOperationException) { }
+				}
+			}
+
+			baseQuery = baseQuery.OrderByDescending(x => x.DateUploaded);
 			var listDocuments = await baseQuery.ToListAsync();
 
 			//Allow staff to everything, but filter based on access for regular users
@@ -236,14 +293,13 @@ namespace DocumentsQA_Backend.Controllers {
 						.ToList();
 				}
 
-			Paginate result; but return everything if paginate DTO doesn't exist
-			if (paginate != null)
-			{
-				int countPerPage = paginate.CountPerPage;
+			// Paginate result; but return everything if paginate DTO doesn't exist
+			if (pageDTO != null) {
+				int countPerPage = pageDTO.CountPerPage;
 				int maxPages = (int)Math.Ceiling(listDocuments.Count / (double)countPerPage);
 
 				listDocuments = listDocuments
-					.Skip(paginate.Page!.Value * countPerPage)
+					.Skip(pageDTO.Page!.Value * countPerPage)
 					.Take(countPerPage)
 					.ToList();
 			}
@@ -296,8 +352,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
 			if (!bValid)
@@ -322,7 +379,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project project = question.Project;
 
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
 			if (!bValid)
@@ -347,7 +404,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Account not found");
 
 			if (!_access.AllowManageProject(account.Project))
-				return Unauthorized();
+				return Forbid();
 
 			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
 			if (!bValid)
@@ -375,7 +432,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Only staff can do this
 			if (!_access.AllowManageProject(document.Project))
-				return Unauthorized();
+				return Forbid();
 
 			if (dto.Name != null) {
 				var bNameAlreadyExists = await _dataContext.Documents

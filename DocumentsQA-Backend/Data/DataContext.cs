@@ -29,7 +29,8 @@ namespace DocumentsQA_Backend.Data {
 
 		//--------------------------------------------------------------------------
 
-
+		// Scalar DB functions
+		public string GetAccountIdentifierName(int accountId) => throw new NotSupportedException();
 
 		//--------------------------------------------------------------------------
 
@@ -42,12 +43,15 @@ namespace DocumentsQA_Backend.Data {
 				// -----------------------------------------------------
 				// Scalar DB functions
 
-				
+				// Register interface for dbo.ufnGetAccountIdentifierName
+				modelBuilder.HasDbFunction(typeof(DataContext)
+					.GetMethod(nameof(GetAccountIdentifierName), new[] { typeof(int) })!)
+					.HasName("ufnGetAccountIdentifierName");
 
 				// -----------------------------------------------------
 				// Table DB functions
 
-				
+
 			}
 
 			base.OnModelCreating(modelBuilder);

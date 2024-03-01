@@ -35,9 +35,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.IsValidUser())
 				throw new AccessUnauthorizedException();
-
-			//if (!ModelState.IsValid)
-			//	throw new InvalidModelStateException(ModelState);
 		}
 
 		// -----------------------------------------------------
@@ -59,16 +56,17 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </summary>
 		[HttpPost("page/{pid}")]
 		public async Task<IActionResult> GetPosts(int pid, [FromBody] PostGetFilterAndPaginateDTO dto,
-			[FromQuery] int details = 0) {
-
-			var filterDTO = dto.Filter;
-			var pageDTO = dto.Paginate;
-
+			[FromQuery] int details = 0)
+		{
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
+
+			var filterDTO = dto.Filter;
+			var pageDTO = dto.Paginate;
 
 			// Gets only approved
 			IQueryable<Question> query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);
@@ -88,10 +86,9 @@ namespace DocumentsQA_Backend.Controllers {
 				.ToList();
 			int countTotal = listPosts.Count;
 
-			// Paginate result; but return everything if Page is less than 0
+			// Paginate result; but return everything if paginate DTO doesn't exist
 			if (pageDTO != null) {
 				int countPerPage = pageDTO.CountPerPage;
-
 				int maxPages = (int)Math.Ceiling(countTotal / (double)countPerPage);
 
 				listPosts = listPosts
@@ -120,7 +117,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Project not found");
 
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var question = PostHelpers.CreateQuestion(
 				QuestionType.General, project.Id,
@@ -147,19 +144,14 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest(new ValidationProblemDetails(ModelState));
 			}
 
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowToProject(project))
-				return Unauthorized();
-
 			Account? account = await Queries.GetAccountFromId(_dataContext, createDTO.AccountId.Value);
 			if (account == null)
 				return BadRequest("Account not found");
 
 			if (!_access.AllowToTranche(account.Tranche))
-				return Unauthorized();
+				return Forbid();
+
+			Project project = account.Project;
 
 			var question = PostHelpers.CreateQuestion(
 				QuestionType.Account, project.Id,
@@ -189,7 +181,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Only staff can add answer
 			if (!PostHelpers.AllowUserManagePost(_access, question))
-				return Unauthorized();
+				return Forbid();
 
 			var time = DateTime.Now;
 			var userId = _access.GetUserID();
@@ -216,7 +208,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Question not found");
 
 			if (!PostHelpers.AllowUserEditPost(_access, question))
-				return Unauthorized();
+				return Forbid();
 
 			PostHelpers.EditQuestion(question,
 				editDTO.Text, editDTO.Category ?? question.Category,
@@ -238,7 +230,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Project not found");
 
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var questions = project.Questions
 				.Where(x => approveDTO.Questions.Any(y => y == x.Id))
@@ -271,7 +263,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Project not found");
 
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var questions = project.Questions
 				.Where(x => approveDTO.Questions.Any(y => y == x.Id))
@@ -316,7 +308,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Project not found");
 
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
 
@@ -358,7 +350,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Project not found");
 
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			{
 				// Detect invalid accounts + check access
@@ -368,7 +360,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 				foreach (var (_, i) in mapAccounts!) {
 					if (!_access.AllowToTranche(i.Tranche))
-						return Unauthorized();
+						return Forbid($"No access to account \"{i.GetIdentifierName()}\"");
 				}
 
 				if (mapAccounts!.Count != dtos.Count) {
@@ -414,7 +406,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Project not found");
 
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var ids = dtos.Select(x => x.Id!.Value);
 			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
@@ -424,7 +416,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 				foreach (var (_, i) in mapQuestions!) {
 					if (!PostHelpers.AllowUserEditPost(_access, i))
-						return Unauthorized();
+						return Forbid($"No access to question {i.Id}");
 				}
 
 				if (mapQuestions!.Count != dtos.Count) {
@@ -457,21 +449,13 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Only staff can add answers
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var ids = dtos.Select(x => x.Id!.Value);
 			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
 
 			{
-				// Detect invalid questions + check access
-
-				// No need to check for per-question access; a staff always has management rights to the whole project
-				/*
-				foreach (var (_, i) in mapQuestions!) {
-					if (!PostHelpers.AllowUserManagePost(_access, i))
-						return Unauthorized();
-				}
-				*/
+				// Detect invalid questions
 
 				if (mapQuestions!.Count != dtos.Count) {
 					var invalidIds = ids.Except(mapQuestions.Keys);

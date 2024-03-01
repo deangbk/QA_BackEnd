@@ -38,7 +38,7 @@ namespace DocumentsQA_Backend.Controllers {
 			_access = access;
 
 			if (!_access.IsSuperUser())
-				throw new AccessUnauthorizedException("Manager status required");
+				throw new AccessForbiddenException("Manager access required");
 		}
 
 		// -----------------------------------------------------
@@ -55,7 +55,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project project = tranche.Project;
 
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());   // Horrific
 			if (user == null)
@@ -90,7 +90,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project project = tranche.Project;
 
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			List<int> userIdsGrant;
 			try {
@@ -121,7 +121,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project project = tranche.Project;
 
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			if (project.UserManagers.Exists(x => x.Id == uid)) {
 				return BadRequest("Cannot remove access: user has elevated rights");
@@ -142,7 +142,7 @@ namespace DocumentsQA_Backend.Controllers {
 			Project project = tranche.Project;
 
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			List<int> userIdsGrant = new();
 			try {
@@ -197,8 +197,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			DateTime date = DateTime.Now;
 
@@ -353,8 +354,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			IQueryable<Question> query;
 			{

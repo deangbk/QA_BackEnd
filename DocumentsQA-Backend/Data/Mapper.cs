@@ -116,6 +116,20 @@ namespace DocumentsQA_Backend.Data {
 				["date_upload"] = obj.DateUploaded,
 			};
 
+			if (detail == -1) {
+				table["hidden"] = obj.Hidden;
+				table["allow_print"] = obj.AllowPrint;
+
+				table["description"] = obj.Description ?? "";
+				table["upload_by"] = obj.UploadedBy.ToJsonTable(0);
+
+				if (obj.Type == DocumentType.Question) {
+					table["assoc_post"] = obj.AssocQuestion!.ToJsonTable(0);
+				}
+				else if (obj.Type == DocumentType.Account) {
+					table["assoc_account"] = obj.AssocAccount!.ToJsonTable(0);
+				}
+			}
 			if (detail >= 1) {
 				table["url"] = obj.FileUrl;
 				//table["doc_type"] = obj.Type;

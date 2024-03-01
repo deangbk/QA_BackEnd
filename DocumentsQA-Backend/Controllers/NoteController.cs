@@ -49,8 +49,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowToProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var listNotesTables = project.Notes
 				.OrderBy(x => x.Num)
@@ -67,8 +68,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			var note = new Note {
 				ProjectId = pid,
@@ -99,8 +101,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
+
 			if (!_access.AllowManageProject(project))
-				return Unauthorized();
+				return Forbid();
 
 			Note? note = project.Notes.Find(x => x.Num == num);
 			if (note == null)
