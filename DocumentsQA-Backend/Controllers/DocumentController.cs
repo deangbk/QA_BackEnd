@@ -245,19 +245,18 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Allow staff to everything, but filter based on access for regular users
 			if (!_access.IsSuperUser()) {
-				var mapAccounts = await baseQuery
-					.Where(x => x.AssocAccountId != null)
-					.GroupBy(x => (int)x.AssocAccountId!)
-					.ToDictionaryAsync(x => x.Key, x => _access.AllowToProject(x.First().Project));
-				var mapPosts = await baseQuery
-					.Where(x => x.AssocQuestionId != null)
-					.GroupBy(x => (int)x.AssocAccountId!)
-					.ToDictionaryAsync(x => x.Key, x => _access.AllowToProject(x.First().Project));
+				AppUser user = (await Queries.GetUserFromId(_dataContext, _access.GetUserID()))!;
+				var trancheAccesses = ProjectHelpers.GetUserTrancheAccessesInProject(user, id);
+
+				var listAllowedAccounts = trancheAccesses
+					.SelectMany(x => x.Accounts.Select(x => x.Id))
+					.ToHashSet();
 
 				listDocuments = listDocuments
 					.Where(x => x.Type switch {
-						DocumentType.Question => mapAccounts[(int)x.AssocQuestionId!],
-						DocumentType.Account => mapPosts[(int)x.AssocAccountId!],
+						DocumentType.Account => listAllowedAccounts.Contains((int)x.AssocAccountId!),
+						DocumentType.Question => x.AssocQuestion!.AccountId == null
+							|| listAllowedAccounts.Contains((int)x.AssocQuestion!.AccountId),
 						_ => true,
 					})
 					.ToList();
