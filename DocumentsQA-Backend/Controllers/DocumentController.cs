@@ -54,6 +54,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.AllowToProject(project))
 					return Forbid();
+			AuthHelpers.GuardDetailsLevel(_access, project, details, 4);
 
 			return Ok(document.ToJsonTable(details));
 		}
@@ -116,6 +117,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.AllowToProject(project))
 				return Forbid();
+			AuthHelpers.GuardDetailsLevel(_access, project, details, 4);
 
 			var listDocuments = await _dataContext.Documents
 				.Where(x => x.ProjectId == id)
@@ -139,6 +141,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.AllowToProject(question.Project))
 				return Forbid();
+			AuthHelpers.GuardDetailsLevel(_access, question.Project, details, 4);
 
 			var listDocuments = question.Attachments
 				.OrderBy(x => x.DateUploaded);
@@ -159,6 +162,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.AllowToProject(account.Project))
 				return Forbid();
+			AuthHelpers.GuardDetailsLevel(_access, account.Project, details, 4);
 
 			var listDocuments = account.Documents
 				.OrderBy(x => x.DateUploaded);
@@ -179,6 +183,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.AllowToProject(project))
 				return Forbid();
+			AuthHelpers.GuardDetailsLevel(_access, project, details, 4);
 
 			var baseQuery = _dataContext.Documents
 				.Where(x => x.ProjectId == id);
