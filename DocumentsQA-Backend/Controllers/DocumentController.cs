@@ -346,7 +346,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
+			var (bValid, document) = await _DocumentFromUploadDTO(project.Id, upload);
 			if (!bValid)
 				return BadRequest($"File {document.FileName} already exists");
 
@@ -371,7 +371,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(account.Project))
 				return Forbid();
 
-			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
+			var (bValid, document) = await _DocumentFromUploadDTO(account.ProjectId, upload);
 			if (!bValid)
 				return BadRequest($"File {document.FileName} already exists");
 
