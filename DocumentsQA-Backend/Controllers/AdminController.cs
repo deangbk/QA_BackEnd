@@ -89,7 +89,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </summary>
 		[HttpPut("grant/role/{uid}/{role}")]
 		public async Task<IActionResult> GrantUserRole(int uid, string role) {
-			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());   // Horrific
+			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
 			if (user == null)
 				return BadRequest("User not found");
 
