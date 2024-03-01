@@ -214,28 +214,31 @@ namespace DocumentsQA_Backend.Controllers {
 				.OrderByDescending(x => x.DateUploaded);
 			var listDocuments = await baseQuery.ToListAsync();
 
-			// Allow staff to everything, but filter based on access for regular users
-			if (!_access.IsSuperUser()) {
-				var mapAccounts = await baseQuery
-					.Where(x => x.AssocAccountId != null)
-					.GroupBy(x => (int)x.AssocAccountId!)
-					.ToDictionaryAsync(x => x.Key, x => _access.AllowToProject(x.First().Project));
-				var mapPosts = await baseQuery
-					.Where(x => x.AssocQuestionId != null)
-					.GroupBy(x => (int)x.AssocAccountId!)
-					.ToDictionaryAsync(x => x.Key, x => _access.AllowToProject(x.First().Project));
+			//Allow staff to everything, but filter based on access for regular users
+			if (!_access.IsSuperUser())
+				{
+					var mapAccounts = await baseQuery
+						.Where(x => x.AssocAccountId != null)
+						.GroupBy(x => (int)x.AssocAccountId!)
+						.ToDictionaryAsync(x => x.Key, x => _access.AllowToProject(x.First().Project));
+					var mapPosts = await baseQuery
+						.Where(x => x.AssocQuestionId != null)
+						.GroupBy(x => (int)x.AssocAccountId!)
+						.ToDictionaryAsync(x => x.Key, x => _access.AllowToProject(x.First().Project));
 
-				listDocuments = listDocuments
-					.Where(x => x.Type switch {
-						DocumentType.Question => mapAccounts[(int)x.AssocQuestionId!],
-						DocumentType.Account => mapPosts[(int)x.AssocAccountId!],
-						_ => true,
-					})
-					.ToList();
-			}
+					listDocuments = listDocuments
+						.Where(x => x.Type switch
+						{
+							DocumentType.Question => mapAccounts[(int)x.AssocQuestionId!],
+							DocumentType.Account => mapPosts[(int)x.AssocAccountId!],
+							_ => true,
+						})
+						.ToList();
+				}
 
-			// Paginate result; but return everything if paginate DTO doesn't exist
-			if (paginate != null) {
+			Paginate result; but return everything if paginate DTO doesn't exist
+			if (paginate != null)
+			{
 				int countPerPage = paginate.CountPerPage;
 				int maxPages = (int)Math.Ceiling(listDocuments.Count / (double)countPerPage);
 
