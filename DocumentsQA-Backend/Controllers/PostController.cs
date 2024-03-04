@@ -434,8 +434,8 @@ namespace DocumentsQA_Backend.Controllers {
 					userId);
 			}
 
-			await _dataContext.SaveChangesAsync();
-			return Ok();
+			var count = await _dataContext.SaveChangesAsync();
+			return Ok(count);
 		}
 
 		/// <summary>
@@ -479,8 +479,8 @@ namespace DocumentsQA_Backend.Controllers {
 				PostHelpers.ApproveAnswer(question, userId, false);
 			}
 
-			await _dataContext.SaveChangesAsync();
-			return Ok();
+			var count = await _dataContext.SaveChangesAsync();
+			return Ok(count);
 		}
 	}
 }
