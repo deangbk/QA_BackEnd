@@ -53,7 +53,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var project = document.Project;
 
 			if (!_access.AllowToProject(project))
-					return Forbid();
+				return Forbid();
 			AuthHelpers.GuardDetailsLevel(_access, project, details, 4);
 
 			return Ok(document.ToJsonTable(details));
@@ -69,7 +69,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Document not found");
 
 			if (!_access.AllowToProject(document.Project))
-					return Forbid();
+				return Forbid();
 
 			byte[] fileBytes;
 			try {
@@ -390,27 +390,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		/// <summary>
-		/// Edits document info
-		/// </summary>
-		[HttpPut("edit/{id}")]
-		public async Task<IActionResult> EditDocument(int id, [FromBody] DocumentEditDTO dto) {
-			Document? document = await Queries.GetDocumentFromId(_dataContext, id);
-			if (document == null)
-				return BadRequest("Document not found");
-
-			// Only staff can do this
-			if (!_access.AllowManageProject(document.Project))
-				return Forbid();
-
+		private void _EditDocument(Document document, DocumentEditDTO dto) {
 			if (dto.Name != null) {
-				var bNameAlreadyExists = await _dataContext.Documents
-					.Where(x => x.ProjectId == document.ProjectId)
-					.Where(x => x.FileName == dto.Name)
-					.AnyAsync();
-				if (bNameAlreadyExists)
-					return BadRequest($"File {dto.Name} already exists");
-
 				document.FileName = dto.Name;
 			}
 			if (dto.Description != null) {
@@ -428,8 +409,89 @@ namespace DocumentsQA_Backend.Controllers {
 			if (dto.Printable != null) {
 				document.AllowPrint = dto.Printable.Value;
 			}
+		}
+
+		/// <summary>
+		/// Edits document info
+		/// </summary>
+		[HttpPut("edit")]
+		public async Task<IActionResult> EditDocument([FromBody] DocumentEditDTO dto) {
+			Document? document = await Queries.GetDocumentFromId(_dataContext, dto.Id!.Value);
+			if (document == null)
+				return BadRequest("Document not found");
+
+			// Only staff can do this
+			if (!_access.AllowManageProject(document.Project))
+				return Forbid();
+
+			{
+				var bNameAlreadyExists = await _dataContext.Documents
+					.Where(x => x.ProjectId == document.ProjectId)
+					.Where(x => x.FileName == dto.Name)
+					.AnyAsync();
+				if (bNameAlreadyExists)
+					return BadRequest($"File {dto.Name} already exists");
+			}
+			_EditDocument(document, dto);
 
 			return Ok();
+		}
+
+		/// <summary>
+		/// Bulk edits documents info
+		/// </summary>
+		[HttpPut("bulk/edit/{id}")]
+		public async Task<IActionResult> EditDocumentMultiple(int id, [FromBody] List<DocumentEditDTO> dtos) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, id);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			// Only staff can do this
+			if (!_access.AllowManageProject(project))
+				return Forbid();
+
+			var ids = dtos.Select(x => x.Id!.Value);
+			var mapDocuments = (await Queries.GetDocumentsMapFromIds(_dataContext, ids))!;
+
+			{
+				// Check if the DTO contains documents from other projects
+				var invalidProjects = mapDocuments
+					.Select(x => x.Value.ProjectId)
+					.Where(x => x != id)
+					.ToList();
+				if (invalidProjects.Count > 0)
+					return BadRequest("Invalid document IDs: " + invalidProjects.ToStringEx());
+
+				// Detect invalid IDs
+				if (mapDocuments.Count != dtos.Count) {
+					var invalidIds = ids.Except(mapDocuments.Keys);
+					return BadRequest("Documents not found: " + invalidIds.ToStringEx());
+				}
+			}
+
+			{
+				// Detect any duplicate file names
+
+				var fileNames = dtos
+					.Where(x => x.Name != null)
+					.Select(x => x.Name!)
+					.ToList();
+
+				var duplicateNames = await _dataContext.Documents
+					.Where(x => x.ProjectId == project.Id)
+					.Where(x => fileNames.Any(y => y == x.FileName))
+					.ToListAsync();
+				if (duplicateNames.Count > 0)
+					return BadRequest("Duplicate file names: " + duplicateNames.ToStringEx());
+			}
+
+			foreach (var d in dtos) {
+				var document = mapDocuments[d.Id!.Value];
+				_EditDocument(document, d);
+			}
+
+			var count = await _dataContext.SaveChangesAsync();
+			return Ok(count);
 		}
 	}
 }

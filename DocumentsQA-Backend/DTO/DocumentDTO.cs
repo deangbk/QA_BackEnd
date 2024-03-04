@@ -19,6 +19,9 @@ namespace DocumentsQA_Backend.DTO {
 	}
 
 	public class DocumentEditDTO {
+		[Required]
+		public int? Id { get; set; }
+
 		public string? Name { get; set; }
 		public string? Description { get; set; }
 
