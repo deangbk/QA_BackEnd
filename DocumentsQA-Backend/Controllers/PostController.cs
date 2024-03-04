@@ -218,6 +218,21 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok();
 		}
 
+		[HttpDelete("{id}")]
+		public async Task<IActionResult> DeleteQuestion(int id) {
+			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
+			if (question == null)
+				return BadRequest("Question not found");
+
+			if (!PostHelpers.AllowUserEditPost(_access, question))
+				return Forbid();
+
+			question.Project.Questions.Remove(question);
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+
 		// -----------------------------------------------------
 
 		/// <summary>
