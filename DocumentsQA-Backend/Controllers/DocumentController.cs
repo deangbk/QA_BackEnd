@@ -408,7 +408,7 @@ namespace DocumentsQA_Backend.Controllers {
 				if (mapDocuments.Count != ids.Count) {
 					var invalidIds = ids.Except(mapDocuments.Keys);
 					throw new InvalidOperationException("Documents not found: " + invalidIds.ToStringEx());
-			}
+				}
 			}
 
 			return mapDocuments;
@@ -472,7 +472,42 @@ namespace DocumentsQA_Backend.Controllers {
 			var count = await _dataContext.SaveChangesAsync();
 			return Ok(count);
 		}
-			}
+
+		// -----------------------------------------------------
+
+		[HttpDelete("{id}/{docId}")]
+		public async Task<IActionResult> DeleteDocument(int id, int docId) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, id);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			// Only staff can do this
+			if (!_access.AllowManageProject(project))
+				return Forbid();
+
+			Document? document = await Queries.GetDocumentFromId(_dataContext, docId);
+			if (document == null)
+				return BadRequest("Document not found");
+
+			_dataContext.Documents.Remove(document);
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+
+		[HttpPost("bulk/delete/{id}")]
+		public async Task<IActionResult> DeleteDocumentMultiple(int id, [FromBody] List<int> docIds) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, id);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			// Only staff can do this
+			if (!_access.AllowManageProject(project))
+				return Forbid();
+
+			var mapDocuments = await _GetDocumentsMapAndCheckAccess(project, docIds);
+
+			_dataContext.Documents.RemoveRange(mapDocuments.Values.ToArray());
 
 			var count = await _dataContext.SaveChangesAsync();
 			return Ok(count);
