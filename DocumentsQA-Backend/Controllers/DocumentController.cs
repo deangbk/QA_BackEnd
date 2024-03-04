@@ -390,58 +390,35 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private void _EditDocument(Document document, DocumentEditDTO dto) {
-			if (dto.Name != null) {
-				document.FileName = dto.Name;
-			}
-			if (dto.Description != null) {
-				document.Description = dto.Description;
-			}
-			if (dto.Url != null) {
-				string fileExt = Path.GetExtension(dto.Url)[1..];		// substr to remove the dot
+		private async Task<Dictionary<int, Document>> _GetDocumentsMapAndCheckAccess(Project project, List<int> ids) {
+			int projectId = project.Id;
 
-				document.FileUrl = dto.Url;
-				document.FileType = fileExt;
-			}
-			if (dto.Hidden != null) {
-				document.Hidden = dto.Hidden.Value;
-			}
-			if (dto.Printable != null) {
-				document.AllowPrint = dto.Printable.Value;
-			}
-		}
-
-		/// <summary>
-		/// Edits document info
-		/// </summary>
-		[HttpPut("edit")]
-		public async Task<IActionResult> EditDocument([FromBody] DocumentEditDTO dto) {
-			Document? document = await Queries.GetDocumentFromId(_dataContext, dto.Id!.Value);
-			if (document == null)
-				return BadRequest("Document not found");
-
-			// Only staff can do this
-			if (!_access.AllowManageProject(document.Project))
-				return Forbid();
+			var mapDocuments = (await Queries.GetDocumentsMapFromIds(_dataContext, ids))!;
 
 			{
-				var bNameAlreadyExists = await _dataContext.Documents
-					.Where(x => x.ProjectId == document.ProjectId)
-					.Where(x => x.FileName == dto.Name)
-					.AnyAsync();
-				if (bNameAlreadyExists)
-					return BadRequest($"File {dto.Name} already exists");
-			}
-			_EditDocument(document, dto);
+				// Check if the DTO contains documents from other projects
+				var invalidProjects = mapDocuments
+					.Select(x => x.Value.ProjectId)
+					.Where(x => x != projectId)
+					.ToList();
+				if (invalidProjects.Count > 0)
+					throw new InvalidOperationException("Invalid document IDs: " + invalidProjects.ToStringEx());
 
-			return Ok();
+				// Detect invalid IDs
+				if (mapDocuments.Count != ids.Count) {
+					var invalidIds = ids.Except(mapDocuments.Keys);
+					throw new InvalidOperationException("Documents not found: " + invalidIds.ToStringEx());
+			}
+			}
+
+			return mapDocuments;
 		}
 
 		/// <summary>
 		/// Bulk edits documents info
 		/// </summary>
 		[HttpPut("bulk/edit/{id}")]
-		public async Task<IActionResult> EditDocumentMultiple(int id, [FromBody] List<DocumentEditDTO> dtos) {
+		public async Task<IActionResult> EditDocuments(int id, [FromBody] List<DocumentEditDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -450,24 +427,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			var ids = dtos.Select(x => x.Id!.Value);
-			var mapDocuments = (await Queries.GetDocumentsMapFromIds(_dataContext, ids))!;
-
-			{
-				// Check if the DTO contains documents from other projects
-				var invalidProjects = mapDocuments
-					.Select(x => x.Value.ProjectId)
-					.Where(x => x != id)
-					.ToList();
-				if (invalidProjects.Count > 0)
-					return BadRequest("Invalid document IDs: " + invalidProjects.ToStringEx());
-
-				// Detect invalid IDs
-				if (mapDocuments.Count != dtos.Count) {
-					var invalidIds = ids.Except(mapDocuments.Keys);
-					return BadRequest("Documents not found: " + invalidIds.ToStringEx());
-				}
-			}
+			var ids = dtos.Select(x => x.Id!.Value).ToList();
+			var mapDocuments = await _GetDocumentsMapAndCheckAccess(project, ids);
 
 			{
 				// Detect any duplicate file names
@@ -487,7 +448,30 @@ namespace DocumentsQA_Backend.Controllers {
 
 			foreach (var d in dtos) {
 				var document = mapDocuments[d.Id!.Value];
-				_EditDocument(document, d);
+
+				if (d.Name != null) {
+					document.FileName = d.Name;
+				}
+				if (d.Description != null) {
+					document.Description = d.Description;
+				}
+				if (d.Url != null) {
+					string fileExt = Path.GetExtension(d.Url)[1..];       // substr to remove the dot
+
+					document.FileUrl = d.Url;
+					document.FileType = fileExt;
+				}
+				if (d.Hidden != null) {
+					document.Hidden = d.Hidden.Value;
+				}
+				if (d.Printable != null) {
+					document.AllowPrint = d.Printable.Value;
+				}
+			}
+
+			var count = await _dataContext.SaveChangesAsync();
+			return Ok(count);
+		}
 			}
 
 			var count = await _dataContext.SaveChangesAsync();
