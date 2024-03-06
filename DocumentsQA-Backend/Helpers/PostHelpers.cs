@@ -129,14 +129,14 @@ namespace DocumentsQA_Backend.Helpers {
 					query = query.Where(x => x.Type == QuestionType.General);
 				}
 				else if (typeName == "account") {
-					if (filter.Account == null) {
-						throw new ArgumentException("Account number cannot be null", "Account");
-					}
+                    //if (filter.Account == null) {
+                    //	throw new ArgumentException("Account number cannot be null", "Account");
+                    //}
+                    query = query.Where(x => x.Type == QuestionType.Account);
 
-					query = query.Where(x => x.Type == QuestionType.Account
-						&& x.AccountId == filter.Account);
-				}
-			}
+                }
+               
+            }
 			if (filter.Category != null) {
 				query = query.Where(x => x.Category == filter.Category);
 			}
