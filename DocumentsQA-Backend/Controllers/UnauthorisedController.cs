@@ -43,13 +43,6 @@ namespace DocumentsQA_Backend.Controllers
 
 		// -----------------------------------------------------
 
-		[HttpGet("get_stuff/{pid}")]
-        public async Task<IActionResult> GetPosts(int pid)
-        {
-
-            return Ok(pid);
-        }
-
         /// <summary>
         /// Posts general questions in bulk
         /// </summary>
@@ -80,25 +73,30 @@ namespace DocumentsQA_Backend.Controllers
 			{
 				// Collect and validate user IDs
 
-				var userEmails = dtos
-					.Select(x => x.Email)
-					.Distinct()
-					.ToList();
+				List<string> invalidUsers = new();
 
 				mapUsers = new();
-				foreach (var email in userEmails) {
-					var user = await _userManager.FindByEmailAsync(email);
+				foreach (var dto in dtos) {
+					int projectId = dto.ProjectID!.Value;
+					string actualEmail = AuthHelpers.ComposeUsername(
+						projectId, dto.Email);
 
-					// TODO: Verify user project access
+					var user = await _userManager.FindByEmailAsync(actualEmail);
+					if (user == null) {
+						invalidUsers.Add($"(project={projectId}){dto.Email}");
+					}
+					else {
+						// TODO: Verify user project access
 
-					if (user != null) {
-						mapUsers[email] = user;
+						dto.Email = actualEmail;
+						if (user != null) {
+							mapUsers[dto.Email] = user;
+						}
 					}
 				}
 
-				if (mapUsers!.Count != userEmails.Count) {
-					var invalidEmails = userEmails.Except(mapUsers.Keys);
-					return BadRequest("User not found: " + invalidEmails.ToStringEx());
+				if (invalidUsers.Count > 0) {
+					return BadRequest("Users not found: " + invalidUsers.ToStringEx());
 				}
 			}
 
