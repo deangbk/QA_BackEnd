@@ -114,7 +114,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </summary>
 		[HttpDelete("ungrant/role/{uid}/{role}")]
 		public async Task<IActionResult> RemoveUserRole(int uid, string role) {
-			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());   // Horrific
+			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
 			if (user == null)
 				return BadRequest("User not found");
 
@@ -159,7 +159,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (project == null)
 				return BadRequest("Project not found");
 
-			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());   // Horrific
+			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
 			if (user == null)
 				return BadRequest("User not found");
 
@@ -226,7 +226,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Make the users managers if they're not already one
 			foreach (var id in userIds) {
-				AppUser? user = await _userManager.FindByIdAsync(id.ToString());    // Horrific
+				AppUser user = (await Queries.GetUserFromId(_dataContext, id))!;
 				await _GrantUserRole(user, AppRole.Manager);
 			}
 
