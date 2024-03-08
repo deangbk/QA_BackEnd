@@ -362,14 +362,16 @@ namespace DocumentsQA_Backend.Controllers {
 			{
 				switch (filterDTO.Approved) {
 					case true:
-						query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);	// Gets only approved
+                        query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);
+                     //   query = Queries.GetApprovedQuestionsQuery(_dataContext, pid).AsQueryable();	// Gets only approved
 						break;
 					case false:
-						query = Queries.GetUnapprovedQuestionsQuery(_dataContext, pid); // Gets only unapproved
+						query = Queries.GetUnapprovedQuestionsQuery(_dataContext, pid).AsQueryable(); // Gets only unapproved
 						break;
 					case null:
-						query = project.Questions.AsQueryable();	// Gets everything
-						break;
+						query = Queries.GetAllQuestionsQuery(_dataContext, pid);//project.Questions.AsQueryable();	// Gets everything
+
+                        break;
 				}
 			}
 

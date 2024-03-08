@@ -66,5 +66,12 @@ namespace DocumentsQA_Backend.Data {
 				.Where(x => x.ProjectId == pid)
 				.Where(x => x.QuestionApprovedById == null);
 		}
-	}
+
+        public static IQueryable<Question> GetAllQuestionsQuery(DataContext dataContext, int pid)
+        {
+			return dataContext.Questions
+				.Where(x => x.ProjectId == pid);
+                
+        }
+    }
 }
