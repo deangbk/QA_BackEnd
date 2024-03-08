@@ -369,8 +369,10 @@ namespace DocumentsQA_Backend.Controllers {
 						query = Queries.GetUnapprovedQuestionsQuery(_dataContext, pid).AsQueryable(); // Gets only unapproved
 						break;
 					case null:
-						// Gets everything
-						query = _dataContext.Questions
+                        // Gets everything
+                       // query = Queries.GetAllQuestionsQuery(_dataContext, pid);//project.Questions.AsQueryable();	// Gets everything
+
+                        query = _dataContext.Questions
 							.Where(x => x.ProjectId == pid);
 						break;
 				}
