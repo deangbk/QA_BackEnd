@@ -54,7 +54,7 @@ namespace DocumentsQA_Backend.DTO {
 		/// <list type="bullet">
 		/// <item>null:    don't care, gets everything</item>
 		/// <item>general: gets only general questions</item>
-		/// <item>account: gets only questions tied to a specific account, Account must then not be null</item>
+		/// <item>account: gets only account questions, gets only from a specific account if Account is not null</item>
 		/// </list>
 		/// </summary>
 		public string? Type { get; set; }

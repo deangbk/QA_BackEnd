@@ -49,46 +49,17 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		/*
-		[HttpPost("create")]
-		public async Task<IActionResult> CreateUser([FromBody] UserCreateDTO uc) {
-			var user = new AppUser() {
-				UserName = uc.Email,
-				Email = uc.Email,
-				DisplayName = uc.DisplayName,
-				Company = uc.Company,
-				DateCreated = DateTime.Now,
-			};
-			if (uc.DisplayName.Length == 0)
-				return BadRequest("DisplayName must not be empty");
-			if (uc.Company.Length == 0)
-				return BadRequest("Company must not be empty");
-
-			var result = await _userManager.CreateAsync(user, uc.Password);
-
-			if (result.Succeeded) {
-				// Set user role
-				await AppRole.AddRoleToUser(_userManager, user, AppRole.User);
-
-				var token = await _CreateUserToken(uc.Email);
-				return Ok(token);
-			}
-			else {
-				return BadRequest(result.Errors);
-			}
-		}
-		*/
-
-		private async Task<AuthResponse> _CreateUserToken(string email) {
+		private async Task<AuthResponse> _CreateUserToken(int projectId, string actualEmail) {
 			var claims = new List<Claim> {
 				//new Claim("email", uc.Email),
 			};
 
 			{
-				var user = await _userManager.FindByEmailAsync(email);
+				var user = await _userManager.FindByEmailAsync(actualEmail);
 				if (user != null) {
 					claims.Add(new Claim("id", user.Id.ToString()));
 					claims.Add(new Claim("name", user.DisplayName));
+					claims.Add(new Claim("project", projectId.ToString()));
 
 					// Add role claims for the user
 					{
@@ -114,15 +85,17 @@ namespace DocumentsQA_Backend.Controllers {
 			};
 		}
 
-		[HttpPost("login")]
-		public async Task<IActionResult> Login([FromBody] LoginDTO uc) {
+		[HttpPost("login/{pid}")]
+		public async Task<IActionResult> Login(int pid, [FromBody] LoginDTO uc) {
+			string actualEmail = AuthHelpers.ComposeUsername(pid, uc.Email);
+
 			// _signinManager.SignInAsync creates a cookie under the hood so don't use that
-			var user = await _userManager.FindByNameAsync(uc.Email);
+			var user = await _userManager.FindByEmailAsync(actualEmail);
 			if (user != null) {
 				var result = await _signinManager.CheckPasswordSignInAsync(user, uc.Password, false);
 
 				if (result.Succeeded) {
-					var token = await _CreateUserToken(uc.Email);
+					var token = await _CreateUserToken(pid, actualEmail);
 					return Ok(token);
 				}
 				else if (result.IsLockedOut) {

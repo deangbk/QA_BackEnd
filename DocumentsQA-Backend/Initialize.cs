@@ -61,6 +61,10 @@ namespace DocumentsQA_Backend {
 					.AddEntityFrameworkStores<DataContext>();
 
 				services.Configure<IdentityOptions>(options => {
+					// User settings
+
+					options.User.RequireUniqueEmail = true;
+
 					// Password settings
 
 					options.Password.RequiredLength = 6;
@@ -73,7 +77,7 @@ namespace DocumentsQA_Backend {
 
 					// Lockout settings
 
-					options.Lockout.MaxFailedAccessAttempts = 10;
+					options.Lockout.MaxFailedAccessAttempts = 99999;
 				});
 			}
 

@@ -57,7 +57,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			AppUser? user = await _userManager.FindByIdAsync(uid.ToString());   // Horrific
+			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
 			if (user == null)
 				return BadRequest("User not found");
 
@@ -369,9 +369,10 @@ namespace DocumentsQA_Backend.Controllers {
 						query = Queries.GetUnapprovedQuestionsQuery(_dataContext, pid).AsQueryable(); // Gets only unapproved
 						break;
 					case null:
-						query = Queries.GetAllQuestionsQuery(_dataContext, pid);//project.Questions.AsQueryable();	// Gets everything
-
-                        break;
+						// Gets everything
+						query = _dataContext.Questions
+							.Where(x => x.ProjectId == pid);
+						break;
 				}
 			}
 
