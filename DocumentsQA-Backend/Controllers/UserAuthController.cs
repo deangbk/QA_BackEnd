@@ -49,7 +49,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private async Task<AuthResponse> _CreateUserToken(string actualEmail) {
+		private async Task<AuthResponse> _CreateUserToken(int projectId, string actualEmail) {
 			var claims = new List<Claim> {
 				//new Claim("email", uc.Email),
 			};
@@ -59,6 +59,7 @@ namespace DocumentsQA_Backend.Controllers {
 				if (user != null) {
 					claims.Add(new Claim("id", user.Id.ToString()));
 					claims.Add(new Claim("name", user.DisplayName));
+					claims.Add(new Claim("project", projectId.ToString()));
 
 					// Add role claims for the user
 					{
@@ -94,7 +95,7 @@ namespace DocumentsQA_Backend.Controllers {
 				var result = await _signinManager.CheckPasswordSignInAsync(user, uc.Password, false);
 
 				if (result.Succeeded) {
-					var token = await _CreateUserToken(actualEmail);
+					var token = await _CreateUserToken(pid, actualEmail);
 					return Ok(token);
 				}
 				else if (result.IsLockedOut) {
