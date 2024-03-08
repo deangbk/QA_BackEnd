@@ -386,10 +386,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest(new ValidationProblemDetails(ModelState));
 			}
 
-			// Then filter based on access
-			var listPosts = (await query.ToListAsync())
-				.Where(x => PostHelpers.AllowUserReadPost(_access, x))
-				.ToList();
+			var listPosts = await query.ToListAsync();
 			var listPostTables = listPosts.Select(x => x.ToJsonTable(details));
 
 			return Ok(listPostTables);
