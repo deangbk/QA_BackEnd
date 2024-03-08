@@ -43,5 +43,21 @@ namespace DocumentsQA_Backend.Helpers {
 					throw new AccessForbiddenException($"Insufficient credentials to get details level {details}");
 			}
 		}
+
+		public static string GeneratePassword(Random rand, int length) {
+			const string passwordChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+			
+			var pass = string.Concat(Enumerable.Range(0, length)
+				.Select(x => passwordChars[rand.Next() % passwordChars.Length]));
+
+			// Must contain at least 1 digit
+			if (!pass.Any(x => Char.IsDigit(x))) {
+				pass = pass.ReplaceAt(0, '0');
+			}
+
+			return pass;
+		}
+
+
 	}
 }
