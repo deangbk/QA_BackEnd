@@ -75,8 +75,9 @@ namespace DocumentsQA_Backend.Data {
 
 				["q_text"] = obj.QuestionText,
 				["a_text"] = obj.QuestionAnswer!,
+				
 
-				["post_by"] = obj.PostedBy.ToJsonTable(0),
+                ["post_by"] = obj.PostedBy.ToJsonTable(0),
 
 				["date_post"] = obj.DatePosted,
 				["date_edit"] = obj.DateLastEdited,

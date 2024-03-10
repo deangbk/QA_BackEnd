@@ -102,6 +102,19 @@ namespace DocumentsQA_Backend.Helpers {
 				question.DateAnswerApproved = null;
 			}
 		}
+
+		/// <summary>
+		/// update single question from edit page
+		/// </summary>
+		public static  Question updateQuestion(Question question, PostEditQuestionDTO questionDetails)
+		{
+			question.QuestionText = questionDetails.Question;
+			question.Category = questionDetails.Category;
+			question.QuestionAnswer = questionDetails.Answer;
+			//question.AccountId = questionDetails.accountId;
+
+			return question;
+		}
 		public static void ApproveAnswer(Question question, int userId, bool approve) {
 			var time = DateTime.Now;
 

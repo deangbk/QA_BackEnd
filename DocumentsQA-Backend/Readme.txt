@@ -3,6 +3,12 @@ Roles
 2.User
 3.Manager
 
+Category Types:
+General
+Litegation
+
+
+
 Design Guidelines
 - Class properts uses PascalCase.
 - Json classes in front end use camelCase.

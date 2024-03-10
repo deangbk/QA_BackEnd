@@ -391,5 +391,29 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok(listPostTables);
 		}
-	}
+
+
+		[HttpPost("editq")]
+		public async Task<IActionResult> EditQestion([FromBody] PostEditQuestionDTO questionDetails)
+		{
+			var pid = 1;
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			if (!_access.AllowManageProject(project))
+                return Forbid();
+
+            //var questions = project.Questions
+            //.Where(x => questionDetails.Questions.Any(y => y == x.Id))
+            //.ToList();
+            var quest =  Queries.GetSingleQuestionsQuery(_dataContext, questionDetails.Id).SingleOrDefault();
+            if (quest == null)
+                return BadRequest("Question not found");
+            quest =PostHelpers.updateQuestion(quest, questionDetails);
+            _dataContext.SaveChanges();
+
+            return Ok("{}");
+        }
+        }
 }

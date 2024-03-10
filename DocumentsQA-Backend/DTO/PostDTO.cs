@@ -78,7 +78,26 @@ namespace DocumentsQA_Backend.DTO {
 		public string Text { get; set; } = null!;
 		public string? Category { get; set; }
 	}
-	public class PostSetAnswerDTO {
+    public class PostEditQuestionDTO 
+    {
+
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("q_text")]
+        public string? Question { get; set; } = null!;
+        [JsonPropertyName("a_text")]
+        public string? Answer { get; set; } = null!;
+        [JsonPropertyName("category")]
+        public string? Category { get; set; } = null!;
+	
+        [JsonPropertyName("type")]
+        public string? questionType { get; set; } = null!;
+        
+    }
+
+
+    public class PostSetAnswerDTO {
 		public string Answer { get; set; } = null!;
 	}
 
