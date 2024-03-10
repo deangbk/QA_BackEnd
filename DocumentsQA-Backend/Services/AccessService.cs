@@ -90,9 +90,11 @@ namespace DocumentsQA_Backend.Services {
 
 			// Allow project managers
 			if (UserHasRole(AppRole.Manager)) {
-				///// Un comment later once we have the system for assigning managers to projects
+				// Un comment later once we have the system for assigning managers to projects
+
 				//bool allowManager = project.UserManagers.Any(x => x.Id == userId);
-				//if (allowManager)
+				bool allowManager = true;
+				if (allowManager)
 					return true;
 			}
 
