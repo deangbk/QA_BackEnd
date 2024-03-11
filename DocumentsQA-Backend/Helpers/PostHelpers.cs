@@ -106,12 +106,14 @@ namespace DocumentsQA_Backend.Helpers {
 		/// <summary>
 		/// update single question from edit page
 		/// </summary>
-		public static  Question updateQuestion(Question question, PostEditQuestionDTO questionDetails)
+		public static  Question updateQuestion(Question question, PostEditQuestionDTO questionDetails, int userId)
 		{
 			question.QuestionText = questionDetails.Question;
 			question.Category = questionDetails.Category;
 			question.QuestionAnswer = questionDetails.Answer;
 			//question.AccountId = questionDetails.accountId;
+			question.DateLastEdited = DateTime.UtcNow;
+			question.LastEditorId = userId;
 
 			return question;
 		}

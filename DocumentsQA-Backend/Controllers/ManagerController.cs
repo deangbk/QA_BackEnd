@@ -472,7 +472,7 @@ namespace DocumentsQA_Backend.Controllers {
             var quest =  Queries.GetSingleQuestionsQuery(_dataContext, questionDetails.Id).SingleOrDefault();
             if (quest == null)
                 return BadRequest("Question not found");
-            quest =PostHelpers.updateQuestion(quest, questionDetails);
+            quest =PostHelpers.updateQuestion(quest, questionDetails, _access.GetUserID());
             _dataContext.SaveChanges();
 
             return Ok("{}");
