@@ -18,6 +18,7 @@ using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Services {
 	public interface IAccessService {
+		public int GetProjectID();
 		public int GetUserID();
 		public bool UserHasRole(AppRole role);
 
@@ -51,20 +52,26 @@ namespace DocumentsQA_Backend.Services {
 
 		// -----------------------------------------------------
 
-		private static int _ParseUserID(string? idClaim) {
+		private static int _ParseIntID(string? idClaim) {
 			try {
-				return int.Parse(idClaim!);		// Ignore null so ArgumentNullException would return -1
+				return int.Parse(idClaim!);     // Ignore null so ArgumentNullException would return -1
 			}
 			catch (Exception) {
 				return -1;
 			}
 		}
 
+		public int GetProjectID() {
+			HttpContext ctx = _httpContextAccessor.HttpContext!;
+			var claims = ctx.User;
+			var idClaim = claims.FindFirst("project")?.Value;
+			return _ParseIntID(idClaim);
+		}
 		public int GetUserID() {
 			HttpContext ctx = _httpContextAccessor.HttpContext!;
 			var claims = ctx.User;
 			var idClaim = claims.FindFirst("id")?.Value;
-			return _ParseUserID(idClaim);
+			return _ParseIntID(idClaim);
 		}
 		public bool UserHasRole(AppRole role) {
 			HttpContext ctx = _httpContextAccessor.HttpContext!;
@@ -73,12 +80,12 @@ namespace DocumentsQA_Backend.Services {
 		}
 
 		public bool IsValidUser() => GetUserID() >= 0;
-		public bool IsNormalUser() => IsValidUser() && !IsSuperUser(); 
+		public bool IsNormalUser() => IsValidUser() && !IsSuperUser();
 		public bool IsSuperUser() => UserHasRole(AppRole.Admin) || UserHasRole(AppRole.Manager);
 		public bool IsAdmin() => UserHasRole(AppRole.Admin);
 
 		public bool AllowToProject(Project project) {
-			return AllowToProject(project, 
+			return AllowToProject(project,
 				id => ProjectHelpers.CanUserAccessProject(project, id));
 		}
 		public bool AllowToProject(Project project, Func<int, bool> userAllowPolicy) {
@@ -124,6 +131,7 @@ namespace DocumentsQA_Backend.Services {
 	}
 
 	public class AccessAllowAll : IAccessService {
+		public int GetProjectID() => -1;
 		public int GetUserID() => -1;
 		public bool UserHasRole(AppRole role) => true;
 
