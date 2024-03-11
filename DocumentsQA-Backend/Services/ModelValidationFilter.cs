@@ -5,7 +5,7 @@ namespace DocumentsQA_Backend.Services {
 	public class ModelValidationActionFilter : IActionFilter {
 		public void OnActionExecuting(ActionExecutingContext context) {
 			if (!context.ModelState.IsValid) {
-				//throw new InvalidModelStateException(context.ModelState);
+				throw new InvalidModelStateException(context.ModelState);
 			}
 		}
 
