@@ -73,17 +73,27 @@ namespace DocumentsQA_Backend.Helpers {
 			}
 		}
 
-		public static void EditQuestion(Question question, string text, string category, int userId) {
+		public static void EditQuestion(Question question, PostEditDTO edit, int userId, bool approve = false) {
 			var time = DateTime.Now;
 
-			question.QuestionText = text;
-			question.Category = category;
+			if (edit.Question != null) {
+				question.QuestionText = edit.Question;
+			}
+			if (edit.Answer != null) {
+				question.QuestionAnswer = edit.Answer;
+				question.AnsweredById = userId;
+			}
+			if (edit.Category != null) {
+				question.Category = edit.Category;
+			}
 
 			question.LastEditorId = userId;
 			question.DateLastEdited = time;
 
-			// Editing should also invalidate existing approval status
-			ApproveQuestion(question, userId, false);
+			ApproveQuestion(question, userId, approve);
+			if (edit.Answer != null) {
+				ApproveAnswer(question, userId, approve);
+			}
 		}
 
 		public static void ApproveQuestion(Question question, int userId, bool approve) {
@@ -103,18 +113,6 @@ namespace DocumentsQA_Backend.Helpers {
 			}
 		}
 
-		/// <summary>
-		/// update single question from edit page
-		/// </summary>
-		public static  Question updateQuestion(Question question, PostEditQuestionDTO questionDetails)
-		{
-			question.QuestionText = questionDetails.Question;
-			question.Category = questionDetails.Category;
-			question.QuestionAnswer = questionDetails.Answer;
-			//question.AccountId = questionDetails.accountId;
-
-			return question;
-		}
 		public static void ApproveAnswer(Question question, int userId, bool approve) {
 			var time = DateTime.Now;
 
@@ -193,9 +191,6 @@ namespace DocumentsQA_Backend.Helpers {
 				Tranche tranche = question.Account!.Tranche;
 				return access.AllowToTranche(tranche);
 			}
-		}
-		public static bool AllowUserEditPost(IAccessService access, Question question) {
-			return AllowUserManagePost(access, question) || (access.GetUserID() == question.PostedById);
 		}
 		public static bool AllowUserManagePost(IAccessService access, Question question) {
 			if (question.Type == QuestionType.General) {

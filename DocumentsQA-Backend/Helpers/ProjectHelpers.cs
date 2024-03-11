@@ -46,5 +46,22 @@ namespace DocumentsQA_Backend.Helpers {
 				.Select(x => x.Id)
 				.ToList();
 		}
+
+		/// <summary>
+		/// Gets all user IDs who has access to the project's tranches
+		/// <para>"A": [1, 2, 3, ...],</para>
+		/// <para>"B": [10, 11, 12, ...], ...</para>
+		/// <para>...</para>
+		/// </summary>
+		public static Dictionary<Tranche, List<int>> GetTrancheUserAccessesMap(Project project) {
+			return project.Tranches
+				.Select(x => new {
+					tranche = x,
+					ids = x.UserAccesses
+						.Select(x => x.Id)
+						.ToList(),
+				})
+				.ToDictionary(x => x.tranche, x => x.ids);
+		}
 	}
 }
