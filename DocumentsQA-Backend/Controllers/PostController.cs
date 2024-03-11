@@ -280,6 +280,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		/// <summary>
 		/// Sets the approval status of answers to questions
+		/// too much logic in the api, should be in the a helper. Can then re-use for questions
 		/// </summary>
 		[HttpPut("approve/a/{pid}")]
 		public async Task<IActionResult> SetPostsApprovalA(int pid, [FromBody] PostSetApproveDTO dto) {
