@@ -239,11 +239,24 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
+		private string? _CheckInvalidQuestionIds(IEnumerable<int> source, IEnumerable<int> mapped) {
+			if (source.Count() != mapped.Count()) {
+				var invalidIds = source.Except(mapped).ToList();
+				if (invalidIds.Count > 0) {
+					return "Question not found: " + invalidIds.ToStringEx();
+				}
+				else {
+					return "One or more duplicated question IDs";
+				}
+			}
+			return null;
+		}
+
 		/// <summary>
 		/// Sets the approval status of questions
 		/// </summary>
 		[HttpPut("approve/q/{pid}")]
-		public async Task<IActionResult> SetPostsApprovalQ(int pid, [FromBody] PostSetApproveDTO approveDTO) {
+		public async Task<IActionResult> SetPostsApprovalQ(int pid, [FromBody] PostSetApproveDTO dto) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -252,19 +265,20 @@ namespace DocumentsQA_Backend.Controllers {
 				return Forbid();
 
 			var questions = project.Questions
-				.Where(x => approveDTO.Questions.Any(y => y == x.Id))
+				.Where(x => dto.Questions.Any(y => y == x.Id))
 				.ToList();
-			if (questions.Count != approveDTO.Questions.Count) {
-				var invalidIds = approveDTO.Questions
-					.Except(questions.Select(x => x.Id));
-				return BadRequest("Questions not found: " + invalidIds.ToStringEx());
+			{
+				var err = _CheckInvalidQuestionIds(dto.Questions, questions.Select(x => x.Id));
+				if (err != null) {
+					return BadRequest(err);
+			}
 			}
 
 			var time = DateTime.Now;
 			var userId = _access.GetUserID();
 
 			foreach (var i in questions) {
-				PostHelpers.ApproveQuestion(i, userId, approveDTO.Approve!.Value);
+				PostHelpers.ApproveQuestion(i, userId, dto.Approve!.Value);
 				i.DateLastEdited = time;
 			}
 
@@ -276,8 +290,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Sets the approval status of answers to questions
 		/// </summary>
 		[HttpPut("approve/a/{pid}")]
-		public async Task<IActionResult> SetPostsApprovalA(int pid, [FromBody] PostSetApproveDTO approveDTO) {
-     
+		public async Task<IActionResult> SetPostsApprovalA(int pid, [FromBody] PostSetApproveDTO dto) {
             Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -286,12 +299,13 @@ namespace DocumentsQA_Backend.Controllers {
 				return Forbid();
 
 			var questions = project.Questions
-				.Where(x => approveDTO.Questions.Any(y => y == x.Id))
+				.Where(x => dto.Questions.Any(y => y == x.Id))
 				.ToList();
-			if (questions.Count != approveDTO.Questions.Count) {
-				var invalidIds = approveDTO.Questions
-					.Except(questions.Select(x => x.Id));
-				return BadRequest("Questions not found: " + invalidIds.ToStringEx());
+			{
+				var err = _CheckInvalidQuestionIds(dto.Questions, questions.Select(x => x.Id));
+				if (err != null) {
+					return BadRequest(err);
+			}
 			}
 
 			{
@@ -308,7 +322,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var userId = _access.GetUserID();
 
 			foreach (var i in questions) {
-				PostHelpers.ApproveAnswer(i, userId, approveDTO.Approve!.Value);
+				PostHelpers.ApproveAnswer(i, userId, dto.Approve!.Value);
 				i.DateLastEdited = time;
 			}
 
@@ -385,7 +399,12 @@ namespace DocumentsQA_Backend.Controllers {
 
 				if (mapAccounts!.Count != dtos.Count) {
 					var invalidAccounts = accountIds.Except(mapAccounts.Keys);
+					if (invalidAccounts.Any()) {
 					return BadRequest("Account not found: " + invalidAccounts.ToStringEx());
+				}
+					else {
+						return BadRequest("One or more duplicated account IDs");
+			}
 				}
 			}
 
@@ -431,17 +450,11 @@ namespace DocumentsQA_Backend.Controllers {
 			var ids = dtos.Select(x => x.Id!.Value);
 			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
 
+			// Detect invalid questions
 			{
-				// Detect invalid questions + check access
-
-				foreach (var (_, i) in mapQuestions!) {
-					if (!PostHelpers.AllowUserEditPost(_access, i))
-						return Forbid($"No access to question {i.Id}");
-				}
-
-				if (mapQuestions!.Count != dtos.Count) {
-					var invalidIds = ids.Except(mapQuestions.Keys);
-					return BadRequest("Question not found: " + invalidIds.ToStringEx());
+				var err = _CheckInvalidQuestionIds(ids, mapQuestions!.Keys);
+				if (err != null) {
+					return BadRequest(err);
 				}
 			}
 
@@ -474,12 +487,11 @@ namespace DocumentsQA_Backend.Controllers {
 			var ids = dtos.Select(x => x.Id!.Value);
 			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
 
+			// Detect invalid questions
 			{
-				// Detect invalid questions
-
-				if (mapQuestions!.Count != dtos.Count) {
-					var invalidIds = ids.Except(mapQuestions.Keys);
-					return BadRequest("Question not found: " + invalidIds.ToStringEx());
+				var err = _CheckInvalidQuestionIds(ids, mapQuestions!.Keys);
+				if (err != null) {
+					return BadRequest(err);
 				}
 			}
 
