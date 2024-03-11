@@ -34,6 +34,11 @@ namespace DocumentsQA_Backend.Data {
 			return res;
 		}
 
+		public static async Task<Dictionary<int, AppUser>?> GetUsersMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
+			return await dataContext.Users
+				.Where(x => ids.Contains(x.Id))
+				.ToDictionaryAsync(x => x.Id, x => x);
+		}
 		public static async Task<Dictionary<int, Account>?> GetAccountsMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
 			return await dataContext.Accounts
 				.Where(x => ids.Contains(x.Id))
@@ -66,24 +71,5 @@ namespace DocumentsQA_Backend.Data {
 				.Where(x => x.ProjectId == pid)
 				.Where(x => x.QuestionApprovedById == null);
 		}
-
-        public static IQueryable<Question> GetAllQuestionsQuery(DataContext dataContext, int pid)
-        {
-			return dataContext.Questions
-				.Where(x => x.ProjectId == pid);
-                
-        }
-		/// <summary>
-		/// Get single question by id
-		/// </summary>
-		/// <param name="dataContext"></param>
-		/// <param name="qid"></param>
-		/// <returns></returns>
-        public static IQueryable<Question> GetSingleQuestionsQuery(DataContext dataContext, int qid)
-        {
-            return  dataContext.Questions
-                .Where(x => x.Id== qid);
-
-        }
-    }
+	}
 }

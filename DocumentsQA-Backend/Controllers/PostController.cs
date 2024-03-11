@@ -203,20 +203,24 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		/// <summary>
-		/// Edits the question
+		/// Edits a question
 		/// </summary>
-		[HttpPut("edit/{id}")]
-		public async Task<IActionResult> EditQuestion(int id, [FromBody] PostEditDTO editDTO) {
-			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
+		[HttpPut("edit/{pid}")]
+		public async Task<IActionResult> EditQuestion(int pid, [FromBody] PostEditDTO dto) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			// Only staff can edit
+			if (!_access.AllowManageProject(project))
+				return Forbid();
+
+			Question? question = await Queries.GetQuestionFromId(_dataContext, dto.Id!.Value);
 			if (question == null)
 				return BadRequest("Question not found");
 
-			if (!PostHelpers.AllowUserEditPost(_access, question))
-				return Forbid();
-
-			PostHelpers.EditQuestion(question,
-				editDTO.Text, editDTO.Category ?? question.Category,
-				_access.GetUserID());
+			PostHelpers.EditQuestion(question, dto, _access.GetUserID(), 
+				question.QuestionApprovedBy != null);
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
@@ -228,7 +232,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (question == null)
 				return BadRequest("Question not found");
 
-			if (!PostHelpers.AllowUserEditPost(_access, question))
+			if (!PostHelpers.AllowUserManagePost(_access, question))
 				return Forbid();
 
 			question.Project.Questions.Remove(question);
@@ -259,7 +263,7 @@ namespace DocumentsQA_Backend.Controllers {
 					dto.Questions, questions.Select(x => x.Id), "Question");
 				if (err != null) {
 					return BadRequest(err);
-			}
+				}
 			}
 
 			var time = DateTime.Now;
@@ -279,7 +283,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </summary>
 		[HttpPut("approve/a/{pid}")]
 		public async Task<IActionResult> SetPostsApprovalA(int pid, [FromBody] PostSetApproveDTO dto) {
-            Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
 
@@ -294,7 +298,7 @@ namespace DocumentsQA_Backend.Controllers {
 					dto.Questions, questions.Select(x => x.Id), "Question");
 				if (err != null) {
 					return BadRequest(err);
-			}
+				}
 			}
 
 			{
@@ -391,7 +395,7 @@ namespace DocumentsQA_Backend.Controllers {
 						accountIds, mapAccounts.Keys, "Account");
 					if (err != null) {
 						return BadRequest(err);
-			}
+					}
 				}
 			}
 
@@ -426,12 +430,12 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Edit questions in bulk
 		/// </summary>
 		[HttpPut("bulk/edit/{pid}")]
-		public async Task<IActionResult> EditQuestionMultiple(int pid, [FromBody] List<PostEditMultipleDTO> dtos) {
+		public async Task<IActionResult> EditQuestionMultiple(int pid, [FromBody] List<PostEditDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
 
-			if (!_access.AllowToProject(project))
+			if (!_access.AllowManageProject(project))
 				return Forbid();
 
 			var ids = dtos.Select(x => x.Id!.Value);
@@ -448,11 +452,10 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var userId = _access.GetUserID();
 
-			foreach (var i in dtos) {
-				var question = mapQuestions[i.Id!.Value];
-				PostHelpers.EditQuestion(question,
-					i.Text, i.Category ?? question.Category,
-					userId);
+			foreach (var dto in dtos) {
+				var question = mapQuestions[dto.Id!.Value];
+				PostHelpers.EditQuestion(question, dto, _access.GetUserID(),
+					question.QuestionApprovedBy != null);
 			}
 
 			var count = await _dataContext.SaveChangesAsync();
