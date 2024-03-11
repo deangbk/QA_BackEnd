@@ -149,6 +149,7 @@ namespace DocumentsQA_Backend.Controllers {
 			public string Name { get; set; } = string.Empty;
 			public string Company { get; set; } = string.Empty;
 			public HashSet<int>? Tranches { get; set; }
+			public bool Staff { get; set; }
 		}
 
 		private async Task _AddUsersIntoDatabase(List<_TmpUserData> users, Project project) {
@@ -183,12 +184,27 @@ namespace DocumentsQA_Backend.Controllers {
 
 				await _dataContext.SaveChangesAsync();
 
-				foreach (var iTranche in project.Tranches) {
-					var accesses = users
-						.Where(x => x.Tranches == null || x.Tranches.Contains(iTranche.Id))
+				{
+					var normalUsers = users
+						.Where(x => !x.Staff)
+						.ToList();
+					foreach (var iTranche in project.Tranches) {
+						var accesses = normalUsers
+							.Where(x => x.Tranches == null || x.Tranches.Contains(iTranche.Id))
+							.Select(x => x.User!)
+							.ToArray();
+						iTranche.UserAccesses.AddRange(accesses);
+					}
+				}
+				{
+					var newStaffs = users
+						.Where(x => x.Staff)
 						.Select(x => x.User!)
-						.ToArray();
-					iTranche.UserAccesses.AddRange(accesses);
+						.ToList();
+					if (newStaffs.Count > 0) {
+						await AdminHelpers.MakeProjectManagers(_dataContext, _userManager,
+							project, newStaffs);
+					}
 				}
 
 				await _dataContext.SaveChangesAsync();
@@ -276,6 +292,7 @@ namespace DocumentsQA_Backend.Controllers {
 							Name = displayName,
 							Company = projectCompany,
 							Tranches = tranches,
+							Staff = false,
 						});
 
 						++iLine;
@@ -349,11 +366,18 @@ namespace DocumentsQA_Backend.Controllers {
 							Name = user.Name,
 							Company = user.Company ?? projectCompany,
 							Tranches = tranches,
+							Staff = user.Staff ?? false,
 						});
 					}
 				}
 				catch (KeyNotFoundException e) {
 					return BadRequest($"Tranche not found in project: \"{e.Message}\"");
+				}
+			}
+
+			if (!_access.IsAdmin()) {
+				if (listUser.Any(x => x.Staff)) {
+					return Forbid("Must be admin to create user as staff");
 				}
 			}
 
