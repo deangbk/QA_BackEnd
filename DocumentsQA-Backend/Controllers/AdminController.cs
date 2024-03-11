@@ -66,6 +66,7 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 			}
 
+			await _dataContext.SaveChangesAsync();
 			return Ok();
 		}
 
@@ -97,16 +98,10 @@ namespace DocumentsQA_Backend.Controllers {
 			if (roleFind == null)
 				return BadRequest("Role not found");
 
-			await _GrantUserRole(user, roleFind);
+			await AdminHelpers.GrantUserRole(_userManager, user, roleFind);
 
+			await _dataContext.SaveChangesAsync();
 			return Ok();
-		}
-		private async Task _GrantUserRole(AppUser user, AppRole role) {
-			var roleExists = await _userManager.IsInRoleAsync(user, role.Name);
-			if (!roleExists) {
-				await _userManager.AddClaimAsync(user, new Claim("role", role.Name));
-				await _userManager.AddToRoleAsync(user, role.Name);
-			}
 		}
 
 		/// <summary>
@@ -122,31 +117,13 @@ namespace DocumentsQA_Backend.Controllers {
 			if (roleFind == null)
 				return BadRequest("Role not found");
 
-			var claims = await _userManager.GetClaimsAsync(user);
-			var roleClaims = claims
-				.Where(x => x.ValueType == "role")
-				.Where(x => x.Value == role);
+			await AdminHelpers.RemoveUserRole(_userManager, user, roleFind);
 
-			await _userManager.RemoveClaimsAsync(user, roleClaims);
-			await _userManager.RemoveFromRoleAsync(user, role);
-
+			await _dataContext.SaveChangesAsync();
 			return Ok();
 		}
 
 		// -----------------------------------------------------
-
-		public static IEnumerable<EJoinClass> ExcludeExistingTrancheAccess(Tranche tranche, IEnumerable<int> userIds) {
-			// Remove all IDs that already have access to the tranche
-			return userIds
-				.Except(tranche.UserAccesses.Select(x => x.Id))
-				.Select(x => EJoinClass.TrancheUser(tranche.Id, x));
-		}
-		public static IEnumerable<EJoinClass> ExcludeExistingProjectManage(Project project, IEnumerable<int> userIds) {
-			// Remove all IDs that already have access to the project
-			return userIds
-				.Except(project.UserManagers.Select(x => x.Id))
-				.Select(x => EJoinClass.ProjectUser(project.Id, x));
-		}
 
 		/// <summary>
 		/// Grants project management rights to a user
@@ -159,27 +136,34 @@ namespace DocumentsQA_Backend.Controllers {
 			if (project == null)
 				return BadRequest("Project not found");
 
-			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
-			if (user == null)
-				return BadRequest("User not found");
+			int rowsAdded;
+			using (var transaction = _dataContext.Database.BeginTransaction()) {
+				await AdminHelpers.MakeProjectManagers(_dataContext, _userManager,
+					project, new List<int> { uid });
 
-			// Make the user a manager if they're not already one
-			await _GrantUserRole(user, AppRole.Manager);
-
-			// Grant elevated access (manager) to all tranches in the project
-			{
-				// Add access for each tranche in project
-				foreach (var i in project.Tranches) {
-					if (!i.UserAccesses.Exists(x => x.Id == uid))
-						i.UserAccesses.Add(user);
-				}
-				// Add to project manager
-				if (!project.UserManagers.Exists(x => x.Id == uid))
-					project.UserManagers.Add(user);
+				rowsAdded = await _dataContext.SaveChangesAsync();
+				await transaction.CommitAsync();
 			}
 
-			var rows = await _dataContext.SaveChangesAsync();
-			return Ok(rows);
+			return Ok(rowsAdded);
+		}
+
+		[HttpPut("grant/manage/bulk/{pid}")]
+		public async Task<IActionResult> GrantProjectManagements(int pid, [FromBody] List<int> userIds) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
+
+			int rowsAdded;
+			using (var transaction = _dataContext.Database.BeginTransaction()) {
+				await AdminHelpers.MakeProjectManagers(_dataContext, _userManager,
+					project, userIds);
+
+				rowsAdded = await _dataContext.SaveChangesAsync();
+				await transaction.CommitAsync();
+			}
+
+			return Ok(rowsAdded);
 		}
 
 		/// <summary>
@@ -212,39 +196,16 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("File parse error: " + e.Message);
 			}
 
-			// Verify user IDs
-			{
-				var userIdsExist = await _dataContext.Users
-					.Where(x => userIds.Any(y => y == x.Id))
-					.Select(x => x.Id)
-					.ToListAsync();
-				if (userIdsExist.Count != userIds.Count) {
-					var invalidUsers = userIds.Except(userIdsExist);
-					return BadRequest("Users don't exist: " + string.Join(", ", invalidUsers));
-				}
+			int rowsAdded;
+			using (var transaction = _dataContext.Database.BeginTransaction()) {
+				await AdminHelpers.MakeProjectManagers(_dataContext, _userManager,
+					project, userIds);
+
+				rowsAdded = await _dataContext.SaveChangesAsync();
+				await transaction.CommitAsync();
 			}
 
-			// Make the users managers if they're not already one
-			foreach (var id in userIds) {
-				AppUser user = (await Queries.GetUserFromId(_dataContext, id))!;
-				await _GrantUserRole(user, AppRole.Manager);
-			}
-
-			// Grant elevated access (manager) to all tranches in the project
-			{
-				var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
-				var dbSetManager = _dataContext.Set<EJoinClass>("ProjectUserManage");
-
-				// Add access for each tranche in project
-				foreach (var i in project.Tranches) {
-					dbSetTranche.AddRange(ExcludeExistingTrancheAccess(i, userIds));
-				}
-				// Add to project manager
-				dbSetManager.AddRange(ExcludeExistingProjectManage(project, userIds));
-			}
-
-			var rows = await _dataContext.SaveChangesAsync();
-			return Ok(rows);
+			return Ok(rowsAdded);
 		}
 
 		/// <summary>
@@ -257,43 +218,11 @@ namespace DocumentsQA_Backend.Controllers {
 			if (project == null)
 				return BadRequest("Project not found");
 
-			// Remove access from all tranches
-			foreach (var i in project.Tranches) {
-				i.UserAccesses.RemoveAll(x => x.Id == uid);
-			}
-			// Remove manage access for the project
-			project.UserManagers.RemoveAll(x => x.Id == uid);
+			AdminHelpers.ClearUsersTrancheAccess(_dataContext, new List<int> { uid });
+			AdminHelpers.RemoveProjectManagers(_dataContext, pid, new List<int> { uid });
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
-		/*
-		[HttpDelete("ungrant/manage/file/{pid}")]
-		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]	// 4MB
-		public async Task<IActionResult> RemoveProjectManagementFromFile(int pid, [FromForm] IFormFile file) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			List<int> userIds = new();
-			try {
-				string contents = await FileHelpers.ReadIFormFile(file);
-				userIds = ValueHelpers.SplitIntString(contents).ToList();
-			}
-			catch (Exception e) {
-				return BadRequest("File parse error: " + e.Message);
-			}
-
-			// Remove access from all tranches
-			foreach (var i in project.Tranches) {
-				i.UserAccesses.RemoveAll(x => userIds.Any(y => y == x.Id));
-			}
-			// Also remove manage access for the project
-			project.UserManagers.RemoveAll(x => userIds.Any(y => y == x.Id));
-
-			var rows = await _dataContext.SaveChangesAsync();
-			return Ok(rows);
-		}
-		*/
 	}
 }

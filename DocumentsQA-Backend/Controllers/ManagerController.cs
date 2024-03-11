@@ -101,9 +101,16 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("File parse error: " + e.Message);
 			}
 
-			var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
-			dbSetTranche.AddRange(AdminController.ExcludeExistingTrancheAccess(
-				tranche, userIdsGrant));
+			{
+				// Clear existing access first to not cause insert conflicts
+				AdminHelpers.RemoveUsersTrancheAccess(_dataContext, tid, userIdsGrant);
+
+				var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
+				dbSetTranche.AddRange(userIdsGrant.Select(u => new EJoinClass {
+					Id1 = tid,
+					Id2 = u,
+				}));
+			}
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
@@ -132,38 +139,6 @@ namespace DocumentsQA_Backend.Controllers {
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
 		}
-		/*
-		[HttpDelete("ungrant/access/file/{tid}")]
-		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]  // 4MB
-		public async Task<IActionResult> RemoveTrancheAccessFromFile(int tid, [FromForm] IFormFile file) {
-			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
-			if (tranche == null)
-				return BadRequest("Tranche not found");
-			Project project = tranche.Project;
-
-			if (!_access.AllowManageProject(project))
-				return Forbid();
-
-			List<int> userIdsGrant = new();
-			try {
-				string contents = await FileHelpers.ReadIFormFile(file);
-				userIdsGrant = ValueHelpers.SplitIntString(contents).ToList();
-			}
-			catch (Exception e) {
-				return BadRequest("File parse error: " + e.Message);
-			}
-
-			if (!project.UserManagers.Exists(x => userIdsGrant.Any(y => y == x.Id))) {
-				tranche.UserAccesses.RemoveAll(x => userIdsGrant.Any(y => y == x.Id));
-			}
-			else {
-				return BadRequest("Cannot remove access: one or more users have elevated rights");
-			}
-
-			var rows = await _dataContext.SaveChangesAsync();
-			return Ok(rows);
-		}
-		*/
 
 		// -----------------------------------------------------
 
@@ -205,6 +180,8 @@ namespace DocumentsQA_Backend.Controllers {
 					// Set user role
 					await AppRole.AddRoleToUser(_userManager, user, AppRole.User);
 				}
+
+				await _dataContext.SaveChangesAsync();
 
 				foreach (var iTranche in project.Tranches) {
 					var accesses = users
@@ -453,5 +430,5 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok(listPostTables);
 		}
-        }
+	}
 }
