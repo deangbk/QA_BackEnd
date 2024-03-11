@@ -171,22 +171,26 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		/// <summary>
-		/// Adds an answer to the question
+		/// Adds an answer to a question
 		/// </summary>
-		[HttpPut("answer/{id}")]
-		public async Task<IActionResult> SetAnswer(int id, [FromBody] PostSetAnswerDTO answerDTO) {
-			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
-			if (question == null)
-				return BadRequest("Question not found");
+		[HttpPut("answer/{pid}")]
+		public async Task<IActionResult> SetAnswer(int pid, [FromBody] PostSetAnswerDTO dto) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
 
 			// Only staff can add answer
-			if (!PostHelpers.AllowUserManagePost(_access, question))
+			if (!_access.AllowManageProject(project))
 				return Forbid();
+
+			Question? question = await Queries.GetQuestionFromId(_dataContext, dto.Id!.Value);
+			if (question == null)
+				return BadRequest("Question not found");
 
 			var time = DateTime.Now;
 			var userId = _access.GetUserID();
 
-			question.QuestionAnswer = answerDTO.Answer;
+			question.QuestionAnswer = dto.Answer;
 			question.AnsweredById = userId;
 			question.DateAnswered = time;
 			question.DateLastEdited = time;

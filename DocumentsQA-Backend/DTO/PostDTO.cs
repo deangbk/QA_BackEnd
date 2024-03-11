@@ -98,6 +98,7 @@ namespace DocumentsQA_Backend.DTO {
 
 
     public class PostSetAnswerDTO {
+		[Required] public int? Id { get; set; }
 		public string Answer { get; set; } = null!;
 	}
 
