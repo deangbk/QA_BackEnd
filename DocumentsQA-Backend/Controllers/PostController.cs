@@ -239,19 +239,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private string? _CheckInvalidQuestionIds(IEnumerable<int> source, IEnumerable<int> mapped) {
-			if (source.Count() != mapped.Count()) {
-				var invalidIds = source.Except(mapped).ToList();
-				if (invalidIds.Count > 0) {
-					return "Question not found: " + invalidIds.ToStringEx();
-				}
-				else {
-					return "One or more duplicated question IDs";
-				}
-			}
-			return null;
-		}
-
 		/// <summary>
 		/// Sets the approval status of questions
 		/// </summary>
@@ -268,7 +255,8 @@ namespace DocumentsQA_Backend.Controllers {
 				.Where(x => dto.Questions.Any(y => y == x.Id))
 				.ToList();
 			{
-				var err = _CheckInvalidQuestionIds(dto.Questions, questions.Select(x => x.Id));
+				var err = ValueHelpers.CheckInvalidIds(
+					dto.Questions, questions.Select(x => x.Id), "Question");
 				if (err != null) {
 					return BadRequest(err);
 			}
@@ -302,7 +290,8 @@ namespace DocumentsQA_Backend.Controllers {
 				.Where(x => dto.Questions.Any(y => y == x.Id))
 				.ToList();
 			{
-				var err = _CheckInvalidQuestionIds(dto.Questions, questions.Select(x => x.Id));
+				var err = ValueHelpers.CheckInvalidIds(
+					dto.Questions, questions.Select(x => x.Id), "Question");
 				if (err != null) {
 					return BadRequest(err);
 			}
@@ -397,13 +386,11 @@ namespace DocumentsQA_Backend.Controllers {
 						return Forbid($"No access to account \"{i.GetIdentifierName()}\"");
 				}
 
-				if (mapAccounts!.Count != dtos.Count) {
-					var invalidAccounts = accountIds.Except(mapAccounts.Keys);
-					if (invalidAccounts.Any()) {
-					return BadRequest("Account not found: " + invalidAccounts.ToStringEx());
-				}
-					else {
-						return BadRequest("One or more duplicated account IDs");
+				{
+					var err = ValueHelpers.CheckInvalidIds(
+						accountIds, mapAccounts.Keys, "Account");
+					if (err != null) {
+						return BadRequest(err);
 			}
 				}
 			}
@@ -452,7 +439,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Detect invalid questions
 			{
-				var err = _CheckInvalidQuestionIds(ids, mapQuestions!.Keys);
+				var err = ValueHelpers.CheckInvalidIds(
+					ids, mapQuestions!.Keys, "Question");
 				if (err != null) {
 					return BadRequest(err);
 				}
@@ -489,7 +477,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 			// Detect invalid questions
 			{
-				var err = _CheckInvalidQuestionIds(ids, mapQuestions!.Keys);
+				var err = ValueHelpers.CheckInvalidIds(
+					ids, mapQuestions!.Keys, "Question");
 				if (err != null) {
 					return BadRequest(err);
 				}
