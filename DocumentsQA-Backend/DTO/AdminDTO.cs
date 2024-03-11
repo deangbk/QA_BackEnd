@@ -11,5 +11,6 @@ namespace DocumentsQA_Backend.DTO {
 		public string Name { get; set; } = null!;
 		public string? Company { get; set; }
 		public List<string>? Tranches { get; set; }
+		public bool? Staff { get; set; }
 	}
 }

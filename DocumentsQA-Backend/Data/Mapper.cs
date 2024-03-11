@@ -58,7 +58,7 @@ namespace DocumentsQA_Backend.Data {
 			};
 
 			if (detail >= 1) {
-				table["user_name"] = obj.UserName;
+				table["user_name"] = AuthHelpers.DecomposeUsername(obj.UserName).Item2;
 				table["date_created"] = obj.DateCreated;
 			}
 

@@ -57,11 +57,12 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		/// <summary>
-		/// Gets list of all users with project read access, and project management access
+		/// Gets list of all users with project read access
 		/// <para>Admins are not included</para>
 		/// </summary>
 		[HttpGet("users/{pid}")]
-		public async Task<IActionResult> GetProjectUsers(int pid) {
+		public async Task<IActionResult> GetProjectUsers(int pid, [FromQuery] int details = 0)
+		{
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -69,20 +70,31 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			var listManagerIds = project.UserManagers
-				.Select(x => x.Id)
-				.ToList();
-			var listUserIds = project.Tranches
-				.SelectMany(x => x.UserAccesses)
-				.Select(x => x.Id)
-				.Distinct()
-				.ToList();
+			var listUserIds = ProjectHelpers.GetProjectUserAccesses(project);
 
-			var listAccessIds = listManagerIds
-				.Union(listUserIds)
-				.ToList();
+			if (details > 0) {
+				// TODO: Maybe optimize these
 
-			return Ok(listUserIds);
+				var trancheUsersMap = ProjectHelpers.GetTrancheUserAccessesMap(project);
+				var trancheDataMap = project.Tranches
+					.ToDictionary(x => x.Id, x => x.ToJsonTable(0));
+
+				var mapUsers = (await Queries.GetUsersMapFromIds(_dataContext, listUserIds))!;
+				var listRes = mapUsers
+					.Select(x => {
+						var tableBase = x.Value.ToJsonTable(details);
+						tableBase["tranches"] = trancheUsersMap
+							.Where(y => y.Value.Contains(x.Key))
+							.Select(y => trancheDataMap[y.Key.Id])
+							.ToList();
+						return tableBase;
+					});
+
+				return Ok(listRes);
+			}
+			else {
+				return Ok(listUserIds);
+			}
 		}
 
 		/// <summary>
@@ -90,7 +102,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <para>Admins are not included</para>
 		/// </summary>
 		[HttpGet("managers/{pid}")]
-		public async Task<IActionResult> GetProjectManagers(int pid) {
+		public async Task<IActionResult> GetProjectManagers(int pid, [FromQuery] int details = -1) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -102,7 +114,27 @@ namespace DocumentsQA_Backend.Controllers {
 				.Select(x => x.Id)
 				.ToList();
 
-			return Ok(listManagerIds);
+			if (details >= 0) {
+				var trancheUsersMap = ProjectHelpers.GetTrancheUserAccessesMap(project);
+				var trancheDataMap = project.Tranches
+					.ToDictionary(x => x.Id, x => x.ToJsonTable(0));
+
+				var mapUsers = (await Queries.GetUsersMapFromIds(_dataContext, listManagerIds))!;
+				var listRes = mapUsers
+					.Select(x => {
+						var tableBase = x.Value.ToJsonTable(details);
+						tableBase["tranches"] = trancheUsersMap
+							.Where(y => y.Value.Contains(x.Key))
+							.Select(y => trancheDataMap[y.Key.Id])
+							.ToList();
+						return tableBase;
+					});
+
+				return Ok(listRes);
+			}
+			else {
+				return Ok(listManagerIds);
+			}
 		}
 
 		[HttpGet("content/{pid}")]
