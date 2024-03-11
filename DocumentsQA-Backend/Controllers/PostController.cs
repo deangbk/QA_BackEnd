@@ -462,7 +462,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Adds answers to questions in bulk
 		/// </summary>
 		[HttpPut("bulk/answer/{pid}")]
-		public async Task<IActionResult> SetAnswerMultiple(int pid, [FromBody] List<PostSetAnswerMultipleDTO> dtos) {
+		public async Task<IActionResult> SetAnswerMultiple(int pid, [FromBody] List<PostSetAnswerDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");

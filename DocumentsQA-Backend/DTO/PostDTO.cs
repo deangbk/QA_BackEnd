@@ -115,12 +115,6 @@ namespace DocumentsQA_Backend.DTO {
 		public string? Category { get; set; }
 	}
 
-	public class PostSetAnswerMultipleDTO {
-		[Required] public int? Id { get; set; }
-
-		public string Answer { get; set; } = null!;
-	}
-
 	public class PostAddCommentDTO {
 		public string Text { get; set; } = null!;
 	}
