@@ -85,6 +85,26 @@ namespace DocumentsQA_Backend.DTO {
 		public string? Category { get; set; }
     }
 
+	/// <summary>
+	/// needed for the edit question page in front edit, the other edit dtos don't cover all the properties needed
+	/// </summary>
+    public class PostEditQuestionDTO
+    {
+
+        [JsonPropertyName("id")]
+        public int Id { get; set; }
+
+        [JsonPropertyName("q_text")]
+        public string? Question { get; set; } = null!;
+        [JsonPropertyName("a_text")]
+        public string? Answer { get; set; } = null!;
+        [JsonPropertyName("category")]
+        public string? Category { get; set; } = null!;
+
+        [JsonPropertyName("type")]
+        public string? questionType { get; set; } = null!;
+
+    }
     public class PostSetAnswerDTO {
 		[Required] public int? Id { get; set; }
 		public string Answer { get; set; } = null!;
