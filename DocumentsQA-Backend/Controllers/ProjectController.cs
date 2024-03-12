@@ -57,6 +57,35 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		/// <summary>
+		/// Gets project tranches information
+		/// </summary>
+		[HttpGet("tranches")]
+		public async Task<IActionResult> GetProjectTranches() {
+			Project? project = await Queries.GetProjectFromId(
+				_dataContext, _access.GetProjectID());
+			if (project == null)
+				return BadRequest("Project not found");
+
+			int userId = _access.GetUserID();
+
+			List<Tranche> tranches = new();
+			if (!_access.IsSuperUser()) {
+				var user = await Queries.GetUserFromId(_dataContext, userId);
+				if (user != null) {
+					tranches = ProjectHelpers.GetUserTrancheAccessesInProject(user, project.Id);
+				}
+			}
+			else {
+				tranches = project.Tranches;
+			}
+
+			var mapTrancheAccounts = tranches.ToDictionary(x => x, x => x.Accounts);
+
+			var resTable = project.Tranches.Select(x => x.ToJsonTable(1));
+			return Ok(resTable);
+		}
+
+		/// <summary>
 		/// Gets list of all users with project read access
 		/// <para>Admins are not included</para>
 		/// </summary>
