@@ -48,6 +48,12 @@ namespace DocumentsQA_Backend.Data {
 				["name"] = obj.Name,
 			};
 
+			if (detail >= 1) {
+				table["accounts"] = obj.Accounts
+					.Select(x => x.ToJsonTable(0))
+					.ToList();
+			}
+
 			return table;
 		}
 
@@ -173,8 +179,11 @@ namespace DocumentsQA_Backend.Data {
 				["id"] = obj.GetIdentifierName(),
 				["no"] = obj.AccountNo,
 				["name"] = obj.AccountName ?? "",
-				["tranche"] = obj.Tranche.ToJsonTable(0),
 			};
+
+			if (detail >= 1) {
+				table["tranche"] = obj.Tranche.ToJsonTable(0);
+			}
 
 			return table;
 		}
