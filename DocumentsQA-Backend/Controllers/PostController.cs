@@ -249,10 +249,10 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		/// <summary>
-		/// Sets the approval status of questions
+		/// Sets the approval status of questions or answers
 		/// </summary>
-		[HttpPut("approve/q/{pid}")]
-		public async Task<IActionResult> SetPostsApprovalQ(int pid, [FromBody] PostSetApproveDTO dto) {
+		[HttpPut("bulk/approve/{pid}")]
+		public async Task<IActionResult> SetPostsApproval(int pid, [FromBody] PostSetApproveDTO dto, [FromQuery] string mode) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -260,67 +260,49 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			var questions = project.Questions
-				.Where(x => dto.Questions.Any(y => y == x.Id))
-				.ToList();
+			int modeI = mode switch {
+				"q" => 0,
+				"a" => 1,
+				_ => -1,
+			};
+			if (modeI == -1) {
+				return BadRequest("mode must be either \"q\" or \"a\"");
+				}
+
+			var questions = (await Queries.GetQuestionsMapFromIds(_dataContext, dto.Questions))!;
 			{
+				// Check invalid IDs and duplicate IDs
+
 				var err = ValueHelpers.CheckInvalidIds(
-					dto.Questions, questions.Select(x => x.Id), "Question");
+					dto.Questions, questions.Keys, "Question");
 				if (err != null) {
 					return BadRequest(err);
 				}
 			}
 
-			var time = DateTime.Now;
-
-			foreach (var i in questions) {
-				PostHelpers.ApproveQuestion(i, _userId, dto.Approve!.Value);
-				i.DateLastEdited = time;
-			}
-
-			await _dataContext.SaveChangesAsync();
-			return Ok();
-		}
-
-		/// <summary>
-		/// Sets the approval status of answers to questions
-		/// too much logic in the api, should be in the a helper. Can then re-use for questions
-		/// </summary>
-		[HttpPut("approve/a/{pid}")]
-		public async Task<IActionResult> SetPostsApprovalA(int pid, [FromBody] PostSetApproveDTO dto) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowManageProject(project))
-				return Forbid();
-
-			var questions = project.Questions
-				.Where(x => dto.Questions.Any(y => y == x.Id))
-				.ToList();
-			{
-				var err = ValueHelpers.CheckInvalidIds(
-					dto.Questions, questions.Select(x => x.Id), "Question");
-				if (err != null) {
-					return BadRequest(err);
-				}
-			}
-
-			{
+			// If approving answers, all posts must already have an answer
+			if (modeI == 1) {
 				var unanswered = questions
-					.Where(x => x.QuestionAnswer == null)
-					.Select(x => x.Id)
+					.Where(x => x.Value.QuestionAnswer == null)
+					.Select(x => x.Value.Id)
 					.ToList();
-				if (unanswered.Count > 0) {
+				if (unanswered.Any()) {
 					return BadRequest("Unanswered questions: " + unanswered.ToStringEx());
 				}
 			}
 
 			var time = DateTime.Now;
+			bool approve = dto.Approve!.Value;
 
-			foreach (var i in questions) {
-				PostHelpers.ApproveAnswer(i, _userId, dto.Approve!.Value);
-				i.DateLastEdited = time;
+			foreach (var (_, q) in questions) {
+				if (modeI == 0) {
+					PostHelpers.ApproveQuestion(q, _userId, approve);
+			}
+				else {
+					PostHelpers.ApproveAnswer(q, _userId, approve);
+				}
+
+				q.DateLastEdited = time;
 			}
 
 			await _dataContext.SaveChangesAsync();
