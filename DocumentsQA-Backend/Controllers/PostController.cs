@@ -297,6 +297,8 @@ namespace DocumentsQA_Backend.Controllers {
 					QuestionType.General, project.Id,
 					d.Text, d.Category ?? "general",
 					d.PostAs ?? _userId);
+				if (d.DateSent is not null)
+					question.DateSent = d.DateSent.Value;
 
 				if (d.AccountId != null) {
 					question.Type = QuestionType.Account;

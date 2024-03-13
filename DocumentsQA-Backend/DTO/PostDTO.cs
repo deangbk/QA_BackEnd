@@ -75,6 +75,9 @@ namespace DocumentsQA_Backend.DTO {
 
 		[JsonPropertyName("post_as")]
 		public int? PostAs { get; set; }
+
+		[JsonPropertyName("date_sent")]
+		public DateTime? DateSent { get; set; }
 	}
 
 	public class PostEditDTO {
