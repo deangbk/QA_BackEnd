@@ -32,6 +32,7 @@ namespace DocumentsQA_Backend.Helpers {
 				LastEditorId = userId,
 
 				DatePosted = time,
+				DateSent = time,
 				DateLastEdited = time,
 			};
 			return question;
