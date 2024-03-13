@@ -72,6 +72,9 @@ namespace DocumentsQA_Backend.DTO {
 
 		public string Text { get; set; } = null!;
 		public string? Category { get; set; }
+
+		[JsonPropertyName("post_as")]
+		public int? PostAs { get; set; }
 	}
 
 	public class PostEditDTO {
