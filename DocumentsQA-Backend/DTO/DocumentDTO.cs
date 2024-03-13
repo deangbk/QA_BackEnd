@@ -58,7 +58,13 @@ namespace DocumentsQA_Backend.DTO {
 		[JsonPropertyName("in_account")]
 		public int? AssocAccount { get; set; }
 	}
-	public class DocumentGetDTO {
+    public class fileUploadDTO
+    {
+        public DocumentFilterDTO? Filter { get; set; }
+        public PaginateDTO? Paginate { get; set; }
+    }
+
+    public class DocumentGetDTO {
 		public DocumentFilterDTO? Filter { get; set; }
 		public PaginateDTO? Paginate { get; set; }
 	}
