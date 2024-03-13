@@ -27,14 +27,20 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly IAccessService _access;
 
+		private readonly int _userId, _projectId;
+
 		public PostController(DataContext dataContext, ILogger<PostController> logger, IAccessService access) {
 			_dataContext = dataContext;
 			_logger = logger;
 
 			_access = access;
-
+			{
 			if (!_access.IsValidUser())
 				throw new AccessUnauthorizedException();
+
+				_userId = _access.GetUserID();
+				_projectId = _access.GetProjectID();
+		}
 		}
 
 		// -----------------------------------------------------
@@ -188,15 +194,14 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Question not found");
 
 			var time = DateTime.Now;
-			var userId = _access.GetUserID();
 
 			question.QuestionAnswer = dto.Answer;
-			question.AnsweredById = userId;
+			question.AnsweredById = _userId;
 			question.DateAnswered = time;
 			question.DateLastEdited = time;
 
 			// Automatically approve
-			PostHelpers.ApproveAnswer(question, userId, true);
+			PostHelpers.ApproveAnswer(question, _userId, true);
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
@@ -219,7 +224,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (question == null)
 				return BadRequest("Question not found");
 
-			PostHelpers.EditQuestion(question, dto, _access.GetUserID(), 
+			PostHelpers.EditQuestion(question, dto, _userId, 
 				question.QuestionApprovedBy != null);
 
 			await _dataContext.SaveChangesAsync();
@@ -267,10 +272,9 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			var time = DateTime.Now;
-			var userId = _access.GetUserID();
 
 			foreach (var i in questions) {
-				PostHelpers.ApproveQuestion(i, userId, dto.Approve!.Value);
+				PostHelpers.ApproveQuestion(i, _userId, dto.Approve!.Value);
 				i.DateLastEdited = time;
 			}
 
@@ -313,10 +317,9 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			var time = DateTime.Now;
-			var userId = _access.GetUserID();
 
 			foreach (var i in questions) {
-				PostHelpers.ApproveAnswer(i, userId, dto.Approve!.Value);
+				PostHelpers.ApproveAnswer(i, _userId, dto.Approve!.Value);
 				i.DateLastEdited = time;
 			}
 
@@ -451,11 +454,9 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 			}
 
-			var userId = _access.GetUserID();
-
 			foreach (var dto in dtos) {
 				var question = mapQuestions[dto.Id!.Value];
-				PostHelpers.EditQuestion(question, dto, _access.GetUserID(),
+				PostHelpers.EditQuestion(question, dto, _userId,
 					question.QuestionApprovedBy != null);
 			}
 
@@ -489,19 +490,18 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			var time = DateTime.Now;
-			var userId = _access.GetUserID();
 
 			foreach (var i in dtos) {
 				var question = mapQuestions[i.Id!.Value];
 
 				question.QuestionAnswer = i.Answer;
-				question.AnsweredById = userId;
+				question.AnsweredById = _userId;
 				question.DateAnswered = time;
 				question.DateLastEdited = time;
 
 				// Don't auto-approve on bulk answer
-				PostHelpers.ApproveQuestion(question, userId, true);
-				PostHelpers.ApproveAnswer(question, userId, false);
+				PostHelpers.ApproveQuestion(question, _userId, true);
+				PostHelpers.ApproveAnswer(question, _userId, false);
 			}
 
 			var count = await _dataContext.SaveChangesAsync();
