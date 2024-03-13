@@ -27,9 +27,10 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly UserManager<AppUser> _userManager;
 		private readonly IAccessService _access;
+        private readonly IWebHostEnvironment _env;
 
-		public ManagerController(DataContext dataContext, ILogger<ManagerController> logger,
-			UserManager<AppUser> userManager, IAccessService access) {
+        public ManagerController(DataContext dataContext, ILogger<ManagerController> logger,
+			UserManager<AppUser> userManager, IAccessService access, IWebHostEnvironment env) {
 
 			_dataContext = dataContext;
 			_logger = logger;
@@ -39,7 +40,9 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.IsSuperUser())
 				throw new AccessForbiddenException("Manager access required");
-		}
+
+            _env = env;
+        }
 
 		// -----------------------------------------------------
 
@@ -478,5 +481,36 @@ namespace DocumentsQA_Backend.Controllers {
 
             return Ok("{}");
         }
+
+        [HttpPost("upQDoc")]
+        public async Task<IActionResult> UploadQestionDocs( [FromForm] PostEditQuestionDTO questionDetails)
+        {
+			var documentFolder= "Documents";
+            var files = Request.Form.Files;
+			var rootPath = _env.ContentRootPath;
+			var upPath = Path.Combine(rootPath, documentFolder);
+
+			try
+			{
+				foreach (var file in files)
+				{
+
+					var fullPath = Path.Combine(upPath, file.FileName);
+					// You can access the file here
+					using (var stream = new FileStream(fullPath, FileMode.Create))
+					{
+						//var fName= file.FileName;
+						await file.CopyToAsync(stream);
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+                Console.WriteLine($"An error occurred: {ex.Message}");
+            }
+            return Ok("");
         }
-}
+    }
+
+
+    }
