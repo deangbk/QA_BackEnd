@@ -35,12 +35,12 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_access = access;
 			{
-			if (!_access.IsValidUser())
-				throw new AccessUnauthorizedException();
+				if (!_access.IsValidUser())
+					throw new AccessUnauthorizedException();
 
 				_userId = _access.GetUserID();
 				_projectId = _access.GetProjectID();
-		}
+			}
 		}
 
 		// -----------------------------------------------------
@@ -112,69 +112,6 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		// -----------------------------------------------------
-
-		/// <summary>
-		/// Posts a general question
-		/// </summary>
-		[HttpPost("general/{pid}")]
-		public async Task<IActionResult> PostGeneralQuestion(int pid, [FromBody] PostCreateDTO createDTO) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowToProject(project))
-				return Forbid();
-
-			var question = PostHelpers.CreateQuestion(
-				QuestionType.General, project.Id,
-				createDTO.Text, createDTO.Category ?? "general",
-				_access.GetUserID());
-
-			// Set the question number to 1 more than the current highest
-			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
-			question.QuestionNum = maxQuestionNo + 1;
-
-			project.Questions.Add(question);
-
-			await _dataContext.SaveChangesAsync();
-			return Ok(question.Id);
-		}
-
-		/// <summary>
-		/// Posts an account question
-		/// </summary>
-		[HttpPost("account/{pid}")]
-		public async Task<IActionResult> PostAccountQuestion(int pid, [FromBody] PostCreateDTO createDTO) {
-			if (createDTO.AccountId == null) {
-				ModelState.AddModelError("AccountId", "AccountId cannot be null");
-				return BadRequest(new ValidationProblemDetails(ModelState));
-			}
-
-			Account? account = await Queries.GetAccountFromId(_dataContext, createDTO.AccountId.Value);
-			if (account == null)
-				return BadRequest("Account not found");
-
-			if (!_access.AllowToTranche(account.Tranche))
-				return Forbid();
-
-			Project project = account.Project;
-
-			var question = PostHelpers.CreateQuestion(
-				QuestionType.Account, project.Id,
-				createDTO.Text, createDTO.Category ?? "general",
-				_access.GetUserID());
-
-			question.AccountId = account.Id;
-
-			// Set the question number to 1 more than the current highest
-			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
-			question.QuestionNum = maxQuestionNo + 1;
-
-			project.Questions.Add(question);
-			await _dataContext.SaveChangesAsync();
-
-			return Ok(question.Id);
-		}
 
 		/// <summary>
 		/// Adds an answer to a question
@@ -267,7 +204,7 @@ namespace DocumentsQA_Backend.Controllers {
 			};
 			if (modeI == -1) {
 				return BadRequest("mode must be either \"q\" or \"a\"");
-				}
+			}
 
 			var questions = (await Queries.GetQuestionsMapFromIds(_dataContext, dto.Questions))!;
 			{
@@ -297,7 +234,7 @@ namespace DocumentsQA_Backend.Controllers {
 			foreach (var (_, q) in questions) {
 				if (modeI == 0) {
 					PostHelpers.ApproveQuestion(q, _userId, approve);
-			}
+				}
 				else {
 					PostHelpers.ApproveAnswer(q, _userId, approve);
 				}
