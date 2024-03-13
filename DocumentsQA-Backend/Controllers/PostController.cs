@@ -27,14 +27,20 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly IAccessService _access;
 
+		private readonly int _userId, _projectId;
+
 		public PostController(DataContext dataContext, ILogger<PostController> logger, IAccessService access) {
 			_dataContext = dataContext;
 			_logger = logger;
 
 			_access = access;
+			{
+				if (!_access.IsValidUser())
+					throw new AccessUnauthorizedException();
 
-			if (!_access.IsValidUser())
-				throw new AccessUnauthorizedException();
+				_userId = _access.GetUserID();
+				_projectId = _access.GetProjectID();
+			}
 		}
 
 		// -----------------------------------------------------
@@ -108,69 +114,6 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		/// <summary>
-		/// Posts a general question
-		/// </summary>
-		[HttpPost("general/{pid}")]
-		public async Task<IActionResult> PostGeneralQuestion(int pid, [FromBody] PostCreateDTO createDTO) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowToProject(project))
-				return Forbid();
-
-			var question = PostHelpers.CreateQuestion(
-				QuestionType.General, project.Id,
-				createDTO.Text, createDTO.Category ?? "general",
-				_access.GetUserID());
-
-			// Set the question number to 1 more than the current highest
-			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
-			question.QuestionNum = maxQuestionNo + 1;
-
-			project.Questions.Add(question);
-
-			await _dataContext.SaveChangesAsync();
-			return Ok(question.Id);
-		}
-
-		/// <summary>
-		/// Posts an account question
-		/// </summary>
-		[HttpPost("account/{pid}")]
-		public async Task<IActionResult> PostAccountQuestion(int pid, [FromBody] PostCreateDTO createDTO) {
-			if (createDTO.AccountId == null) {
-				ModelState.AddModelError("AccountId", "AccountId cannot be null");
-				return BadRequest(new ValidationProblemDetails(ModelState));
-			}
-
-			Account? account = await Queries.GetAccountFromId(_dataContext, createDTO.AccountId.Value);
-			if (account == null)
-				return BadRequest("Account not found");
-
-			if (!_access.AllowToTranche(account.Tranche))
-				return Forbid();
-
-			Project project = account.Project;
-
-			var question = PostHelpers.CreateQuestion(
-				QuestionType.Account, project.Id,
-				createDTO.Text, createDTO.Category ?? "general",
-				_access.GetUserID());
-
-			question.AccountId = account.Id;
-
-			// Set the question number to 1 more than the current highest
-			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
-			question.QuestionNum = maxQuestionNo + 1;
-
-			project.Questions.Add(question);
-			await _dataContext.SaveChangesAsync();
-
-			return Ok(question.Id);
-		}
-
-		/// <summary>
 		/// Adds an answer to a question
 		/// </summary>
 		[HttpPut("answer/{pid}")]
@@ -188,15 +131,14 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Question not found");
 
 			var time = DateTime.Now;
-			var userId = _access.GetUserID();
 
 			question.QuestionAnswer = dto.Answer;
-			question.AnsweredById = userId;
+			question.AnsweredById = _userId;
 			question.DateAnswered = time;
 			question.DateLastEdited = time;
 
 			// Automatically approve
-			PostHelpers.ApproveAnswer(question, userId, true);
+			PostHelpers.ApproveAnswer(question, _userId, true);
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
@@ -219,7 +161,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (question == null)
 				return BadRequest("Question not found");
 
-			PostHelpers.EditQuestion(question, dto, _access.GetUserID(), 
+			PostHelpers.EditQuestion(question, dto, _userId, 
 				question.QuestionApprovedBy != null);
 
 			await _dataContext.SaveChangesAsync();
@@ -244,10 +186,10 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		/// <summary>
-		/// Sets the approval status of questions
+		/// Sets the approval status of questions or answers
 		/// </summary>
-		[HttpPut("approve/q/{pid}")]
-		public async Task<IActionResult> SetPostsApprovalQ(int pid, [FromBody] PostSetApproveDTO dto) {
+		[HttpPut("bulk/approve/{pid}")]
+		public async Task<IActionResult> SetPostsApproval(int pid, [FromBody] PostSetApproveDTO dto, [FromQuery] string mode) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -255,69 +197,49 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			var questions = project.Questions
-				.Where(x => dto.Questions.Any(y => y == x.Id))
-				.ToList();
+			int modeI = mode switch {
+				"q" => 0,
+				"a" => 1,
+				_ => -1,
+			};
+			if (modeI == -1) {
+				return BadRequest("mode must be either \"q\" or \"a\"");
+			}
+
+			var questions = (await Queries.GetQuestionsMapFromIds(_dataContext, dto.Questions))!;
 			{
+				// Check invalid IDs and duplicate IDs
+
 				var err = ValueHelpers.CheckInvalidIds(
-					dto.Questions, questions.Select(x => x.Id), "Question");
+					dto.Questions, questions.Keys, "Question");
 				if (err != null) {
 					return BadRequest(err);
 				}
 			}
 
-			var time = DateTime.Now;
-			var userId = _access.GetUserID();
-
-			foreach (var i in questions) {
-				PostHelpers.ApproveQuestion(i, userId, dto.Approve!.Value);
-				i.DateLastEdited = time;
-			}
-
-			await _dataContext.SaveChangesAsync();
-			return Ok();
-		}
-
-		/// <summary>
-		/// Sets the approval status of answers to questions
-		/// too much logic in the api, should be in the a helper. Can then re-use for questions
-		/// </summary>
-		[HttpPut("approve/a/{pid}")]
-		public async Task<IActionResult> SetPostsApprovalA(int pid, [FromBody] PostSetApproveDTO dto) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowManageProject(project))
-				return Forbid();
-
-			var questions = project.Questions
-				.Where(x => dto.Questions.Any(y => y == x.Id))
-				.ToList();
-			{
-				var err = ValueHelpers.CheckInvalidIds(
-					dto.Questions, questions.Select(x => x.Id), "Question");
-				if (err != null) {
-					return BadRequest(err);
-				}
-			}
-
-			{
+			// If approving answers, all posts must already have an answer
+			if (modeI == 1) {
 				var unanswered = questions
-					.Where(x => x.QuestionAnswer == null)
-					.Select(x => x.Id)
+					.Where(x => x.Value.QuestionAnswer == null)
+					.Select(x => x.Value.Id)
 					.ToList();
-				if (unanswered.Count > 0) {
+				if (unanswered.Any()) {
 					return BadRequest("Unanswered questions: " + unanswered.ToStringEx());
 				}
 			}
 
 			var time = DateTime.Now;
-			var userId = _access.GetUserID();
+			bool approve = dto.Approve!.Value;
 
-			foreach (var i in questions) {
-				PostHelpers.ApproveAnswer(i, userId, dto.Approve!.Value);
-				i.DateLastEdited = time;
+			foreach (var (_, q) in questions) {
+				if (modeI == 0) {
+					PostHelpers.ApproveQuestion(q, _userId, approve);
+				}
+				else {
+					PostHelpers.ApproveAnswer(q, _userId, approve);
+				}
+
+				q.DateLastEdited = time;
 			}
 
 			await _dataContext.SaveChangesAsync();
@@ -329,67 +251,24 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Posts general questions in bulk
 		/// </summary>
-		[HttpPost("bulk/general/{pid}")]
-		public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos) {
+		[HttpPost("bulk/{pid}")]
+		public async Task<IActionResult> PostQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
 
 			if (!_access.AllowToProject(project))
 				return Forbid();
+			bool isStaff = _access.IsSuperUser();
 
-			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
+			var accountIds = dtos
+				.Where(x => x.AccountId != null)
+				.Select(x => x.AccountId!.Value)
+				.ToList();
+			var mapAccounts = (await Queries.GetAccountsMapFromIds(_dataContext, accountIds))!;
 
-			List<Question> listQuestions = new();
-
-			foreach (var i in dtos) {
-				var question = PostHelpers.CreateQuestion(
-					QuestionType.General, project.Id,
-					i.Text, i.Category ?? "general",
-					_access.GetUserID());
-
-				// Increment num with each question added
-				question.QuestionNum = ++maxQuestionNo;
-
-				listQuestions.Add(question);
-			}
-
-			project.Questions.AddRange(listQuestions);
-			await _dataContext.SaveChangesAsync();
-
-			// Return IDs of all created questions
-			var questionIds = listQuestions.Select(x => x.Id).ToList();
-
-			return Ok(questionIds);
-		}
-
-		/// <summary>
-		/// Posts account questions in bulk
-		/// </summary>
-		[HttpPost("bulk/account/{pid}")]
-		public async Task<IActionResult> PostAccountQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos) {
-			if (dtos.Any(x => x.AccountId == null)) {
-				ModelState.AddModelError("AccountId", "AccountId cannot be null");
-				return BadRequest(new ValidationProblemDetails(ModelState));
-			}
-
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowToProject(project))
-				return Forbid();
-
-			{
+			if (accountIds.Count > 0) {
 				// Detect invalid accounts + check access
-
-				var accountIds = dtos.Select(x => x.AccountId!.Value);
-				var mapAccounts = await Queries.GetAccountsMapFromIds(_dataContext, accountIds);
-
-				foreach (var (_, i) in mapAccounts!) {
-					if (!_access.AllowToTranche(i.Tranche))
-						return Forbid($"No access to account \"{i.GetIdentifierName()}\"");
-				}
 
 				{
 					var err = ValueHelpers.CheckInvalidIds(
@@ -398,32 +277,50 @@ namespace DocumentsQA_Backend.Controllers {
 						return BadRequest(err);
 					}
 				}
+
+				var tranches = mapAccounts.Values
+					.Select(x => x.Tranche).Distinct();
+				foreach (var t in tranches) {
+					if (!_access.AllowToTranche(t))
+						return Forbid($"No access to tranche \"{t.Name}\" (id={t.Id})");
+				}
+
+				if (!isStaff && dtos.Where(x => x.PostAs != null).Any()) {
+					return Forbid($"post_as can only be used by managers");
+				}
 			}
 
 			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
 
-			List<Question> listQuestions = new();
-
-			foreach (var i in dtos) {
+			var listQuestions = dtos.Select(d => {
 				var question = PostHelpers.CreateQuestion(
-					QuestionType.Account, project.Id,
-					i.Text, i.Category ?? "general",
-					_access.GetUserID());
+					QuestionType.General, project.Id,
+					d.Text, d.Category ?? "general",
+					d.PostAs ?? _userId);
+				if (d.DateSent is not null)
+					question.DateSent = d.DateSent.Value;
 
-				question.AccountId = i.AccountId;
+				if (d.AccountId != null) {
+					question.Type = QuestionType.Account;
+					question.AccountId = d.AccountId;
+				}
 
 				// Increment num with each question added
 				question.QuestionNum = ++maxQuestionNo;
 
-				listQuestions.Add(question);
-			}
+				// Auto-approve if the request is made by a manager
+				if (isStaff) {
+					PostHelpers.ApproveQuestion(question, _userId, true);
+				}
+
+				return question;
+			}).ToList();
 
 			project.Questions.AddRange(listQuestions);
 			await _dataContext.SaveChangesAsync();
 
 			// Return IDs of all created questions
 			var questionIds = listQuestions.Select(x => x.Id).ToList();
-
 			return Ok(questionIds);
 		}
 
@@ -451,11 +348,9 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 			}
 
-			var userId = _access.GetUserID();
-
 			foreach (var dto in dtos) {
 				var question = mapQuestions[dto.Id!.Value];
-				PostHelpers.EditQuestion(question, dto, _access.GetUserID(),
+				PostHelpers.EditQuestion(question, dto, _userId,
 					question.QuestionApprovedBy != null);
 			}
 
@@ -489,19 +384,18 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			var time = DateTime.Now;
-			var userId = _access.GetUserID();
 
 			foreach (var i in dtos) {
 				var question = mapQuestions[i.Id!.Value];
 
 				question.QuestionAnswer = i.Answer;
-				question.AnsweredById = userId;
+				question.AnsweredById = _userId;
 				question.DateAnswered = time;
 				question.DateLastEdited = time;
 
 				// Don't auto-approve on bulk answer
-				PostHelpers.ApproveQuestion(question, userId, true);
-				PostHelpers.ApproveAnswer(question, userId, false);
+				PostHelpers.ApproveQuestion(question, _userId, true);
+				PostHelpers.ApproveAnswer(question, _userId, false);
 			}
 
 			var count = await _dataContext.SaveChangesAsync();

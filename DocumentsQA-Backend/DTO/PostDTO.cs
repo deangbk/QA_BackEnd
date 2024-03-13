@@ -72,6 +72,12 @@ namespace DocumentsQA_Backend.DTO {
 
 		public string Text { get; set; } = null!;
 		public string? Category { get; set; }
+
+		[JsonPropertyName("post_as")]
+		public int? PostAs { get; set; }
+
+		[JsonPropertyName("date_sent")]
+		public DateTime? DateSent { get; set; }
 	}
 
 	public class PostEditDTO {
@@ -105,7 +111,7 @@ namespace DocumentsQA_Backend.DTO {
         public string? questionType { get; set; } = null!;
 
     }
-    public class PostSetAnswerDTO {
+	public class PostSetAnswerDTO {
 		[Required] public int? Id { get; set; }
 		public string Answer { get; set; } = null!;
 	}

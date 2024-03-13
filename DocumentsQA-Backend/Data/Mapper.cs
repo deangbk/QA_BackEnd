@@ -48,6 +48,12 @@ namespace DocumentsQA_Backend.Data {
 				["name"] = obj.Name,
 			};
 
+			if (detail >= 1) {
+				table["accounts"] = obj.Accounts
+					.Select(x => x.ToJsonTable(0))
+					.ToList();
+			}
+
 			return table;
 		}
 
@@ -80,6 +86,7 @@ namespace DocumentsQA_Backend.Data {
                 ["post_by"] = obj.PostedBy.ToJsonTable(0),
 
 				["date_post"] = obj.DatePosted,
+				["date_sent"] = obj.DateSent,
 				["date_edit"] = obj.DateLastEdited,
 
 				["attachments"] = obj.Attachments
@@ -170,11 +177,15 @@ namespace DocumentsQA_Backend.Data {
 
 		public static JsonTable ToJsonTable(this Account obj, int detail) {
 			var table = new JsonTable() {
-				["id"] = obj.GetIdentifierName(),
+				["id"] = obj.Id,
+				["id_pretty"] = obj.GetIdentifierName(),
 				["no"] = obj.AccountNo,
 				["name"] = obj.AccountName ?? "",
-				["tranche"] = obj.Tranche.ToJsonTable(0),
 			};
+
+			if (detail >= 1) {
+				table["tranche"] = obj.Tranche.ToJsonTable(0);
+			}
 
 			return table;
 		}

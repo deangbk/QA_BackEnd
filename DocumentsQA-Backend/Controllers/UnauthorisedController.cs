@@ -109,6 +109,8 @@ namespace DocumentsQA_Backend.Controllers
                     QuestionType.General, i.ProjectID!.Value,
                     i.Text, i.Category ?? "general",
 					user.Id);
+				if (i.DateSent is not null)
+					question.DateSent = i.DateSent.Value;
 
                 listQuestions.Add(question);
             }

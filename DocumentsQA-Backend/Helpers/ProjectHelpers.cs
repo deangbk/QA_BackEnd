@@ -16,15 +16,15 @@ namespace DocumentsQA_Backend.Helpers {
 		public static bool CanUserAccessProject(Project project, AppUser user) {
 			return CanUserAccessProject(project, user.Id);
 		}
-		public static bool CanUserAccessProject(Project project, int userID) {
+		public static bool CanUserAccessProject(Project project, int userId) {
 			// User has project access if they have access to any of the project's tranches
 			var tranches = project.Tranches;
-			return tranches.Any(x => x.UserAccesses.Any(y => y.Id == userID));
+			return tranches.Any(x => x.UserAccesses.Any(y => y.Id == userId));
 		}
 
-		public static List<Tranche> GetUserTrancheAccessesInProject(AppUser user, int pid) {
+		public static List<Tranche> GetUserTrancheAccessesInProject(AppUser user, int projectId) {
 			return user.TrancheAccesses
-				.Where(x => x.ProjectId == pid)
+				.Where(x => x.ProjectId == projectId)
 				.ToList();
 		}
 

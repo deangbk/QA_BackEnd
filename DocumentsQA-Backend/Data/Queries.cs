@@ -17,6 +17,11 @@ namespace DocumentsQA_Backend.Data {
 			var res = await dataContext.Accounts.FindAsync(id);
 			return res;
 		}
+		public static async Task<Account?> GetAccountFromIdName(DataContext dataContext, string id) {
+			var res = await dataContext.Accounts
+				.FirstAsync(x => id == dataContext.GetAccountIdentifierName(x.Id));
+			return res;
+		}
 		public static async Task<AppUser?> GetUserFromId(DataContext dataContext, int id) {
 			var res = await dataContext.Users.FindAsync(id);
 			return res;
@@ -42,6 +47,11 @@ namespace DocumentsQA_Backend.Data {
 		public static async Task<Dictionary<int, Account>?> GetAccountsMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
 			return await dataContext.Accounts
 				.Where(x => ids.Contains(x.Id))
+				.ToDictionaryAsync(x => x.Id, x => x);
+		}
+		public static async Task<Dictionary<int, Account>?> GetAccountsMapFromIdNames(DataContext dataContext, IEnumerable<string> ids) {
+			return await dataContext.Accounts
+				.Where(x => ids.Contains(dataContext.GetAccountIdentifierName(x.Id)))
 				.ToDictionaryAsync(x => x.Id, x => x);
 		}
 		public static async Task<Dictionary<int, Question>?> GetQuestionsMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
