@@ -251,67 +251,24 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Posts general questions in bulk
 		/// </summary>
-		[HttpPost("bulk/general/{pid}")]
-		public async Task<IActionResult> PostGeneralQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos) {
+		[HttpPost("bulk/{pid}")]
+		public async Task<IActionResult> PostQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
 
 			if (!_access.AllowToProject(project))
 				return Forbid();
+			bool isStaff = _access.IsSuperUser();
 
-			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
+			var accountIds = dtos
+				.Where(x => x.AccountId != null)
+				.Select(x => x.AccountId!.Value)
+				.ToList();
+			var mapAccounts = (await Queries.GetAccountsMapFromIds(_dataContext, accountIds))!;
 
-			List<Question> listQuestions = new();
-
-			foreach (var i in dtos) {
-				var question = PostHelpers.CreateQuestion(
-					QuestionType.General, project.Id,
-					i.Text, i.Category ?? "general",
-					_access.GetUserID());
-
-				// Increment num with each question added
-				question.QuestionNum = ++maxQuestionNo;
-
-				listQuestions.Add(question);
-			}
-
-			project.Questions.AddRange(listQuestions);
-			await _dataContext.SaveChangesAsync();
-
-			// Return IDs of all created questions
-			var questionIds = listQuestions.Select(x => x.Id).ToList();
-
-			return Ok(questionIds);
-		}
-
-		/// <summary>
-		/// Posts account questions in bulk
-		/// </summary>
-		[HttpPost("bulk/account/{pid}")]
-		public async Task<IActionResult> PostAccountQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos) {
-			if (dtos.Any(x => x.AccountId == null)) {
-				ModelState.AddModelError("AccountId", "AccountId cannot be null");
-				return BadRequest(new ValidationProblemDetails(ModelState));
-			}
-
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowToProject(project))
-				return Forbid();
-
-			{
+			if (accountIds.Count > 0) {
 				// Detect invalid accounts + check access
-
-				var accountIds = dtos.Select(x => x.AccountId!.Value);
-				var mapAccounts = await Queries.GetAccountsMapFromIds(_dataContext, accountIds);
-
-				foreach (var (_, i) in mapAccounts!) {
-					if (!_access.AllowToTranche(i.Tranche))
-						return Forbid($"No access to account \"{i.GetIdentifierName()}\"");
-				}
 
 				{
 					var err = ValueHelpers.CheckInvalidIds(
@@ -320,32 +277,48 @@ namespace DocumentsQA_Backend.Controllers {
 						return BadRequest(err);
 					}
 				}
+
+				var tranches = mapAccounts.Values
+					.Select(x => x.Tranche).Distinct();
+				foreach (var t in tranches) {
+					if (!_access.AllowToTranche(t))
+						return Forbid($"No access to tranche \"{t.Name}\" (id={t.Id})");
+				}
+
+				if (!isStaff && dtos.Where(x => x.PostAs != null).Any()) {
+					return Forbid($"post_as can only be used by managers");
+				}
 			}
 
 			var maxQuestionNo = PostHelpers.GetHighestQuestionNo(project);
 
-			List<Question> listQuestions = new();
-
-			foreach (var i in dtos) {
+			var listQuestions = dtos.Select(d => {
 				var question = PostHelpers.CreateQuestion(
-					QuestionType.Account, project.Id,
-					i.Text, i.Category ?? "general",
-					_access.GetUserID());
+					QuestionType.General, project.Id,
+					d.Text, d.Category ?? "general",
+					d.PostAs ?? _userId);
 
-				question.AccountId = i.AccountId;
+				if (d.AccountId != null) {
+					question.Type = QuestionType.Account;
+					question.AccountId = d.AccountId;
+				}
 
 				// Increment num with each question added
 				question.QuestionNum = ++maxQuestionNo;
 
-				listQuestions.Add(question);
-			}
+				// Auto-approve if the request is made by a manager
+				if (isStaff) {
+					PostHelpers.ApproveQuestion(question, _userId, true);
+				}
+
+				return question;
+			}).ToList();
 
 			project.Questions.AddRange(listQuestions);
 			await _dataContext.SaveChangesAsync();
 
 			// Return IDs of all created questions
 			var questionIds = listQuestions.Select(x => x.Id).ToList();
-
 			return Ok(questionIds);
 		}
 
