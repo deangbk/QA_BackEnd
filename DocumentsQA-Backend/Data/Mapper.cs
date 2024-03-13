@@ -176,7 +176,8 @@ namespace DocumentsQA_Backend.Data {
 
 		public static JsonTable ToJsonTable(this Account obj, int detail) {
 			var table = new JsonTable() {
-				["id"] = obj.GetIdentifierName(),
+				["id"] = obj.Id,
+				["id_pretty"] = obj.GetIdentifierName(),
 				["no"] = obj.AccountNo,
 				["name"] = obj.AccountName ?? "",
 			};
