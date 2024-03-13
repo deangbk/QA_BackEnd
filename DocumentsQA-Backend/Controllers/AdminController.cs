@@ -126,12 +126,12 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		/// <summary>
-		/// Grants project management rights to a user
+		/// Grants project management rights to users
 		/// <para>Also grants the manager role to the user if they're not already one</para>
 		/// <para>To grant simply read access, see <see cref="ManagerController.GrantTrancheAccess"/></para>
 		/// </summary>
-		[HttpPut("grant/manage/{pid}/{uid}")]
-		public async Task<IActionResult> GrantProjectManagement(int pid, int uid) {
+		[HttpPut("grant/manage/{pid}")]
+		public async Task<IActionResult> GrantProjectManagements(int pid, [FromBody] List<int> users) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -139,25 +139,7 @@ namespace DocumentsQA_Backend.Controllers {
 			int rowsAdded;
 			using (var transaction = _dataContext.Database.BeginTransaction()) {
 				await AdminHelpers.MakeProjectManagers(_dataContext, _userManager,
-					project, new List<int> { uid });
-
-				rowsAdded = await _dataContext.SaveChangesAsync();
-				await transaction.CommitAsync();
-			}
-
-			return Ok(rowsAdded);
-		}
-
-		[HttpPut("grant/manage/bulk/{pid}")]
-		public async Task<IActionResult> GrantProjectManagements(int pid, [FromBody] List<int> userIds) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			int rowsAdded;
-			using (var transaction = _dataContext.Database.BeginTransaction()) {
-				await AdminHelpers.MakeProjectManagers(_dataContext, _userManager,
-					project, userIds);
+					project, users);
 
 				rowsAdded = await _dataContext.SaveChangesAsync();
 				await transaction.CommitAsync();
