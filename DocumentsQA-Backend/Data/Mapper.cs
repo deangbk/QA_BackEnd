@@ -86,6 +86,7 @@ namespace DocumentsQA_Backend.Data {
                 ["post_by"] = obj.PostedBy.ToJsonTable(0),
 
 				["date_post"] = obj.DatePosted,
+				["date_sent"] = obj.DateSent,
 				["date_edit"] = obj.DateLastEdited,
 
 				["attachments"] = obj.Attachments

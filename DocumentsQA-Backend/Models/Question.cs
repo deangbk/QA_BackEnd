@@ -35,7 +35,9 @@ namespace DocumentsQA_Backend.Models {
 		public int LastEditorId { get; set; }				// FK to User
 		public virtual AppUser LastEditor { get; set; } = null!;
 
-		public DateTime DatePosted { get; set; }
+		public DateTime DatePosted { get; set; }	// Date added to the system
+		public DateTime DateSent { get; set; }		// Date when the question is made, even if outside the system
+
 		public DateTime? DateAnswered { get; set; }
 		public DateTime? DateQuestionApproved { get; set; }
 		public DateTime? DateAnswerApproved { get; set; }
