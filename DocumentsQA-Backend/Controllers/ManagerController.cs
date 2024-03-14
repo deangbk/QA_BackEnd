@@ -17,6 +17,7 @@ using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Extensions;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace DocumentsQA_Backend.Controllers {
 	[Route("api/manage")]
@@ -482,27 +483,78 @@ namespace DocumentsQA_Backend.Controllers {
             return Ok("{}");
         }
 
+
+		/// <summary>
+		/// Handles file uploads for all document types
+		/// </summary>
+		/// <param name="uploadDetails"></param>
+		/// <returns></returns>
         [HttpPost("upQDoc")]
-        public async Task<IActionResult> UploadQestionDocs( [FromForm] PostEditQuestionDTO questionDetails)
+        public async Task<IActionResult> UploadQestionDocs( [FromForm] fileUploadDTO uploadDetails)
         {
 			var documentFolder= "Documents";
             var files = Request.Form.Files;
 			var rootPath = _env.ContentRootPath;
 			var upPath = Path.Combine(rootPath, documentFolder);
+			var docList= new List<DocumentsQA_Backend.Models.Document>();
+			var docType = uploadDetails.upType;
+			var enumType= Enum.Parse<DocumentType>(docType);
 
-			try
+
+            try
 			{
+
+				
 				foreach (var file in files)
 				{
+                    var fName = System.IO.Path.GetFileNameWithoutExtension(file.FileName); 
+					var finalName= fName;
+                    int index = 1;
+                    var ext = Path.GetExtension(file.FileName).ToString();
+                    while (System.IO.File.Exists(upPath +"/"+ fName + ext))
+                    {
+                        fName = finalName + "(" + index + ")";
+                        index++;
+                    }
+					
 
-					var fullPath = Path.Combine(upPath, file.FileName);
+					var fullName = fName + ext;
+                    var docDetails = new DocumentsQA_Backend.Models.Document()
+					{
+						UploadedById = _access.GetUserID(),
+						DateUploaded = DateTime.UtcNow,
+						AllowPrint = false,
+						ProjectId = 1,   ///fixneeded 
+					Type= enumType,
+						FileName = fullName,
+						FileUrl = "/Documents/"+ fullName, ///fix needed
+						Description = "file",
+						FileType= ext
+                };
+					//docDetails.Type = Enum.Parse<DocumentType>("Account"); 
+					switch (docType)
+					{
+                        case "Account":
+                            docDetails.AssocAccountId= uploadDetails.AccountId;
+                            break;
+                        case "Question":
+                            docDetails.AssocQuestionId = uploadDetails.QuestionID;
+                            break;
+                       
+                        default:
+                            
+                            break;
+                    }
+					var fullPath = Path.Combine(upPath, fullName);
 					// You can access the file here
 					using (var stream = new FileStream(fullPath, FileMode.Create))
 					{
 						//var fName= file.FileName;
 						await file.CopyToAsync(stream);
 					}
-				}
+                    _dataContext.Documents.Add(docDetails);
+                }
+				_dataContext.SaveChanges();
 			}
 			catch (Exception ex)
 			{

@@ -60,8 +60,10 @@ namespace DocumentsQA_Backend.DTO {
 	}
     public class fileUploadDTO
     {
-        public DocumentFilterDTO? Filter { get; set; }
-        public PaginateDTO? Paginate { get; set; }
+        public int QuestionID { get; set; }
+        public string? upType{ get; set; }
+		public string? Account { get; set; }
+        public int AccountId { get; set; }
     }
 
     public class DocumentGetDTO {
