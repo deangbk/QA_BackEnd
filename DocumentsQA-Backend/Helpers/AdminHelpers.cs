@@ -130,16 +130,19 @@ namespace DocumentsQA_Backend.Helpers {
 				var dbSetTranche = dataContext.Set<EJoinClass>("TrancheUserAccess");
 				var dbSetManager = dataContext.Set<EJoinClass>("ProjectUserManage");
 
+				/*
 				// Remove existing accesses for users
 				dbSetTranche.RemoveRange(
 					dbSetTranche
 						.Where(x => userIds.Any(y => y == x.Id2)));
+				*/
 
 				// Remove existing manager rights for users
 				dbSetManager.RemoveRange(
 					dbSetManager
 						.Where(x => userIds.Any(y => y == x.Id1)));
 
+				/*
 				// Add access for each tranche in project
 				{
 					var adds = project.Tranches.SelectMany(x => userIds, (t, u) => new EJoinClass {
@@ -148,6 +151,7 @@ namespace DocumentsQA_Backend.Helpers {
 					});
 					dbSetTranche.AddRange(adds);
 				}
+				*/
 
 				// Add to project managers
 				{
