@@ -26,7 +26,7 @@ namespace DocumentsQA_Backend.Models {
 		public bool Hidden { get; set; } = false;
 		public bool AllowPrint { get; set; } = false;
 
-		public DocumentType Type { get; set; } = DocumentType.General;
+		public DocumentType Type { get; set; } = DocumentType.Bid;
 
 		public int ProjectId { get; set; }				// FK to Project	(Always required)
 		public virtual Project Project { get; set; } = null!;
@@ -39,9 +39,9 @@ namespace DocumentsQA_Backend.Models {
 	}
 
 	public enum DocumentType {
-		Bid,		// No association
+		Bid,			// No association
 		Question,		// Associated with a specific question
-		Account,
-		Transaction// Associated with a specific account
+		Account,		// Associated with a specific account
+		Transaction,	// No association
 	}
 }

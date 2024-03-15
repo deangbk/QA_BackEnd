@@ -121,7 +121,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var listDocuments = await _dataContext.Documents
 				.Where(x => x.ProjectId == id)
-				.Where(x => x.Type == DocumentType.General)
+				.Where(x => x.Type == DocumentType.Transaction || x.Type == DocumentType.Bid)
 				.OrderBy(x => x.DateUploaded)
 				.ToListAsync();
 			var listDocumentTables = listDocuments.Select(x => x.ToJsonTable(details));
@@ -209,12 +209,8 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 
 				if (filterDTO.Category != null) {
-					DocumentType typeMatch = filterDTO.Category.ToLower() switch {
-						"question" or "post"
-									=> DocumentType.Question,
-						"account"	=> DocumentType.Account,
-						_ => DocumentType.General,
-					};
+					var typeMatch = DocumentHelpers.ParseDocumentType(filterDTO.Category)
+						?? DocumentType.Bid;
 					baseQuery = baseQuery.Where(x => x.Type == typeMatch);
 				}
 				if (filterDTO.AssocQuestion != null) {
@@ -329,7 +325,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!bValid)
 				return BadRequest($"File {document.FileName} already exists");
 
-			document.Type = DocumentType.General;
+			document.Type = DocumentType.Bid;
 
 			_dataContext.Documents.Add(document);
 			await _dataContext.SaveChangesAsync();
