@@ -133,6 +133,11 @@ namespace DocumentsQA_Backend {
 				services.AddScoped<IEmailService, EmailService>();
 			}
 
+			// Register file manager service
+			services.AddScoped<IFileManagerService, InProjectRootFileManager>();
+
+			// -----------------------------------------------------------
+
 			services.AddHttpContextAccessor();
 
 			services.AddEndpointsApiExplorer();

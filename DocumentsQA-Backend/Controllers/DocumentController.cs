@@ -29,11 +29,22 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly IAccessService _access;
 
-		public DocumentController(DataContext dataContext, ILogger<DocumentController> logger, IAccessService access) {
+		private readonly IWebHostEnvironment _env;
+		private readonly IFileManagerService _fileManager;
+
+		public DocumentController(
+			DataContext dataContext, ILogger<DocumentController> logger,
+			IAccessService access,
+			IWebHostEnvironment env,
+			IFileManagerService fileManager)
+		{
 			_dataContext = dataContext;
 			_logger = logger;
 
 			_access = access;
+
+			_env = env;
+			_fileManager = fileManager;
 
 			if (!_access.IsValidUser())
 				throw new AccessUnauthorizedException();
