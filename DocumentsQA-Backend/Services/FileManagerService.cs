@@ -14,6 +14,7 @@ namespace DocumentsQA_Backend.Services {
 	public interface IFileManagerService {
 		public Task CreateFile(string path, Stream dataStream);
 		public Task ReadFile(string path, Stream outStream);
+		public Task DeleteFile(string path);
 	}
 
 	public class InProjectRootFileManager : IFileManagerService {
@@ -49,7 +50,15 @@ namespace DocumentsQA_Backend.Services {
 			if (File.Exists(finalPath)) {
 				using var fs = File.OpenRead(finalPath);
 
-			await fs.CopyToAsync(outStream);
+				await fs.CopyToAsync(outStream);
+			}
+		}
+
+		public Task DeleteFile(string path) {
+			string finalPath = Path.Combine(RootPath, path);
+			File.Delete(finalPath);
+
+			return Task.CompletedTask;
 		}
 	}
 
@@ -70,6 +79,10 @@ namespace DocumentsQA_Backend.Services {
 		public async Task ReadFile(string path, Stream outStream) {
 			using HttpClient client = new();
 			outStream = await client.GetStreamAsync(path);
+		}
+
+		public Task DeleteFile(string path) {
+			throw new NotImplementedException();
 		}
 	}
 }
