@@ -542,7 +542,8 @@ namespace DocumentsQA_Backend.Controllers {
                             break;
                        
                         default:
-                            
+							docDetails.AssocAccountId = 0;
+							docDetails.AssocQuestionId = 0;
                             break;
                     }
 					var fullPath = Path.Combine(upPath, fullName);
