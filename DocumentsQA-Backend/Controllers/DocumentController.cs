@@ -29,7 +29,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly IAccessService _access;
 
-		private readonly IWebHostEnvironment _env;
 		private readonly IFileManagerService _fileManager;
 
 		public DocumentController(
@@ -43,7 +42,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_access = access;
 
-			_env = env;
 			_fileManager = fileManager;
 
 			if (!_access.IsValidUser())
