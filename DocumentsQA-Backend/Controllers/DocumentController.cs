@@ -82,11 +82,18 @@ namespace DocumentsQA_Backend.Controllers {
 
 			byte[] fileBytes;
 			try {
-				using HttpClient client = new();
-				fileBytes = await client.GetByteArrayAsync(document.FileUrl);
+				string path = DocumentHelpers.GetDocumentFileRoute(document);
+
+				using var ms = new MemoryStream();
+				await _fileManager.ReadFile(path, ms);
+
+				fileBytes = ms.ToArray();
 			}
-			catch (Exception) {
+			catch (FileNotFoundException) {
 				return NotFound(document.FileName);
+			}
+			catch (Exception e) {
+				return StatusCode(500, e.Message);
 			}
 
 			{
