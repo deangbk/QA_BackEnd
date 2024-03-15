@@ -39,8 +39,9 @@ namespace DocumentsQA_Backend.Models {
 	}
 
 	public enum DocumentType {
-		General,		// No association
+		Bid,		// No association
 		Question,		// Associated with a specific question
-		Account,		// Associated with a specific account
+		Account,
+		Transaction// Associated with a specific account
 	}
 }
