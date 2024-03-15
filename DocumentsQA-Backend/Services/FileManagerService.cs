@@ -51,4 +51,24 @@ namespace DocumentsQA_Backend.Services {
 			await fs.CopyToAsync(outStream);
 		}
 	}
+
+	public class FromHttpFileManager : IFileManagerService {
+		private readonly ILogger<InProjectRootFileManager> _logger;
+
+		public FromHttpFileManager(
+			ILogger<InProjectRootFileManager> logger)
+		{
+			_logger = logger;
+		}
+
+		// -----------------------------------------------------
+		public async Task CreateFile(string path, Stream dataStream) {
+			throw new NotImplementedException();
+		}
+
+		public async Task ReadFile(string path, Stream outStream) {
+			using HttpClient client = new();
+			outStream = await client.GetStreamAsync(path);
+		}
+	}
 }
