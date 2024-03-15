@@ -152,6 +152,9 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.AllowToProject(question.Project))
 				return Forbid();
+			if (!PostHelpers.AllowUserReadPost(_access, question))
+				return Forbid();
+
 			AuthHelpers.GuardDetailsLevel(_access, question.Project, details, 4);
 
 			var listDocuments = question.Attachments
@@ -171,7 +174,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (account == null)
 				return BadRequest("Account not found");
 
-			if (!_access.AllowToProject(account.Project))
+			if (!_access.AllowToTranche(account.Tranche))
 				return Forbid();
 			AuthHelpers.GuardDetailsLevel(_access, account.Project, details, 4);
 
