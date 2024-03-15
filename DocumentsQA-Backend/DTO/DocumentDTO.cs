@@ -8,11 +8,19 @@ using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend.DTO {
 	public class DocumentUploadDTO {
-		public string? Name { get; set; }
+		public string Type { get; set; } = null!;
+
+		[JsonPropertyName("with_post")]
+		public int? AssocQuestion { get; set; }
+
+		[JsonPropertyName("with_account")]
+		public int? AssocAccount { get; set; }
+
+		public string Name { get; set; } = null!;
 		public string? Description { get; set; }
 
 		[Url]
-		public string Url { get; set; } = null!;
+		public string? Url { get; set; }
 
 		public bool? Hidden { get; set; } = false;
 		public bool? Printable { get; set; } = false;

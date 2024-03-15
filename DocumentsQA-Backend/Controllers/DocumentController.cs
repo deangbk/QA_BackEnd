@@ -295,107 +295,125 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private async Task<(bool, Document)> _DocumentFromUploadDTO(int projectId, DocumentUploadDTO upload) {
-			string fileName;
-			if (upload.Name == null)
-				fileName = Path.GetFileName(upload.Url);
-			else fileName = upload.Name;
+		private ObjectResult? _ValidateDocumentType(DocumentUploadDTO dto, Document document) {
+			var docType = DocumentHelpers.ParseDocumentType(dto.Type);
+			if (docType == null) {
+				return BadRequest("Invalid document type: " + dto.Type);
+			}
 
-			string fileExt = Path.GetExtension(upload.Url)[1..];		// substr to remove the dot
+			switch (docType) {
+				case DocumentType.Question: {
+					if (dto.AssocQuestion == null) {
+						ModelState.AddModelError("AssocQuestion", "AssocQuestion must not be null");
+						return BadRequest(new ValidationProblemDetails(ModelState));
+					}
 
-			int uploaderId = _access.GetUserID();
+					document.Type = DocumentType.Question;
+					document.AssocQuestionId = dto.AssocQuestion!.Value;
 
-			var document = new Document {
-				FileUrl = upload.Url,
-				FileName = fileName,
-				FileType = fileExt,
-				Description = upload.Description,
+					break;
+				}
+				case DocumentType.Account: {
+					if (dto.AssocQuestion == null) {
+						ModelState.AddModelError("AssocQuestion", "AssocQuestion must not be null");
+						return BadRequest(new ValidationProblemDetails(ModelState));
+					}
 
-				Hidden = upload.Hidden ?? false,
-				AllowPrint = upload.Printable ?? false,
+					document.Type = DocumentType.Account;
+					document.AssocAccountId = dto.AssocAccount!.Value;
 
-				UploadedById = uploaderId,
-				ProjectId = projectId,
-
-				DateUploaded = DateTime.Now,
-			};
-
-			var bNameAlreadyExists = await _dataContext.Documents
-				.Where(x => x.ProjectId == projectId)
-				.Where(x => x.FileName == fileName)
-				.AnyAsync();
-
-			return (!bNameAlreadyExists, document);
+					break;
+				}
+				case DocumentType.Bid:
+					document.Type = DocumentType.Bid;
+					break;
+				case DocumentType.Transaction:
+					document.Type = DocumentType.Account;
+					break;
+			}
+			return null;
 		}
 
 		/// <summary>
-		/// Uploads a general document, attached to a project
+		/// Uploads a document
 		/// </summary>
-		[HttpPost("upload/project/{id}")]
-		public async Task<IActionResult> UploadDocument_General(int id, [FromBody] DocumentUploadDTO upload) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, id);
+		[HttpPost("upload/file/{pid}")]
+		public async Task<IActionResult> UploadDocument(int pid, [FromForm] DocumentUploadDTO dto, [FromForm] IFormFile file) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
 
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			var (bValid, document) = await _DocumentFromUploadDTO(id, upload);
-			if (!bValid)
+			var document = DocumentHelpers.CreateFromDTO(pid, dto);
+			document.UploadedById = _access.GetUserID();
+
+			if (await DocumentHelpers.CheckDuplicate(_dataContext, document))
 				return BadRequest($"File {document.FileName} already exists");
 
-			document.Type = DocumentType.Bid;
+			{
+				var validateRes = _ValidateDocumentType(dto, document);
+				if (validateRes != null) {
+					return BadRequest(validateRes);
+				}
+			}
 
-			_dataContext.Documents.Add(document);
-			await _dataContext.SaveChangesAsync();
+			using (var transaction = _dataContext.Database.BeginTransaction()) {
+				_dataContext.Documents.Add(document);
+				bool success = (await _dataContext.SaveChangesAsync()) > 0;
+
+				if (success) {
+					try {
+						string path = DocumentHelpers.GetDocumentFileRoute(document);
+
+						using var ms = new MemoryStream();
+						await file.CopyToAsync(ms);
+						ms.Position = 0;
+
+						await _fileManager.CreateFile(path, ms);
+					}
+					catch (Exception e) {
+						return StatusCode(500, e.Message);
+					}
+				}
+
+				await transaction.CommitAsync();
+			}
+			
 
 			return Ok(document.Id);
 		}
 
 		/// <summary>
-		/// Uploads a document, attached to a specific question
+		/// Uploads a document by adding a new entry to the system. No file is created anywhere
 		/// </summary>
-		[HttpPost("upload/post/{id}")]
-		public async Task<IActionResult> UploadDocument_Post(int id, [FromBody] DocumentUploadDTO upload) {
-			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
-			if (question == null)
-				return BadRequest("Question not found");
-			Project project = question.Project;
+		[HttpPost("upload/{pid}")]
+		public async Task<IActionResult> UploadDocumentEntryOnly(int pid, [FromBody] DocumentUploadDTO dto) {
+			if (dto.Url == null) {
+				ModelState.AddModelError("Url", "Url must not be null");
+				return BadRequest(new ValidationProblemDetails(ModelState));
+			}
+
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
 
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			var (bValid, document) = await _DocumentFromUploadDTO(project.Id, upload);
-			if (!bValid)
+			var document = DocumentHelpers.CreateFromDTO(pid, dto);
+			document.UploadedById = _access.GetUserID();
+
+			if (!await DocumentHelpers.CheckDuplicate(_dataContext, document))
 				return BadRequest($"File {document.FileName} already exists");
 
-			document.Type = DocumentType.Question;
-			document.AssocQuestionId = id;
-
-			_dataContext.Documents.Add(document);
-			await _dataContext.SaveChangesAsync();
-
-			return Ok(document.Id);
-		}
-
-		/// <summary>
-		/// Uploads a document, attached to a specific account
-		/// </summary>
-		[HttpPost("upload/account/{id}")]
-		public async Task<IActionResult> UploadDocument_Account(int id, [FromBody] DocumentUploadDTO upload) {
-			Account? account = await Queries.GetAccountFromId(_dataContext, id);
-			if (account == null)
-				return BadRequest("Account not found");
-
-			if (!_access.AllowManageProject(account.Project))
-				return Forbid();
-
-			var (bValid, document) = await _DocumentFromUploadDTO(account.ProjectId, upload);
-			if (!bValid)
-				return BadRequest($"File {document.FileName} already exists");
-
-			document.Type = DocumentType.Account;
-			document.AssocAccountId = id;
+			{
+				var validateRes = _ValidateDocumentType(dto, document);
+				if (validateRes != null) {
+					return BadRequest(validateRes);
+				}
+			}
 
 			_dataContext.Documents.Add(document);
 			await _dataContext.SaveChangesAsync();
@@ -503,6 +521,9 @@ namespace DocumentsQA_Backend.Controllers {
 			Document? document = await Queries.GetDocumentFromId(_dataContext, docId);
 			if (document == null)
 				return BadRequest("Document not found");
+
+			await _fileManager.DeleteFile(
+				DocumentHelpers.GetDocumentFileRoute(document));
 
 			_dataContext.Documents.Remove(document);
 

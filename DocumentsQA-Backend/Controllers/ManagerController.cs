@@ -498,6 +498,8 @@ namespace DocumentsQA_Backend.Controllers {
 			var upPath = Path.Combine(rootPath, documentFolder);
 			var docList= new List<DocumentsQA_Backend.Models.Document>();
 			var docType = uploadDetails.upType;
+
+			// TODO: Change to use DocumentHelpers.ParseDocumentType
 			var enumType= Enum.Parse<DocumentType>(docType);
 
 
