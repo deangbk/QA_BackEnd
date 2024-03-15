@@ -79,9 +79,9 @@ namespace DocumentsQA_Backend.Controllers {
 				tranches = project.Tranches;
 			}
 
-			var mapTrancheAccounts = tranches.ToDictionary(x => x, x => x.Accounts);
+			//var mapTrancheAccounts = tranches.ToDictionary(x => x, x => x.Accounts);
 
-			var resTable = project.Tranches.Select(x => x.ToJsonTable(1));
+			var resTable = tranches.Select(x => x.ToJsonTable(1));
 			return Ok(resTable);
 		}
 
