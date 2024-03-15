@@ -42,6 +42,7 @@ namespace DocumentsQA_Backend.Models {
 		Bid,		// No association
 		Question,		// Associated with a specific question
 		Account,
-		Transaction// Associated with a specific account
+		Transaction,
+		General// Associated with a specific account
 	}
 }
