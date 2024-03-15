@@ -2,14 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Security.Claims;
-using System.Security.Cryptography;
+using System.IO;
 
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Controllers;
 using DocumentsQA_Backend.Models;
@@ -35,18 +29,25 @@ namespace DocumentsQA_Backend.Services {
 			_logger = logger;
 			_env = env;
 
-			RootPath = _env.ContentRootPath + "/";
+			RootPath = _env.ContentRootPath;
 		}
 
 		// -----------------------------------------------------
 		public async Task CreateFile(string path, Stream dataStream) {
-			using var fs = new FileStream(RootPath + path, FileMode.Create);
+			string? dir = Path.GetDirectoryName(path);
+			if (dir != null && !Directory.Exists(dir))
+				Directory.CreateDirectory(dir);
+
+			string finalPath = Path.Combine(RootPath, path);
+			using var fs = File.OpenWrite(finalPath);
 
 			await dataStream.CopyToAsync(fs);
 		}
 
 		public async Task ReadFile(string path, Stream outStream) {
-			using var fs = new FileStream(RootPath + path, FileMode.Open, FileAccess.Read);
+			string finalPath = Path.Combine(RootPath, path);
+			if (File.Exists(finalPath)) {
+				using var fs = File.OpenRead(finalPath);
 
 			await fs.CopyToAsync(outStream);
 		}
