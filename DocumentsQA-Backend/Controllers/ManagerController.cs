@@ -486,10 +486,9 @@ namespace DocumentsQA_Backend.Controllers {
 
 		/// <summary>
 		/// Handles file uploads for all document types
+		/// <para>Deprecated, please use <see cref="DocumentController.UploadDocument"/> instead.</para>
 		/// </summary>
-		/// <param name="uploadDetails"></param>
-		/// <returns></returns>
-        [HttpPost("upQDoc")]
+		[HttpPost("upQDoc")]
         public async Task<IActionResult> UploadQestionDocs( [FromForm] fileUploadDTO uploadDetails)
         {
 			var documentFolder= "Documents";
