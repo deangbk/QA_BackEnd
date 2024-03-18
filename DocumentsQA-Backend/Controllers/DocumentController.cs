@@ -304,7 +304,7 @@ namespace DocumentsQA_Backend.Controllers {
 			switch (docType) {
 				case DocumentType.Question: {
 					if (dto.AssocQuestion == null) {
-						ModelState.AddModelError("AssocQuestion", "AssocQuestion must not be null");
+						ModelState.AddModelError("with_post", "with_post must not be null");
 						return BadRequest(new ValidationProblemDetails(ModelState));
 					}
 
@@ -314,8 +314,8 @@ namespace DocumentsQA_Backend.Controllers {
 					break;
 				}
 				case DocumentType.Account: {
-					if (dto.AssocQuestion == null) {
-						ModelState.AddModelError("AssocQuestion", "AssocQuestion must not be null");
+					if (dto.AssocAccount == null) {
+						ModelState.AddModelError("with_account", "with_account must not be null");
 						return BadRequest(new ValidationProblemDetails(ModelState));
 					}
 
@@ -328,7 +328,7 @@ namespace DocumentsQA_Backend.Controllers {
 					document.Type = DocumentType.Bid;
 					break;
 				case DocumentType.Transaction:
-					document.Type = DocumentType.Account;
+					document.Type = DocumentType.Transaction;
 					break;
 			}
 			return null;
@@ -405,7 +405,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var document = DocumentHelpers.CreateFromDTO(pid, dto);
 			document.UploadedById = _access.GetUserID();
 
-			if (!await DocumentHelpers.CheckDuplicate(_dataContext, document))
+				if (await DocumentHelpers.CheckDuplicate(_dataContext, document))
 				return BadRequest($"File {document.FileName} already exists");
 
 			{
