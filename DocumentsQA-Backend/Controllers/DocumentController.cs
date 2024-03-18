@@ -295,17 +295,17 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private ObjectResult? _ValidateDocumentType(DocumentUploadDTO dto, Document document) {
+		private string? _ValidateDocumentType(DocumentUploadDTO dto, Document document) {
 			var docType = DocumentHelpers.ParseDocumentType(dto.Type);
 			if (docType == null) {
-				return BadRequest("Invalid document type: " + dto.Type);
+				return ("Invalid document type: " + dto.Type);
 			}
 
 			switch (docType) {
 				case DocumentType.Question: {
 					if (dto.AssocQuestion == null) {
 						ModelState.AddModelError("with_post", "with_post must not be null");
-						return BadRequest(new ValidationProblemDetails(ModelState));
+						throw new InvalidModelStateException(ModelState);
 					}
 
 					document.Type = DocumentType.Question;
@@ -316,7 +316,7 @@ namespace DocumentsQA_Backend.Controllers {
 				case DocumentType.Account: {
 					if (dto.AssocAccount == null) {
 						ModelState.AddModelError("with_account", "with_account must not be null");
-						return BadRequest(new ValidationProblemDetails(ModelState));
+						throw new InvalidModelStateException(ModelState);
 					}
 
 					document.Type = DocumentType.Account;
