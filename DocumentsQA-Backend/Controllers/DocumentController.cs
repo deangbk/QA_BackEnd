@@ -4,8 +4,11 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using System.IO;
 using System.Security.Cryptography;
+
+using System.ComponentModel.DataAnnotations;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -335,10 +338,31 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		/// <summary>
-		/// Uploads a document
+		/// Uploads documents
 		/// </summary>
 		[HttpPost("upload/file/{pid}")]
-		public async Task<IActionResult> UploadDocument(int pid, [FromForm] DocumentUploadDTO dto, [FromForm] IFormFile file) {
+		public async Task<IActionResult> UploadDocument(int pid, [FromForm] DocumentUploadWithFileDTO dto) {
+			List<DocumentUploadDTO> descs;
+			{
+				var parse = JsonSerializer.Deserialize<List<DocumentUploadDTO>>(dto.DescsJson, 
+					new JsonSerializerOptions {
+						PropertyNameCaseInsensitive = true
+					});
+				if (parse == null) {
+					return BadRequest("descs must not be null");
+				}
+				descs = parse;
+
+				// TODO: Might not work, test later
+				var result = new List<ValidationResult>();
+				foreach (var desc in descs) {
+					var ctx = new ValidationContext(desc);
+					if (!Validator.TryValidateObject(desc, ctx, result)) {
+						return BadRequest(result);
+					}
+				}
+			}
+
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -346,55 +370,59 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			var document = DocumentHelpers.CreateFromDTO(pid, dto);
-			document.UploadedById = _access.GetUserID();
+			List<Document> documents = new();
 
-			if (await DocumentHelpers.CheckDuplicate(_dataContext, document))
-				return BadRequest($"File {document.FileName} already exists");
+			foreach (var docDto in descs) {
+				var document = DocumentHelpers.CreateFromDTO(pid, docDto);
+				document.UploadedById = _access.GetUserID();
+
+				if (await DocumentHelpers.CheckDuplicate(_dataContext, document))
+					return BadRequest($"File {document.FileName} already exists");
+
+				{
+					var validateRes = _ValidateDocumentType(docDto, document);
+					if (validateRes != null) {
+						return BadRequest(validateRes);
+					}
+				}
+
+				documents.Add(document);
+			}
 
 			{
-				var validateRes = _ValidateDocumentType(dto, document);
-				if (validateRes != null) {
-					return BadRequest(validateRes);
+				List<string> uploaded = new();
+
+				try {
+					foreach (var (doc, file) in documents.Zip(dto.Files)) {
+						string path = DocumentHelpers.GetDocumentFileRoute(doc);
+
+						var stream = file.OpenReadStream();
+
+						await _fileManager.CreateFile(path, stream);
+						uploaded.Add(path);
+					}
+
+					_dataContext.Documents.AddRange(documents);
+					await _dataContext.SaveChangesAsync();
+				}
+				catch (Exception e) {
+					// If failed, revert all successful file uploads
+					foreach (var dp in uploaded) {
+						await _fileManager.DeleteFile(dp);
+					}
+
+					return StatusCode(500, e.Message);
 				}
 			}
 
-			using (var transaction = _dataContext.Database.BeginTransaction()) {
-				_dataContext.Documents.Add(document);
-				bool success = (await _dataContext.SaveChangesAsync()) > 0;
-
-				if (success) {
-					try {
-						string path = DocumentHelpers.GetDocumentFileRoute(document);
-
-						using var ms = new MemoryStream();
-						await file.CopyToAsync(ms);
-						ms.Position = 0;
-
-						await _fileManager.CreateFile(path, ms);
-					}
-					catch (Exception e) {
-						return StatusCode(500, e.Message);
-					}
-				}
-
-				await transaction.CommitAsync();
-			}
-			
-
-			return Ok(document.Id);
+			return Ok(documents.Select(x => x.Id).ToList());
 		}
 
 		/// <summary>
-		/// Uploads a document by adding a new entry to the system. No file is created anywhere
+		/// Uploads documents by adding new entries to the system. No file is created anywhere
 		/// </summary>
 		[HttpPost("upload/{pid}")]
-		public async Task<IActionResult> UploadDocumentEntryOnly(int pid, [FromBody] DocumentUploadDTO dto) {
-			if (dto.Url == null) {
-				ModelState.AddModelError("Url", "Url must not be null");
-				return BadRequest(new ValidationProblemDetails(ModelState));
-			}
-
+		public async Task<IActionResult> UploadDocumentEntryOnly(int pid, [FromBody] List<DocumentUploadDTO> dtos) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
@@ -402,23 +430,34 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			var document = DocumentHelpers.CreateFromDTO(pid, dto);
-			document.UploadedById = _access.GetUserID();
+			List<Document> documents = new();
+
+			foreach (var dto in dtos) {
+				if (dto.Url == null) {
+					ModelState.AddModelError("Url", "Url must not be null");
+					return BadRequest(new ValidationProblemDetails(ModelState));
+				}
+
+				var document = DocumentHelpers.CreateFromDTO(pid, dto);
+				document.UploadedById = _access.GetUserID();
 
 				if (await DocumentHelpers.CheckDuplicate(_dataContext, document))
-				return BadRequest($"File {document.FileName} already exists");
+					return BadRequest($"File {document.FileName} already exists");
 
-			{
-				var validateRes = _ValidateDocumentType(dto, document);
-				if (validateRes != null) {
-					return BadRequest(validateRes);
+				{
+					var validateRes = _ValidateDocumentType(dto, document);
+					if (validateRes != null) {
+						return BadRequest(validateRes);
+					}
 				}
+
+				documents.Add(document);
 			}
 
-			_dataContext.Documents.Add(document);
+			_dataContext.Documents.AddRange(documents);
 			await _dataContext.SaveChangesAsync();
 
-			return Ok(document.Id);
+			return Ok(documents.Select(x => x.Id).ToList());
 		}
 
 		// -----------------------------------------------------
