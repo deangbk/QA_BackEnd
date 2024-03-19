@@ -123,8 +123,8 @@ namespace DocumentsQA_Backend {
 				services.AddScoped<IAccessService, AccessService>();
 			}
 			else {
-				services.AddSingleton<IAuthorizationHandler, AuthorizationAllowAnonymous>();
-				services.AddScoped<IAccessService, AccessAllowAll>();
+				services.AddTransient<IAuthorizationHandler, AuthorizationAllowAnonymous>();
+				services.AddTransient<IAccessService, AccessAllowAll>();
 			}
 
 			// Register repository services
