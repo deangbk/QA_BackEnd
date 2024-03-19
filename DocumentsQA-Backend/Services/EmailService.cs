@@ -315,7 +315,7 @@ namespace DocumentsQA_Backend.Services {
 
 					// Get general documents
 					var documents = await queryDocuments
-						.Where(x => x.Type == DocumentType.General)
+						.Where(x => x.Type == DocumentType.Bid) /// change this alter
 						.ToListAsync();
 					{
 						// Get documents attached to general questions
@@ -457,7 +457,7 @@ namespace DocumentsQA_Backend.Services {
 
 				// Get all general documents
 				var documents = await queryDocuments
-					.Where(x => x.Type == DocumentType.General)
+					.Where(x => x.Type == DocumentType.Bid)
 					.ToListAsync();
 				{
 					var questionIds = questions.Select(x => x.Id);
