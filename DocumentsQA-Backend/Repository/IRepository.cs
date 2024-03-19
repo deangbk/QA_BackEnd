@@ -14,5 +14,6 @@ using DocumentsQA_Backend.DTO;
 namespace DocumentsQA_Backend.Repository {
 	public interface IProjectRepository {
 		Task<Project> GetProjectAsync();
+		Task<Tranche?> GetTrancheAsync(int id);
 	}
 }

@@ -34,5 +34,10 @@ namespace DocumentsQA_Backend.Repository {
 			Project? project = await Queries.GetProjectFromId(_dataContext, _access.GetProjectID());
 			return project!;
 		}
+
+		public async Task<Tranche?> GetTrancheAsync(int id) {
+			Project project = await GetProjectAsync();
+			return project.Tranches.FirstOrDefault(x => x.Id == id);
+		}
 	}
 }
