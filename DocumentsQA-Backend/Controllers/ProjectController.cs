@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Data;
+using DocumentsQA_Backend.Repository;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
@@ -22,21 +23,22 @@ namespace DocumentsQA_Backend.Controllers {
 	[Route("api/project")]
 	[Authorize]
 	public class ProjectController : Controller {
-		private readonly DataContext _dataContext;
 		private readonly ILogger<PostController> _logger;
 
+		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
-		public ProjectController(DataContext dataContext, ILogger<PostController> logger, 
-			IAccessService access) {
+		private readonly IProjectRepository _repoProject;
 
-			_dataContext = dataContext;
+		public ProjectController(ILogger<PostController> logger, DataContext dataContext, 
+			IAccessService access, IProjectRepository repoProject) 
+		{
 			_logger = logger;
 
+			_dataContext = dataContext;
 			_access = access;
 
-			if (!_access.IsValidUser())
-				throw new AccessUnauthorizedException();
+			_repoProject = repoProject;
 		}
 
 		// -----------------------------------------------------
@@ -44,14 +46,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Gets project information
 		/// </summary>
-		[HttpGet("info/{pid}")]
-		public async Task<IActionResult> GetProjectInfo(int pid) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowToProject(project))
-				return Forbid();
+		[HttpGet("info")]
+		public async Task<IActionResult> GetProjectInfo() {
+			var project = await _repoProject.GetProjectAsync();
 
 			return Ok(project.ToJsonTable(2));
 		}
@@ -61,16 +58,11 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </summary>
 		[HttpGet("tranches")]
 		public async Task<IActionResult> GetProjectTranches() {
-			Project? project = await Queries.GetProjectFromId(
-				_dataContext, _access.GetProjectID());
-			if (project == null)
-				return BadRequest("Project not found");
-
-			int userId = _access.GetUserID();
+			var project = await _repoProject.GetProjectAsync();
 
 			List<Tranche> tranches = new();
 			if (!_access.IsSuperUser()) {
-				var user = await Queries.GetUserFromId(_dataContext, userId);
+				var user = await Queries.GetUserFromId(_dataContext, _access.GetUserID());
 				if (user != null) {
 					tranches = ProjectHelpers.GetUserTrancheAccessesInProject(user, project.Id);
 				}
@@ -78,8 +70,6 @@ namespace DocumentsQA_Backend.Controllers {
 			else {
 				tranches = project.Tranches;
 			}
-
-			//var mapTrancheAccounts = tranches.ToDictionary(x => x, x => x.Accounts);
 
 			var resTable = tranches.Select(x => x.ToJsonTable(1));
 			return Ok(resTable);
@@ -90,12 +80,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <para>Admins are not included</para>
 		/// </summary>
 		[HttpGet("users/{pid}")]
-		public async Task<IActionResult> GetProjectUsers(int pid, [FromQuery] int details = 0)
-		{
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
+		public async Task<IActionResult> GetProjectUsers(int pid, [FromQuery] int details = 0) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
@@ -132,12 +118,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </summary>
 		[HttpGet("managers/{pid}")]
 		public async Task<IActionResult> GetProjectManagers(int pid, [FromQuery] int details = -1) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowToProject(project))
-				return Forbid();
+			var project = await _repoProject.GetProjectAsync();
 
 			var listManagerIds = project.UserManagers
 				.Select(x => x.Id)
@@ -168,12 +149,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		[HttpGet("content/{pid}")]
 		public async Task<IActionResult> CountContent(int pid) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowToProject(project))
-				return Forbid();
+			var project = await _repoProject.GetProjectAsync();
 
 			int countGeneralPosts = project.Questions
 				.Where(x => x.Type == QuestionType.General)
