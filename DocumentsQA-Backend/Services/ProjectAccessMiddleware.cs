@@ -17,12 +17,16 @@ using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Services {
 	public class ProjectAccessMiddleware {
-
-		// List of controllers where a valid auth token is not required to access
+		// List of controllers to not (automatically) check for project ID claim
 		private static readonly string[] AllowUnauthRoutes = new[] {
 			"Admin",		// Don't unnecessarily restrict admins
 			"UserAuth",
 			"Unauthorised",
+		};
+
+		// List of controllers where manager access is required
+		private static readonly string[] RequireElevatedRoutes = new[] {
+			"Manager",
 		};
 
 		// -----------------------------------------------------
@@ -42,7 +46,7 @@ namespace DocumentsQA_Backend.Services {
 					.ToString()!
 					.ToLower();
 
-				if (!AllowUnauthRoutes.Any(x => x.ToLower() == controller)) {
+				if (!AllowUnauthRoutes.Contains(controller)) {
 					Project? project = await Queries.GetProjectFromId(dataContext, access.GetProjectID());
 
 					if (project == null) {
@@ -60,7 +64,13 @@ namespace DocumentsQA_Backend.Services {
 						await context.Response.WriteAsync("Invalid login token.");
 						return;
 					}
-					if (!access.AllowToProject(project)) {
+
+					bool bRequireElevated = RequireElevatedRoutes.Contains(controller);
+					bool bAllow = bRequireElevated ?
+						access.AllowManageProject(project) :
+						access.AllowToProject(project);
+
+					if (!bAllow) {
 						context.Response.ContentType = "text/plain";
 						context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
 
