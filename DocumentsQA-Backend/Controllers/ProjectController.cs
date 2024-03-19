@@ -196,6 +196,9 @@ namespace DocumentsQA_Backend.Controllers {
 
 		[HttpPost("create")]
 		public async Task<IActionResult> CreateProject([FromBody] CreateProjectDTO dto) {
+			if (_access.IsAdmin())
+				return Forbid();
+
 			Project project = new Project {
 				Name = dto.Name,
 				DisplayName = dto.Name,

@@ -76,7 +76,7 @@ namespace DocumentsQA_Backend.Services {
 
 		public async Task Invoke(HttpContext context) {
 			try {
-				await _next(context);
+				await _next.Invoke(context);
 			}
 			catch (Exception e) {
 				context.Response.ContentType = "text/plain";

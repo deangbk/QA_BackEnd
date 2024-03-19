@@ -49,26 +49,27 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private async Task<AuthResponse> _CreateUserToken(int projectId, string actualEmail) {
-			var claims = new List<Claim> {
-				//new Claim("email", uc.Email),
-			};
+		private async Task<AppUser?> _TrySignIn(int pid, LoginDTO uc) {
+			// _signinManager.SignInAsync creates a cookie under the hood so don't use that
 
-			{
-				var user = await _userManager.FindByEmailAsync(actualEmail);
-				if (user != null) {
-					claims.Add(new Claim("id", user.Id.ToString()));
-					claims.Add(new Claim("name", user.DisplayName));
-					claims.Add(new Claim("project", projectId.ToString()));
+			string actualEmail = AuthHelpers.ComposeUsername(pid, uc.Email);
+			var user = await _userManager.FindByEmailAsync(actualEmail);
 
-					// Add role claims for the user
-					{
-						var userClaims = await _userManager.GetClaimsAsync(user);
-						claims.AddRange(userClaims.Where(x => x.Type == "role"));
-					}
-				}
+			// Admins don't have a project ID prefixed to their emails
+			if (user == null)
+				user = await _userManager.FindByEmailAsync(uc.Email);
+
+			if (user != null) {
+				var result = await _signinManager.CheckPasswordSignInAsync(user, uc.Password, false);
+				return result.Succeeded ? user : null;
 			}
 
+			return null;
+		}
+
+		// -----------------------------------------------------
+
+		private AuthResponse _CreateUserToken(List<Claim> claims) {
 			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Initialize.JwtKey));
 			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
 
@@ -87,22 +88,28 @@ namespace DocumentsQA_Backend.Controllers {
 
 		[HttpPost("login/{pid}")]
 		public async Task<IActionResult> Login(int pid, [FromBody] LoginDTO uc) {
-			string actualEmail = AuthHelpers.ComposeUsername(pid, uc.Email);
-
-			// _signinManager.SignInAsync creates a cookie under the hood so don't use that
-			var user = await _userManager.FindByEmailAsync(actualEmail);
+			var user = await _TrySignIn(pid, uc);
 			if (user != null) {
-				var result = await _signinManager.CheckPasswordSignInAsync(user, uc.Password, false);
+				var claims = new List<Claim>();
 
-				if (result.Succeeded) {
-					var token = await _CreateUserToken(pid, actualEmail);
-					return Ok(token);
+				{
+					claims.Add(new Claim("id", user.Id.ToString()));
+					claims.Add(new Claim("name", user.DisplayName));
+					claims.Add(new Claim("project", pid.ToString()));
+
+					// Add role claims for the user
+					{
+						var userClaims = await _userManager.GetClaimsAsync(user);
+						claims.AddRange(userClaims.Where(x => x.Type == "role"));
+					}
 				}
-				else if (result.IsLockedOut) {
-					return BadRequest("User currently locked out");
-				}
+
+				var token = _CreateUserToken(claims);
+				return Ok(token);
 			}
-			return BadRequest("Incorrect login");
+			else {
+				return BadRequest("Incorrect login");
+			}
 		}
 	}
 }
