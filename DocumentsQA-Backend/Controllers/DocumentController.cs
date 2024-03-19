@@ -195,7 +195,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Get all recently uploaded documents
 		/// <para>Ordered by upload date</para>
 		/// </summary>
-		[HttpPost("recent/{id}")]
+		[HttpPost("recent")]
 		public async Task<IActionResult> GetDocuments_Recent([FromBody] DocumentGetDTO dto, [FromQuery] int details = 0) {
 			var project = await _repoProject.GetProjectAsync();
 			var projectId = project.Id;
