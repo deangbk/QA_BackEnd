@@ -12,6 +12,7 @@ using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Services;
+using DocumentsQA_Backend.Repository;
 
 namespace DocumentsQA_Backend {
 	public class Initialize {
@@ -126,6 +127,11 @@ namespace DocumentsQA_Backend {
 				services.AddScoped<IAccessService, AccessAllowAll>();
 			}
 
+			// Register repository services
+			{
+				services.AddTransient<IProjectRepository, ProjectRepository>();
+			}
+
 			// Register email services
 			{
 				services.AddHostedService<ConsumeScopedServiceHostedService>();
@@ -151,10 +157,8 @@ namespace DocumentsQA_Backend {
 				app.UseDeveloperExceptionPage();
 			}
 
-			app.UseMiddleware<ExceptionMiddleware>();
-
-			app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-
+			// Configure middlewares
+			{
 			app.UseAuthentication();
 
 			app.UseHttpsRedirection();
@@ -162,6 +166,14 @@ namespace DocumentsQA_Backend {
 			app.UseRouting();
 
 			app.UseAuthorization();
+
+				// Custom middlewares
+
+				app.UseMiddleware<ExceptionMiddleware>();
+				app.UseMiddleware<ProjectAccessMiddleware>();
+			}
+
+			app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
 
 			app.UseEndpoints(endpoints => {
 				endpoints.MapControllers();
