@@ -72,7 +72,7 @@ namespace DocumentsQA_Backend.Services {
 		}
 
 		// -----------------------------------------------------
-		public async Task CreateFile(string path, Stream dataStream) {
+		public Task CreateFile(string path, Stream dataStream) {
 			throw new NotImplementedException();
 		}
 
