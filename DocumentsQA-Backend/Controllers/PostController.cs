@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Data;
+using DocumentsQA_Backend.Repository;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
@@ -22,18 +23,23 @@ namespace DocumentsQA_Backend.Controllers {
 	[Route("api/post")]
 	[Authorize]
 	public class PostController : Controller {
-		private readonly DataContext _dataContext;
 		private readonly ILogger<PostController> _logger;
 
+		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
-		private readonly int _userId, _projectId;
+		private readonly IProjectRepository _repoProject;
 
-		public PostController(DataContext dataContext, ILogger<PostController> logger, IAccessService access) {
-			_dataContext = dataContext;
+		public PostController(
+			ILogger<PostController> logger, 
+			DataContext dataContext, IAccessService access, 
+			IProjectRepository repoProject) 
+		{
 			_logger = logger;
 
+			_dataContext = dataContext;
 			_access = access;
+
 			{
 				if (!_access.IsValidUser())
 					throw new AccessUnauthorizedException();
@@ -41,6 +47,8 @@ namespace DocumentsQA_Backend.Controllers {
 				_userId = _access.GetUserID();
 				_projectId = _access.GetProjectID();
 			}
+
+			_repoProject = repoProject;
 		}
 
 		// -----------------------------------------------------

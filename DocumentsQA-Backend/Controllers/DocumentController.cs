@@ -20,25 +20,29 @@ using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Extensions;
+using DocumentsQA_Backend.Repository;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/document")]
-	//[Authorize]
+	[Authorize]
 	public class DocumentController : Controller {
-		private readonly DataContext _dataContext;
 		private readonly ILogger<DocumentController> _logger;
 
+		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
 		private readonly IFileManagerService _fileManager;
+		private readonly IProjectRepository _repoProject;
 
 		public DocumentController(
-			DataContext dataContext, ILogger<DocumentController> logger,
+			ILogger<DocumentController> logger,
+			DataContext dataContext, 
 			IAccessService access,
-			IWebHostEnvironment env,
-			IFileManagerService fileManager)
+
+			IFileManagerService fileManager,
+			IProjectRepository repoProject)
 		{
 			_dataContext = dataContext;
 			_logger = logger;
@@ -46,9 +50,7 @@ namespace DocumentsQA_Backend.Controllers {
 			_access = access;
 
 			_fileManager = fileManager;
-
-			if (!_access.IsValidUser())
-				throw new AccessUnauthorizedException();
+			_repoProject = repoProject;
 		}
 
 		// -----------------------------------------------------

@@ -22,19 +22,19 @@ namespace DocumentsQA_Backend.Controllers {
 	[Route("api/comment")]
 	[Authorize]
 	public class CommentController : Controller {
-		private readonly DataContext _dataContext;
 		private readonly ILogger<CommentController> _logger;
 
+		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
-		public CommentController(DataContext dataContext, ILogger<CommentController> logger, IAccessService access) {
+		public CommentController(
+			ILogger<CommentController> logger, 
+			DataContext dataContext, IAccessService access)
+		{
 			_dataContext = dataContext;
 			_logger = logger;
 
 			_access = access;
-
-			if (!_access.IsValidUser())
-				throw new AccessUnauthorizedException();
 		}
 
 		// -----------------------------------------------------

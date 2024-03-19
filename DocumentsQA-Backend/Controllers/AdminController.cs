@@ -14,33 +14,35 @@ using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Extensions;
+using DocumentsQA_Backend.Repository;
 
 namespace DocumentsQA_Backend.Controllers {
 	[Route("api/admin")]
 	[ApiController]
 	[Authorize]
 	public class AdminController : Controller {
-		private readonly DataContext _dataContext;
-		private readonly ILogger<PostController> _logger;
+		private readonly ILogger<AdminController> _logger;
 
+		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
 		private readonly UserManager<AppUser> _userManager;
 		private readonly RoleManager<AppRole> _roleManager;
 
-		public AdminController(DataContext dataContext, ILogger<PostController> logger, IAccessService access,
-			UserManager<AppUser> userManager, RoleManager<AppRole> roleManager) {
-
-			_dataContext = dataContext;
+		public AdminController(ILogger<AdminController> logger, 
+			DataContext dataContext, IAccessService access, 
+			UserManager<AppUser> userManager, RoleManager<AppRole> roleManager)
+		{
 			_logger = logger;
 
+			_dataContext = dataContext;
 			_access = access;
 
 			_userManager = userManager;
 			_roleManager = roleManager;
 
 			if (!_access.IsAdmin())
-				throw new AccessForbiddenException("Admin access required");
+				throw new AccessForbiddenException();
 		}
 
 		// -----------------------------------------------------

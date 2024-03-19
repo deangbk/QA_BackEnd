@@ -112,7 +112,7 @@ namespace DocumentsQA_Backend.Controllers
 				if (i.DateSent is not null)
 					question.DateSent = i.DateSent.Value;
 
-                listQuestions.Add(question);
+				listQuestions.Add(question);
             }
 
             _dataContext.Questions.AddRange(listQuestions);

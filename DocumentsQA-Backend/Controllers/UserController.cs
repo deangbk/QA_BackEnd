@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authentication;
 
 using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Data;
+using DocumentsQA_Backend.Repository;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
@@ -24,25 +25,29 @@ namespace DocumentsQA_Backend.Controllers {
 	[Route("api/user")]
 	[Authorize]
 	public class UserController : Controller {
+		private readonly ILogger<UserController> _logger;
+
 		private readonly DataContext _dataContext;
-		private readonly ILogger<UserAuthController> _logger;
+		private readonly IAccessService _access;
 
 		private readonly SignInManager<AppUser> _signinManager;
 
-		private readonly IAccessService _access;
+		private readonly IProjectRepository _repoProject;
 
-		public UserController(DataContext dataContext, ILogger<UserAuthController> logger, 
-			SignInManager<AppUser> signinManager, IAccessService access)
+		public UserController(
+			ILogger<UserController> logger,
+			DataContext dataContext, IAccessService access,
+			SignInManager<AppUser> signinManager,
+			IProjectRepository repoProject)
 		{
-			_dataContext = dataContext;
 			_logger = logger;
+
+			_dataContext = dataContext;
+			_access = access;
 
 			_signinManager = signinManager;
 
-			_access = access;
-
-			if (!_access.IsValidUser())
-				throw new AccessUnauthorizedException();
+			_repoProject = repoProject;
 		}
 
 		// -----------------------------------------------------

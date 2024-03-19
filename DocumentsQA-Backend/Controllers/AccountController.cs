@@ -9,11 +9,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
+using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Data;
+using DocumentsQA_Backend.Repository;
+using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
-using DocumentsQA_Backend.Models;
-using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Extensions;
 
 namespace DocumentsQA_Backend.Controllers {
@@ -22,19 +23,24 @@ namespace DocumentsQA_Backend.Controllers {
 	[Route("api/account")]
 	[Authorize]
 	public class AccountController : Controller {
-		private readonly DataContext _dataContext;
 		private readonly ILogger<AccountController> _logger;
 
+		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
-		public AccountController(DataContext dataContext, ILogger<AccountController> logger, IAccessService access) {
-			_dataContext = dataContext;
+		private readonly IProjectRepository _repoProject;
+
+		public AccountController(
+			ILogger<AccountController> logger, 
+			DataContext dataContext, IAccessService access,
+			IProjectRepository repoProject)
+		{
 			_logger = logger;
 
+			_dataContext = dataContext;
 			_access = access;
 
-			if (!_access.IsValidUser())
-				throw new AccessUnauthorizedException();
+			_repoProject = repoProject;
 		}
 
 		// -----------------------------------------------------

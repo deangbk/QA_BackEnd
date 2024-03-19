@@ -23,15 +23,17 @@ namespace DocumentsQA_Backend.Controllers {
 	[Route("api/project")]
 	[Authorize]
 	public class ProjectController : Controller {
-		private readonly ILogger<PostController> _logger;
+		private readonly ILogger<ProjectController> _logger;
 
 		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
 		private readonly IProjectRepository _repoProject;
 
-		public ProjectController(ILogger<PostController> logger, DataContext dataContext, 
-			IAccessService access, IProjectRepository repoProject) 
+		public ProjectController(
+			ILogger<ProjectController> logger, 
+			DataContext dataContext, IAccessService access, 
+			IProjectRepository repoProject) 
 		{
 			_logger = logger;
 

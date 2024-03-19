@@ -29,18 +29,25 @@ namespace DocumentsQA_Backend.Controllers {
 	[Route("api/auth")]
 	[ApiController]
 	public class UserAuthController : ControllerBase {
-		private readonly DataContext _dataContext;
 		private readonly ILogger<UserAuthController> _logger;
+		
+		private readonly DataContext _dataContext;
+		
 
 		private readonly UserManager<AppUser> _userManager;
 		private readonly SignInManager<AppUser> _signinManager;
 		private readonly RoleManager<AppRole> _roleManager;
 
-		public UserAuthController(DataContext dataContext, ILogger<UserAuthController> logger,
-			UserManager<AppUser> userManager, SignInManager<AppUser> signinManager, RoleManager<AppRole> roleManager) {
+		public UserAuthController(
+			ILogger<UserAuthController> logger, 
+			DataContext dataContext, 
+			UserManager<AppUser> userManager, 
+			SignInManager<AppUser> signinManager, 
+			RoleManager<AppRole> roleManager)
+		{
+			_logger = logger;
 
 			_dataContext = dataContext;
-			_logger = logger;
 
 			_userManager = userManager;
 			_signinManager = signinManager;

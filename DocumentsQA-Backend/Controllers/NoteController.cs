@@ -15,6 +15,7 @@ using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Extensions;
+using DocumentsQA_Backend.Repository;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
@@ -22,21 +23,26 @@ namespace DocumentsQA_Backend.Controllers {
 	[Route("api/note")]
 	[Authorize]
 	public class NoteController : Controller {
-		private readonly DataContext _dataContext;
 		private readonly ILogger<NoteController> _logger;
 
+		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
-		public NoteController(DataContext dataContext, ILogger<NoteController> logger,
-			IAccessService access) {
+		private readonly IProjectRepository _repoProject;
+
+		public NoteController(
+			ILogger<NoteController> logger,
+			DataContext dataContext,
+			IAccessService access,
+			IProjectRepository repoProject)
+		{
 
 			_dataContext = dataContext;
 			_logger = logger;
 
 			_access = access;
 
-			if (!_access.IsValidUser())
-				throw new AccessUnauthorizedException();
+			_repoProject = repoProject;
 		}
 
 		// -----------------------------------------------------

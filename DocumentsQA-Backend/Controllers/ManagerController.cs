@@ -13,36 +13,44 @@ using Microsoft.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Data;
+using DocumentsQA_Backend.Repository;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Extensions;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace DocumentsQA_Backend.Controllers {
 	[Route("api/manage")]
 	[Authorize]
 	public class ManagerController : Controller {
-		private readonly DataContext _dataContext;
 		private readonly ILogger<ManagerController> _logger;
 
-		private readonly UserManager<AppUser> _userManager;
-		private readonly IAccessService _access;
         private readonly IWebHostEnvironment _env;
 
-        public ManagerController(DataContext dataContext, ILogger<ManagerController> logger,
-			UserManager<AppUser> userManager, IAccessService access, IWebHostEnvironment env) {
+		private readonly DataContext _dataContext;
+		private readonly IAccessService _access;
 
-			_dataContext = dataContext;
+		private readonly UserManager<AppUser> _userManager;
+
+		private readonly IProjectRepository _repoProject;
+
+		public ManagerController(
+			ILogger<ManagerController> logger,
+			IWebHostEnvironment env,
+			DataContext dataContext, IAccessService access,
+			UserManager<AppUser> userManager,
+			IProjectRepository repoProject)
+		{
 			_logger = logger;
 
-			_userManager = userManager;
+			_env = env;
+
+			_dataContext = dataContext;
 			_access = access;
 
-			if (!_access.IsSuperUser())
-				throw new AccessForbiddenException("Manager access required");
+			_userManager = userManager;
 
-            _env = env;
+			_repoProject = repoProject;
         }
 
 		// -----------------------------------------------------
