@@ -34,15 +34,22 @@ namespace DocumentsQA_Backend.Services {
 	}
 
 	public class AccessService : IAccessService {
-		private readonly DataContext _dataContext;
 		private readonly ILogger<AccessService> _logger;
+
+		private readonly DataContext _dataContext;
 		private readonly SignInManager<AppUser> _signinManager;
 
 		private readonly IHttpContextAccessor _httpContextAccessor;
 
-		public AccessService(DataContext dataContext, ILogger<AccessService> logger,
-			SignInManager<AppUser> signinManager, IHttpContextAccessor httpContextAccessor) {
+		private int? _projectId;
+		private int? _userId;
 
+		public AccessService(
+			ILogger<AccessService> logger,
+			DataContext dataContext, SignInManager<AppUser> signinManager, 
+			
+			IHttpContextAccessor httpContextAccessor)
+		{
 			_dataContext = dataContext;
 			_logger = logger;
 			_signinManager = signinManager;
@@ -60,19 +67,29 @@ namespace DocumentsQA_Backend.Services {
 				return -1;
 			}
 		}
-
 		public int GetProjectID() {
-			HttpContext ctx = _httpContextAccessor.HttpContext!;
-			var claims = ctx.User;
-			var idClaim = claims.FindFirst("project")?.Value;
-			return _ParseIntID(idClaim);
+			if (_projectId == null) {
+				HttpContext ctx = _httpContextAccessor.HttpContext!;
+
+				var claims = ctx.User;
+				var idClaim = claims.FindFirst("project")?.Value;
+
+				_projectId =  _ParseIntID(idClaim);
+			}
+			return _projectId.Value;
 		}
 		public int GetUserID() {
-			HttpContext ctx = _httpContextAccessor.HttpContext!;
-			var claims = ctx.User;
-			var idClaim = claims.FindFirst("id")?.Value;
-			return _ParseIntID(idClaim);
+			if (_userId == null) {
+				HttpContext ctx = _httpContextAccessor.HttpContext!;
+
+				var claims = ctx.User;
+				var idClaim = claims.FindFirst("id")?.Value;
+
+				_userId = _ParseIntID(idClaim);
+			}
+			return _userId.Value;
 		}
+
 		public bool UserHasRole(AppRole role) {
 			HttpContext ctx = _httpContextAccessor.HttpContext!;
 			var claims = ctx.User;
@@ -85,10 +102,9 @@ namespace DocumentsQA_Backend.Services {
 		public bool IsAdmin() => UserHasRole(AppRole.Admin);
 
 		public bool AllowToProject(Project project) {
-			return AllowToProject(project,
-				id => ProjectHelpers.CanUserAccessProject(project, id));
+			return AllowToProject(id => ProjectHelpers.CanUserAccessProject(project, id));
 		}
-		public bool AllowToProject(Project project, Func<int, bool> userAllowPolicy) {
+		public bool AllowToProject(Func<int, bool> userAllowPolicy) {
 			if (!IsValidUser())
 				return false;
 
@@ -117,16 +133,15 @@ namespace DocumentsQA_Backend.Services {
 		}
 
 		public bool AllowToTranche(Tranche tranche) {
-			return AllowToTranche(tranche,
-				id => tranche.UserAccesses.Any(x => x.Id == id));
+			return AllowToTranche(id => tranche.UserAccesses.Any(x => x.Id == id));
 		}
-		public bool AllowToTranche(Tranche tranche, Func<int, bool> userAllowPolicy) {
-			return AllowToProject(tranche.Project, userAllowPolicy);
+		public bool AllowToTranche(Func<int, bool> userAllowPolicy) {
+			return AllowToProject(userAllowPolicy);
 		}
 
 		public bool AllowManageProject(Project project) {
 			// Use the normal AllowToProject, but always refuse normal users
-			return AllowToProject(project, _ => false);
+			return AllowToProject(_ => false);
 		}
 		public bool AllowManageTranche(Tranche tranche) {
 			return AllowManageProject(tranche.Project);
