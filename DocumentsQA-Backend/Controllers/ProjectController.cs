@@ -81,8 +81,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Gets list of all users with project read access
 		/// <para>Admins are not included</para>
 		/// </summary>
-		[HttpGet("users/{pid}")]
-		public async Task<IActionResult> GetProjectUsers(int pid, [FromQuery] int details = 0) {
+		[HttpGet("users")]
+		public async Task<IActionResult> GetProjectUsers([FromQuery] int details = 0) {
 			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
@@ -118,8 +118,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Gets list of all users with project management access
 		/// <para>Admins are not included</para>
 		/// </summary>
-		[HttpGet("managers/{pid}")]
-		public async Task<IActionResult> GetProjectManagers(int pid, [FromQuery] int details = -1) {
+		[HttpGet("managers")]
+		public async Task<IActionResult> GetProjectManagers([FromQuery] int details = -1) {
 			var project = await _repoProject.GetProjectAsync();
 
 			var listManagerIds = project.UserManagers
@@ -149,8 +149,8 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 		}
 
-		[HttpGet("content/{pid}")]
-		public async Task<IActionResult> CountContent(int pid) {
+		[HttpGet("content")]
+		public async Task<IActionResult> CountContent() {
 			var project = await _repoProject.GetProjectAsync();
 
 			int countGeneralPosts = project.Questions
@@ -160,7 +160,7 @@ namespace DocumentsQA_Backend.Controllers {
 				.Where(x => x.Type == QuestionType.Account)
 				.Count();
 			int countDocuments = await _dataContext.Documents
-				.Where(x => x.ProjectId == pid)
+				.Where(x => x.ProjectId == project.Id)
 				.CountAsync();
 
 			return Ok(new JsonTable {
@@ -177,7 +177,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (_access.IsAdmin())
 				return Forbid();
 
-			Project project = new Project {
+			var project = new Project {
 				Name = dto.Name,
 				DisplayName = dto.Name,
 				CompanyName = dto.Company,

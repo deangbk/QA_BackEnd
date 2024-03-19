@@ -55,9 +55,8 @@ namespace DocumentsQA_Backend.Controllers {
 		private JsonTable _UserToResTable(AppUser user, int details) {
 			var table = user.ToJsonTable(details);
 
-			int projectId = _access.GetProjectID();
 			var trancheAccesses = ProjectHelpers.GetUserTrancheAccessesInProject(
-				user, projectId);
+				user, _access.GetProjectID());
 			table["tranches"] = trancheAccesses
 				.Select(x => x.ToJsonTable(0))
 				.ToList();
@@ -85,11 +84,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </summary>
 		[HttpGet("{uid}")]
 		public async Task<IActionResult> GetUserFromId(int uid, [FromQuery] int details = 0) {
-			Project? project = await Queries.GetProjectFromId(
-				_dataContext, _access.GetProjectID());
-			if (project == null)
-				return BadRequest("Project not found");
-
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 

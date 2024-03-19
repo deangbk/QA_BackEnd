@@ -18,7 +18,7 @@ namespace DocumentsQA_Backend.Helpers {
 	public class PostHelpers {
 		public static Question CreateQuestion(QuestionType type, int projectId, string text, string category, int userId) {
 			var time = DateTime.Now;
-			Question question = new Question {
+			var question = new Question {
 				QuestionNum = 0,
 				Type = type,
 				Category = category,

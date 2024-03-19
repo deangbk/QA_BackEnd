@@ -130,18 +130,14 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Get all general documents in the project
 		/// <para>Ordered by upload date</para>
 		/// </summary>
-		[HttpGet("with/project/{id}")]
-		public async Task<IActionResult> GetDocuments_General(int id, [FromQuery] int details = 0) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, id);
-			if (project == null)
-				return BadRequest("Project not found");
+		[HttpGet("with/project")]
+		public async Task<IActionResult> GetDocuments_General([FromQuery] int details = 0) {
+			var project = await _repoProject.GetProjectAsync();
 
-			if (!_access.AllowToProject(project))
-				return Forbid();
 			AuthHelpers.GuardDetailsLevel(_access, project, details, 4);
 
 			var listDocuments = await _dataContext.Documents
-				.Where(x => x.ProjectId == id)
+				.Where(x => x.ProjectId == project.Id)
 				.Where(x => x.Type == DocumentType.Transaction || x.Type == DocumentType.Bid)
 				.OrderBy(x => x.DateUploaded)
 				.ToListAsync();
@@ -200,17 +196,14 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <para>Ordered by upload date</para>
 		/// </summary>
 		[HttpPost("recent/{id}")]
-		public async Task<IActionResult> GetDocuments_Recent(int id, [FromBody] DocumentGetDTO dto, [FromQuery] int details = 0) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, id);
-			if (project == null)
-				return BadRequest("Project not found");
+		public async Task<IActionResult> GetDocuments_Recent([FromBody] DocumentGetDTO dto, [FromQuery] int details = 0) {
+			var project = await _repoProject.GetProjectAsync();
+			var projectId = project.Id;
 
-			if (!_access.AllowToProject(project))
-				return Forbid();
 			AuthHelpers.GuardDetailsLevel(_access, project, details, 4);
 
 			var baseQuery = _dataContext.Documents
-				.Where(x => x.ProjectId == id);
+				.Where(x => x.ProjectId == projectId);
 
 			var filterDTO = dto.Filter;
 			var pageDTO = dto.Paginate;
@@ -266,7 +259,8 @@ namespace DocumentsQA_Backend.Controllers {
 			// Allow staff to everything, but filter based on access for regular users
 			if (!_access.IsSuperUser()) {
 				AppUser user = (await Queries.GetUserFromId(_dataContext, _access.GetUserID()))!;
-				var trancheAccesses = ProjectHelpers.GetUserTrancheAccessesInProject(user, id);
+				var trancheAccesses = ProjectHelpers.GetUserTrancheAccessesInProject(
+					user, projectId);
 
 				var listAllowedAccounts = trancheAccesses
 					.SelectMany(x => x.Accounts.Select(x => x.Id))
@@ -342,8 +336,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Uploads documents
 		/// </summary>
-		[HttpPost("upload/file/{pid}")]
-		public async Task<IActionResult> UploadDocument(int pid, [FromForm] DocumentUploadWithFileDTO dto) {
+		[HttpPost("upload/file")]
+		public async Task<IActionResult> UploadDocument([FromForm] DocumentUploadWithFileDTO dto) {
 			List<DocumentUploadDTO> descs;
 			{
 				var parse = JsonSerializer.Deserialize<List<DocumentUploadDTO>>(dto.DescsJson, 
@@ -365,17 +359,14 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 			}
 
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
 			List<Document> documents = new();
 
 			foreach (var docDto in descs) {
-				var document = DocumentHelpers.CreateFromDTO(pid, docDto);
+				var document = DocumentHelpers.CreateFromDTO(project.Id, docDto);
 				document.UploadedById = _access.GetUserID();
 
 				if (await DocumentHelpers.CheckDuplicate(_dataContext, document))
@@ -423,12 +414,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Uploads documents by adding new entries to the system. No file is created anywhere
 		/// </summary>
-		[HttpPost("upload/{pid}")]
-		public async Task<IActionResult> UploadDocumentEntryOnly(int pid, [FromBody] List<DocumentUploadDTO> dtos) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
+		[HttpPost("upload")]
+		public async Task<IActionResult> UploadDocumentEntryOnly([FromBody] List<DocumentUploadDTO> dtos) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
@@ -440,7 +428,7 @@ namespace DocumentsQA_Backend.Controllers {
 					return BadRequest(new ValidationProblemDetails(ModelState));
 				}
 
-				var document = DocumentHelpers.CreateFromDTO(pid, dto);
+				var document = DocumentHelpers.CreateFromDTO(project.Id, dto);
 				document.UploadedById = _access.GetUserID();
 
 				if (await DocumentHelpers.CheckDuplicate(_dataContext, document))
@@ -491,13 +479,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Bulk edits documents info
 		/// </summary>
-		[HttpPut("bulk/edit/{id}")]
-		public async Task<IActionResult> EditDocuments(int id, [FromBody] List<DocumentEditDTO> dtos) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, id);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			// Only staff can do this
+		[HttpPut("bulk/edit")]
+		public async Task<IActionResult> EditDocuments([FromBody] List<DocumentEditDTO> dtos) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
@@ -549,17 +533,13 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		[HttpDelete("{id}/{docId}")]
-		public async Task<IActionResult> DeleteDocument(int id, int docId) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, id);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			// Only staff can do this
+		[HttpDelete("{id}")]
+		public async Task<IActionResult> DeleteDocument(int id) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			Document? document = await Queries.GetDocumentFromId(_dataContext, docId);
+			Document? document = await Queries.GetDocumentFromId(_dataContext, id);
 			if (document == null)
 				return BadRequest("Document not found");
 
@@ -572,13 +552,9 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok();
 		}
 
-		[HttpPost("bulk/delete/{id}")]
-		public async Task<IActionResult> DeleteDocumentMultiple(int id, [FromBody] List<int> docIds) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, id);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			// Only staff can do this
+		[HttpPost("bulk/delete")]
+		public async Task<IActionResult> DeleteDocumentMultiple([FromBody] List<int> docIds) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 

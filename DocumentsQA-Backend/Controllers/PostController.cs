@@ -40,13 +40,6 @@ namespace DocumentsQA_Backend.Controllers {
 			_dataContext = dataContext;
 			_access = access;
 
-			{
-				if (!_access.IsValidUser())
-					throw new AccessUnauthorizedException();
-
-				_userId = _access.GetUserID();
-				_projectId = _access.GetProjectID();
-			}
 
 			_repoProject = repoProject;
 		}
@@ -68,22 +61,17 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </list>
 		/// <para>Will only return approved questions.</para>
 		/// </summary>
-		[HttpPost("page/{pid}")]
-		public async Task<IActionResult> GetPosts(int pid, [FromBody] PostGetFilterAndPaginateDTO dto,
+		[HttpPost("page")]
+		public async Task<IActionResult> GetPosts([FromBody] PostGetFilterAndPaginateDTO dto,
 			[FromQuery] int details = 0)
 		{
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowToProject(project))
-				return Forbid();
+			var project = await _repoProject.GetProjectAsync();
 
 			var filterDTO = dto.Filter;
 			var pageDTO = dto.Paginate;
 
 			// Gets only approved
-			IQueryable<Question> query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);
+			IQueryable<Question> query = Queries.GetApprovedQuestionsQuery(_dataContext, project.Id);
 
 			try {
 				query = PostHelpers.FilterQuery(query, filterDTO);
@@ -124,13 +112,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Adds an answer to a question
 		/// </summary>
-		[HttpPut("answer/{pid}")]
-		public async Task<IActionResult> SetAnswer(int pid, [FromBody] PostSetAnswerDTO dto) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			// Only staff can add answer
+		[HttpPut("answer")]
+		public async Task<IActionResult> SetAnswer([FromBody] PostSetAnswerDTO dto) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
@@ -139,14 +123,15 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Question not found");
 
 			var time = DateTime.Now;
+			var userId = _access.GetUserID();
 
 			question.QuestionAnswer = dto.Answer;
-			question.AnsweredById = _userId;
+			question.AnsweredById = userId;
 			question.DateAnswered = time;
 			question.DateLastEdited = time;
 
 			// Automatically approve
-			PostHelpers.ApproveAnswer(question, _userId, true);
+			PostHelpers.ApproveAnswer(question, userId, true);
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
@@ -155,13 +140,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Edits a question
 		/// </summary>
-		[HttpPut("edit/{pid}")]
-		public async Task<IActionResult> EditQuestion(int pid, [FromBody] PostEditDTO dto) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			// Only staff can edit
+		[HttpPut("edit")]
+		public async Task<IActionResult> EditQuestion([FromBody] PostEditDTO dto) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
@@ -169,7 +150,9 @@ namespace DocumentsQA_Backend.Controllers {
 			if (question == null)
 				return BadRequest("Question not found");
 
-			PostHelpers.EditQuestion(question, dto, _userId, 
+			var userId = _access.GetUserID();
+
+			PostHelpers.EditQuestion(question, dto, userId, 
 				question.QuestionApprovedBy != null);
 
 			await _dataContext.SaveChangesAsync();
@@ -196,12 +179,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Sets the approval status of questions or answers
 		/// </summary>
-		[HttpPut("approve/{pid}")]
-		public async Task<IActionResult> SetPostsApproval(int pid, [FromBody] PostSetApproveDTO dto, [FromQuery] string mode) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
+		[HttpPut("approve")]
+		public async Task<IActionResult> SetPostsApproval([FromBody] PostSetApproveDTO dto, [FromQuery] string mode) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
@@ -237,14 +217,16 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			var time = DateTime.Now;
+			var userId = _access.GetUserID();
+
 			bool approve = dto.Approve!.Value;
 
 			foreach (var (_, q) in questions) {
 				if (modeI == 0) {
-					PostHelpers.ApproveQuestion(q, _userId, approve);
+					PostHelpers.ApproveQuestion(q, userId, approve);
 				}
 				else {
-					PostHelpers.ApproveAnswer(q, _userId, approve);
+					PostHelpers.ApproveAnswer(q, userId, approve);
 				}
 
 				q.DateLastEdited = time;
@@ -259,14 +241,11 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Posts general questions in bulk
 		/// </summary>
-		[HttpPost("bulk/{pid}")]
-		public async Task<IActionResult> PostQuestionMultiple(int pid, [FromBody] List<PostCreateDTO> dtos) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
+		[HttpPost("bulk")]
+		public async Task<IActionResult> PostQuestionMultiple([FromBody] List<PostCreateDTO> dtos) {
+			var project = await _repoProject.GetProjectAsync();
 
-			if (!_access.AllowToProject(project))
-				return Forbid();
+			var userId = _access.GetUserID();
 			bool isStaff = _access.IsSuperUser();
 
 			var accountIds = dtos
@@ -304,7 +283,7 @@ namespace DocumentsQA_Backend.Controllers {
 				var question = PostHelpers.CreateQuestion(
 					QuestionType.General, project.Id,
 					d.Text, d.Category ?? "general",
-					d.PostAs ?? _userId);
+					d.PostAs ?? userId);
 				if (d.DateSent is not null)
 					question.DateSent = d.DateSent.Value;
 
@@ -318,7 +297,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 				// Auto-approve if the request is made by a manager
 				if (isStaff) {
-					PostHelpers.ApproveQuestion(question, _userId, true);
+					PostHelpers.ApproveQuestion(question, userId, true);
 				}
 
 				return question;
@@ -335,12 +314,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Edit questions in bulk
 		/// </summary>
-		[HttpPut("bulk/edit/{pid}")]
-		public async Task<IActionResult> EditQuestionMultiple(int pid, [FromBody] List<PostEditDTO> dtos) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
+		[HttpPut("bulk/edit")]
+		public async Task<IActionResult> EditQuestionMultiple([FromBody] List<PostEditDTO> dtos) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
@@ -356,9 +332,11 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 			}
 
+			var userId = _access.GetUserID();
+
 			foreach (var dto in dtos) {
 				var question = mapQuestions[dto.Id!.Value];
-				PostHelpers.EditQuestion(question, dto, _userId,
+				PostHelpers.EditQuestion(question, dto, userId,
 					question.QuestionApprovedBy != null);
 			}
 
@@ -369,13 +347,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Adds answers to questions in bulk
 		/// </summary>
-		[HttpPut("bulk/answer/{pid}")]
-		public async Task<IActionResult> SetAnswerMultiple(int pid, [FromBody] List<PostSetAnswerDTO> dtos) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			// Only staff can add answers
+		[HttpPut("bulk/answer")]
+		public async Task<IActionResult> SetAnswerMultiple([FromBody] List<PostSetAnswerDTO> dtos) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
@@ -392,18 +366,19 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			var time = DateTime.Now;
+			var userId = _access.GetUserID();
 
 			foreach (var i in dtos) {
 				var question = mapQuestions[i.Id!.Value];
 
 				question.QuestionAnswer = i.Answer;
-				question.AnsweredById = _userId;
+				question.AnsweredById = userId;
 				question.DateAnswered = time;
 				question.DateLastEdited = time;
 
 				// Don't auto-approve on bulk answer
-				PostHelpers.ApproveQuestion(question, _userId, true);
-				PostHelpers.ApproveAnswer(question, _userId, false);
+				PostHelpers.ApproveQuestion(question, userId, true);
+				PostHelpers.ApproveAnswer(question, userId, false);
 			}
 
 			var count = await _dataContext.SaveChangesAsync();

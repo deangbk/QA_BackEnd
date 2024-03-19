@@ -50,16 +50,11 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Gets project nodes, ordered by number
 		/// </summary>
-		[HttpGet("{pid}")]
-		public async Task<IActionResult> GetNotes(int pid) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowToProject(project))
-				return Forbid();
-
+		[HttpGet("")]
+		public async Task<IActionResult> GetNotes([FromQuery] bool sticky = true) {
+			var project = await _repoProject.GetProjectAsync();
 			var listNotesTables = project.Notes
+
 				.OrderBy(x => x.Num)
 				.Select(x => x.ToJsonTable(0));
 
@@ -69,17 +64,14 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Adds a project note
 		/// </summary>
-		[HttpPost("{pid}")]
-		public async Task<IActionResult> AddNote(int pid, [FromBody] AddNoteDTO dto) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
+		[HttpPost("")]
+		public async Task<IActionResult> AddNote([FromBody] AddNoteDTO dto) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
 			var note = new Note {
-				ProjectId = pid,
+				ProjectId = project.Id,
 				PostedById = _access.GetUserID(),
 
 				Text = dto.Text,
@@ -102,12 +94,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Removes a project note
 		/// </summary>
-		[HttpDelete("{pid}")]
-		public async Task<IActionResult> DeleteNote(int pid, [FromQuery] int num) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
+		[HttpDelete("")]
+		public async Task<IActionResult> DeleteNote([FromQuery] int num) {
+			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 

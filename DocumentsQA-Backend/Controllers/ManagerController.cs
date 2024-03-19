@@ -25,7 +25,7 @@ namespace DocumentsQA_Backend.Controllers {
 	public class ManagerController : Controller {
 		private readonly ILogger<ManagerController> _logger;
 
-        private readonly IWebHostEnvironment _env;
+		private readonly IWebHostEnvironment _env;
 
 		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
@@ -51,7 +51,7 @@ namespace DocumentsQA_Backend.Controllers {
 			_userManager = userManager;
 
 			_repoProject = repoProject;
-        }
+		}
 
 		// -----------------------------------------------------
 
@@ -61,13 +61,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </summary>
 		[HttpPut("grant/access/{tid}/{uid}")]
 		public async Task<IActionResult> GrantTrancheAccess(int tid, int uid) {
-			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
+			var tranche = await _repoProject.GetTrancheAsync(tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
-			Project project = tranche.Project;
-
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
 			if (user == null)
@@ -96,13 +92,9 @@ namespace DocumentsQA_Backend.Controllers {
 		[HttpPut("grant/access/file/{tid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]  // 4MB
 		public async Task<IActionResult> GrantTrancheAccessFromFile(int tid, [FromForm] IFormFile file) {
-			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
+			var tranche = await _repoProject.GetTrancheAsync(tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
-			Project project = tranche.Project;
-
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			List<int> userIdsGrant;
 			try {
@@ -134,15 +126,11 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </summary>
 		[HttpDelete("ungrant/access/{tid}/{uid}")]
 		public async Task<IActionResult> RemoveTrancheAccess(int tid, int uid) {
-			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
+			var tranche = await _repoProject.GetTrancheAsync(tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
-			Project project = tranche.Project;
 
-			if (!_access.AllowManageProject(project))
-				return Forbid();
-
-			if (project.UserManagers.Exists(x => x.Id == uid)) {
+			if (tranche.Project.UserManagers.Exists(x => x.Id == uid)) {
 				return BadRequest("Cannot remove access: user has elevated rights");
 			}
 
@@ -240,15 +228,10 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </code>
 		/// </example>
 		/// </summary>
-		[HttpPost("bulk/create_user/{pid}")]
-		[RequestSizeLimit(bytes: 16 * 1024 * 1024)]  // 16MB
-		public async Task<IActionResult> AddUsersFromFile(int pid, [FromForm] IFormFile file) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowManageProject(project))
-				return Forbid();
+		[HttpPost("bulk/create_user")]
+		[RequestSizeLimit(bytes: 16 * 1024 * 1024)]		// 16MB
+		public async Task<IActionResult> AddUsersFromFile([FromForm] IFormFile file) {
+			var project = await _repoProject.GetProjectAsync();
 
 			List<string> fileLines;
 			{
@@ -337,14 +320,9 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(userInfos);
 		}
 
-		[HttpPost("bulk/create_user/json/{pid}")]
-		public async Task<IActionResult> AddUsers(int pid, [FromBody] List<AddUserDTO> dtos) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowManageProject(project))
-				return Forbid();
+		[HttpPost("bulk/create_user/json")]
+		public async Task<IActionResult> AddUsers([FromBody] List<AddUserDTO> dtos) {
+			var project = await _repoProject.GetProjectAsync();
 
 			DateTime date = DateTime.Now;
 			string projectCompany = project.CompanyName;
@@ -428,27 +406,23 @@ namespace DocumentsQA_Backend.Controllers {
 		///		<item>SearchTerm</item>
 		/// </list>
 		/// </summary>
-		[HttpPost("post/{pid}")]
-		public async Task<IActionResult> GetPosts(int pid, [FromBody] PostGetFilterDTO filterDTO, [FromQuery] int details = 0) {
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
-
-			if (!_access.AllowManageProject(project))
-				return Forbid();
+		[HttpPost("post")]
+		public async Task<IActionResult> GetPosts([FromBody] PostGetFilterDTO filterDTO, [FromQuery] int details = 0) {
+			var project = await _repoProject.GetProjectAsync();
+			var projectId = project.Id;
 
 			IQueryable<Question> query;
 			{
 				switch (filterDTO.Approved) {
 					case true:
-						query = Queries.GetApprovedQuestionsQuery(_dataContext, pid);		// Gets only approved
+						query = Queries.GetApprovedQuestionsQuery(_dataContext, projectId);		// Gets only approved
 						break;
 					case false:
-						query = Queries.GetUnapprovedQuestionsQuery(_dataContext, pid);		// Gets only unapproved
+						query = Queries.GetUnapprovedQuestionsQuery(_dataContext, projectId);	// Gets only unapproved
 						break;
 					case null:
 						query = _dataContext.Questions
-							.Where(x => x.ProjectId == pid);
+							.Where(x => x.ProjectId == projectId);		// Gets everything
 						break;
 				}
 			}
@@ -471,18 +445,12 @@ namespace DocumentsQA_Backend.Controllers {
 		[HttpPost("editq")]
 		public async Task<IActionResult> EditQestion([FromBody] PostEditQuestionDTO questionDetails)
 		{
-			var pid = 1;
-			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
-			if (project == null)
-				return BadRequest("Project not found");
+			var project = await _repoProject.GetProjectAsync();
 
-			if (!_access.AllowManageProject(project))
-                return Forbid();
-
-            //var questions = project.Questions
-            //.Where(x => questionDetails.Questions.Any(y => y == x.Id))
-            //.ToList();
-            var quest =  Queries.GetSingleQuestionsQuery(_dataContext, questionDetails.Id).SingleOrDefault();
+			//var questions = project.Questions
+			//.Where(x => questionDetails.Questions.Any(y => y == x.Id))
+			//.ToList();
+			var quest =  Queries.GetSingleQuestionsQuery(_dataContext, questionDetails.Id).SingleOrDefault();
             if (quest == null)
                 return BadRequest("Question not found");
             quest =PostHelpers.updateQuestion(quest, questionDetails, _access.GetUserID());
