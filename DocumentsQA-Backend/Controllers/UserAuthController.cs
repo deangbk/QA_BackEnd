@@ -49,26 +49,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private async Task<AuthResponse> _CreateUserToken(int projectId, string actualEmail) {
-			var claims = new List<Claim> {
-				//new Claim("email", uc.Email),
-			};
-
-			{
-				var user = await _userManager.FindByEmailAsync(actualEmail);
-				if (user != null) {
-					claims.Add(new Claim("id", user.Id.ToString()));
-					claims.Add(new Claim("name", user.DisplayName));
-					claims.Add(new Claim("project", projectId.ToString()));
-
-					// Add role claims for the user
-					{
-						var userClaims = await _userManager.GetClaimsAsync(user);
-						claims.AddRange(userClaims.Where(x => x.Type == "role"));
-					}
-				}
-			}
-
+		private AuthResponse _CreateUserToken(List<Claim> claims) {
 			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Initialize.JwtKey));
 			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
 
@@ -95,7 +76,21 @@ namespace DocumentsQA_Backend.Controllers {
 				var result = await _signinManager.CheckPasswordSignInAsync(user, uc.Password, false);
 
 				if (result.Succeeded) {
-					var token = await _CreateUserToken(pid, actualEmail);
+					var claims = new List<Claim>();
+
+					{
+						claims.Add(new Claim("id", user.Id.ToString()));
+						claims.Add(new Claim("name", user.DisplayName));
+						claims.Add(new Claim("project", pid.ToString()));
+
+						// Add role claims for the user
+						{
+							var userClaims = await _userManager.GetClaimsAsync(user);
+							claims.AddRange(userClaims.Where(x => x.Type == "role"));
+						}
+					}
+
+					var token = _CreateUserToken(claims);
 					return Ok(token);
 				}
 				else if (result.IsLockedOut) {
