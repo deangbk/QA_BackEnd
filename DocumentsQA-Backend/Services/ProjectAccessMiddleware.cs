@@ -20,6 +20,7 @@ namespace DocumentsQA_Backend.Services {
 
 		// List of controllers where a valid auth token is not required to access
 		private static readonly string[] AllowUnauthRoutes = new[] {
+			"Admin",		// Don't unnecessarily restrict admins
 			"UserAuth",
 			"Unauthorised",
 		};
