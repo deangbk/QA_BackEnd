@@ -89,6 +89,9 @@ namespace DocumentsQA_Backend.Services {
 				id => ProjectHelpers.CanUserAccessProject(project, id));
 		}
 		public bool AllowToProject(Project project, Func<int, bool> userAllowPolicy) {
+			if (!IsValidUser())
+				return false;
+
 			var userId = GetUserID();
 
 			// Admins can access everything
