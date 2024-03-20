@@ -37,10 +37,9 @@ namespace DocumentsQA_Backend.Helpers {
 		/// Throws an AccessForbiddenException if the requested details level is higher than the maximum allowed.
 		/// <para>Does nothing if the user has manager access.</para>
 		/// </summary>
-		public static void GuardDetailsLevel(IAccessService access, Project project, int details, int maxDetails) {
-			if (details >= maxDetails) {
-				if (!access.AllowManageProject(project))
-					throw new AccessForbiddenException($"Insufficient credentials to get details level {details}");
+		public static void GuardDetailsLevel(IAccessService access, int details, int maxDetails) {
+			if (details >= maxDetails && !access.IsSuperUser()) {
+				throw new AccessForbiddenException($"Insufficient credentials to get details level {details}");
 			}
 		}
 
