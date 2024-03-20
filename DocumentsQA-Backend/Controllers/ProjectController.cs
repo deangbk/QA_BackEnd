@@ -48,7 +48,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Gets project information
 		/// </summary>
-		[HttpGet("info")]
+		[HttpGet("")]
 		public async Task<IActionResult> GetProjectInfo() {
 			var project = await _repoProject.GetProjectAsync();
 
