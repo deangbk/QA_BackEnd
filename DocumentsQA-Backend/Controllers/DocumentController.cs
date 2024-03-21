@@ -68,7 +68,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.AllowToProject(project))
 				return Forbid();
-			AuthHelpers.GuardDetailsLevel(_access, project, details, 4);
+			AuthHelpers.GuardDetailsLevel(_access, details, 4);
 
 			return Ok(document.ToJsonTable(details));
 		}
@@ -134,7 +134,7 @@ namespace DocumentsQA_Backend.Controllers {
 		public async Task<IActionResult> GetDocuments_General([FromQuery] int details = 0) {
 			var project = await _repoProject.GetProjectAsync();
 
-			AuthHelpers.GuardDetailsLevel(_access, project, details, 4);
+			AuthHelpers.GuardDetailsLevel(_access, details, 4);
 
 			var listDocuments = await _dataContext.Documents
 				.Where(x => x.ProjectId == project.Id)
@@ -161,7 +161,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!PostHelpers.AllowUserReadPost(_access, question))
 				return Forbid();
 
-			AuthHelpers.GuardDetailsLevel(_access, question.Project, details, 4);
+			AuthHelpers.GuardDetailsLevel(_access, details, 4);
 
 			var listDocuments = question.Attachments
 				.OrderBy(x => x.DateUploaded);
@@ -182,7 +182,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.AllowToTranche(account.Tranche))
 				return Forbid();
-			AuthHelpers.GuardDetailsLevel(_access, account.Project, details, 4);
+			AuthHelpers.GuardDetailsLevel(_access, details, 4);
 
 			var listDocuments = account.Documents
 				.OrderBy(x => x.DateUploaded);
@@ -195,12 +195,12 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Get all recently uploaded documents
 		/// <para>Ordered by upload date</para>
 		/// </summary>
-		[HttpPost("recent/{id}")]
+		[HttpPost("recent")]
 		public async Task<IActionResult> GetDocuments_Recent([FromBody] DocumentGetDTO dto, [FromQuery] int details = 0) {
 			var project = await _repoProject.GetProjectAsync();
 			var projectId = project.Id;
 
-			AuthHelpers.GuardDetailsLevel(_access, project, details, 4);
+			AuthHelpers.GuardDetailsLevel(_access, details, 4);
 
 			var baseQuery = _dataContext.Documents
 				.Where(x => x.ProjectId == projectId);

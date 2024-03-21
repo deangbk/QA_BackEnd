@@ -43,8 +43,7 @@ namespace DocumentsQA_Backend.Services {
 
 			if (controllerValue != null) {
 				string controller = controllerValue
-					.ToString()!
-					.ToLower();
+					.ToString()!;
 
 				if (!AllowUnauthRoutes.Contains(controller)) {
 					Project? project = await Queries.GetProjectFromId(dataContext, access.GetProjectID());

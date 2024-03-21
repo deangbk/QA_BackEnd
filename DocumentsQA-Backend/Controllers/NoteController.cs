@@ -48,17 +48,38 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		/// <summary>
-		/// Gets project nodes, ordered by number
+		/// Gets project nodes
+		/// <para>Sticky notes are ordered by number</para>
+		/// <para>Normal notes are ordered in reverse chronological order</para>
 		/// </summary>
 		[HttpGet("")]
-		public async Task<IActionResult> GetNotes([FromQuery] bool sticky = true) {
+		public async Task<IActionResult> GetNotes([FromQuery] bool sticky = true, [FromQuery] int count = -1) {
 			var project = await _repoProject.GetProjectAsync();
-			var listNotesTables = project.Notes
 
-				.OrderBy(x => x.Num)
-				.Select(x => x.ToJsonTable(0));
+			List<Note> notes = new();
 
-			return Ok(listNotesTables);
+			if (sticky) {
+				notes = project.Notes
+					.Where(x => x.Sticky)
+					.OrderBy(x => x.Num)
+					.ToList();
+
+				IEnumerable<Note> normalNotes = project.Notes
+					.Where(x => !x.Sticky)
+					.OrderByDescending(x => x.DatePosted);
+				if (count >= 0) {
+					normalNotes = normalNotes.Take(count);
+				}
+
+				notes.AddRange(normalNotes);
+			}
+			else {
+				notes = project.Notes
+					.OrderBy(x => x.Num)
+					.ToList();
+			}
+
+			return Ok(notes.Select(x => x.ToJsonTable(1)));
 		}
 
 		/// <summary>
@@ -94,8 +115,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Removes a project note
 		/// </summary>
-		[HttpDelete("")]
-		public async Task<IActionResult> DeleteNote([FromQuery] int num) {
+		[HttpDelete("{num}")]
+		public async Task<IActionResult> DeleteNote(int num) {
 			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
