@@ -338,56 +338,54 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </summary>
 		[HttpPost("upload/file")]
 		public async Task<IActionResult> UploadDocument([FromForm] DocumentUploadWithFileDTO dto) {
-			List<DocumentUploadDTO> descs;
-			{
-				var parse = JsonSerializer.Deserialize<List<DocumentUploadDTO>>(dto.DescsJson, 
-					new JsonSerializerOptions {
-						PropertyNameCaseInsensitive = true
-					});
-				if (parse == null) {
-					return BadRequest("descs must not be null");
-				}
-				descs = parse;
-
-				// TODO: Might not work, test later
-				var result = new List<ValidationResult>();
-				foreach (var desc in descs) {
-					var ctx = new ValidationContext(desc);
-					if (!Validator.TryValidateObject(desc, ctx, result)) {
-						return BadRequest(result);
-					}
-				}
-			}
-
 			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
 			List<Document> documents = new();
 
-			foreach (var docDto in descs) {
-				var document = DocumentHelpers.CreateFromDTO(project.Id, docDto);
-				document.UploadedById = _access.GetUserID();
-
-				if (await DocumentHelpers.CheckDuplicate(_dataContext, document))
-					return BadRequest($"File {document.FileName} already exists");
-
-				{
-					var validateRes = _ValidateDocumentType(docDto, document);
-					if (validateRes != null) {
-						return BadRequest(validateRes);
-					}
-				}
-
-				documents.Add(document);
-			}
-
 			{
 				List<string> uploaded = new();
 
 				try {
-					foreach (var (doc, file) in documents.Zip(dto.Files)) {
-						string path = DocumentHelpers.GetDocumentFileRoute(doc);
+					foreach (var file in dto.Files) {
+						var docDesc = new DocumentUploadDTO {
+							Type = dto.Type,
+							AssocQuestion = dto.AssocQuestion,
+							AssocAccount = dto.AssocAccount,
+							Description = dto.Description,
+							Hidden = dto.Hidden,
+							Printable = dto.Printable,
+						};
+
+						string fileName = file.FileName;
+						docDesc.Url = fileName;
+
+						var document = DocumentHelpers.CreateFromDTO(project.Id, docDesc, fileName);
+						document.UploadedById = _access.GetUserID();
+
+						{
+							// If duplicate name, generate random string and add it to the name
+							{
+								string nameNoExt = Path.GetFileNameWithoutExtension(fileName);
+
+								while (await DocumentHelpers.CheckDuplicate(_dataContext, document)) {
+									string randH = AuthHelpers.GeneratePassword(new Random(GetHashCode()), 4, false);
+									document.FileUrl = $"{nameNoExt}_{randH}.{document.FileType}";
+								}
+							}
+
+							{
+								var validateRes = _ValidateDocumentType(docDesc, document);
+								if (validateRes != null) {
+									return BadRequest(validateRes);
+								}
+							}
+
+							documents.Add(document);
+						}
+
+						string path = DocumentHelpers.GetDocumentFileRoute(document);
 
 						var stream = file.OpenReadStream();
 
@@ -399,7 +397,7 @@ namespace DocumentsQA_Backend.Controllers {
 					await _dataContext.SaveChangesAsync();
 				}
 				catch (Exception e) {
-					// If failed, revert all successful file uploads
+					// If any failed, revert all successful file uploads
 					foreach (var dp in uploaded) {
 						await _fileManager.DeleteFile(dp);
 					}
@@ -423,16 +421,17 @@ namespace DocumentsQA_Backend.Controllers {
 			List<Document> documents = new();
 
 			foreach (var dto in dtos) {
-				if (dto.Url == null) {
-					ModelState.AddModelError("Url", "Url must not be null");
-					return BadRequest(new ValidationProblemDetails(ModelState));
-				}
-
-				var document = DocumentHelpers.CreateFromDTO(project.Id, dto);
+				var document = DocumentHelpers.CreateFromDTO(project.Id, dto, dto.Url);
 				document.UploadedById = _access.GetUserID();
 
-				if (await DocumentHelpers.CheckDuplicate(_dataContext, document))
-					return BadRequest($"File {document.FileName} already exists");
+				{
+					string nameNoExt = Path.GetFileNameWithoutExtension(document.FileName);
+
+					while (await DocumentHelpers.CheckDuplicate(_dataContext, document)) {
+						string randH = AuthHelpers.GeneratePassword(new Random(GetHashCode()), 4);
+						document.FileUrl = $"{nameNoExt}_{randH}.{document.FileType}";
+					}
+				}
 
 				{
 					var validateRes = _ValidateDocumentType(dto, document);

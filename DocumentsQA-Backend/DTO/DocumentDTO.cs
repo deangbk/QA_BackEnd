@@ -7,9 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend.DTO {
-	// Explicit [Required] used here because we're manually validating them in UploadDocument
 	public class DocumentUploadDTO {
-		[Required]
 		public string Type { get; set; } = null!;
 
 		[JsonPropertyName("with_post")]
@@ -18,12 +16,9 @@ namespace DocumentsQA_Backend.DTO {
 		[JsonPropertyName("with_account")]
 		public int? AssocAccount { get; set; }
 
-		[Required]
-		public string Name { get; set; } = null!;
 		public string? Description { get; set; }
 
-		[Url]
-		public string? Url { get; set; }
+		public string Url { get; set; } = null!;
 
 		public bool? Hidden { get; set; } = false;
 		public bool? Printable { get; set; } = false;
@@ -31,8 +26,18 @@ namespace DocumentsQA_Backend.DTO {
 	public class DocumentUploadWithFileDTO {
 		public List<IFormFile> Files { get; set; } = null!;
 
-		[BindProperty(Name = "descs")]
-		public string DescsJson { get; set; } = null!;
+		public string Type { get; set; } = null!;
+
+		[BindProperty(Name = "with_post")]
+		public int? AssocQuestion { get; set; }
+
+		[BindProperty(Name = "with_account")]
+		public int? AssocAccount { get; set; }
+
+		public string? Description { get; set; }
+
+		public bool? Hidden { get; set; } = false;
+		public bool? Printable { get; set; } = false;
 	}
 
 	public class DocumentEditDTO {

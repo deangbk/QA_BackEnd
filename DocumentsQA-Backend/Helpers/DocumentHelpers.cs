@@ -25,18 +25,20 @@ namespace DocumentsQA_Backend.Helpers {
 			_ => null,
 		};
 
-		public static Document CreateFromDTO(int projectId, DocumentUploadDTO upload) {
-			string fileExt = Path.GetExtension(upload.Name)[1..];		// substr to remove the dot
+		public static Document CreateFromDTO(int projectId, DocumentUploadDTO upload, string fileName) {
+			string fileExt = Path.GetExtension(upload.Url)[1..];		// substr to remove the dot
 
 			var document = new Document {
-				FileUrl = upload.Name,
-				FileName = upload.Name,
+				FileUrl = upload.Url,
+				FileName = fileName,
 				FileType = fileExt,
 				Description = upload.Description,
 
 				Hidden = upload.Hidden ?? false,
 				AllowPrint = upload.Printable ?? false,
 
+				//AssocQuestionId = upload.AssocQuestion,
+				//AssocAccountId = upload.AssocAccount,
 				ProjectId = projectId,
 
 				DateUploaded = DateTime.Now,
@@ -47,7 +49,7 @@ namespace DocumentsQA_Backend.Helpers {
 
 		public static async Task<bool> CheckDuplicate(DataContext dataContext, Document document) {
 			bool exists = await dataContext.Documents
-				.Where(x => x.ProjectId == document.ProjectId && x.FileName == document.FileName)
+				.Where(x => x.ProjectId == document.ProjectId && x.FileUrl == document.FileUrl)
 				.AnyAsync();
 			return exists;
 		}
