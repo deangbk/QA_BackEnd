@@ -291,6 +291,7 @@ namespace DocumentsQA_Backend.Controllers {
 					question.Type = QuestionType.Account;
 					question.AccountId = d.AccountId;
 				}
+				
 
 				// Increment num with each question added
 				question.QuestionNum = ++maxQuestionNo;

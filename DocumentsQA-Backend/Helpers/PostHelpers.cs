@@ -81,8 +81,12 @@ namespace DocumentsQA_Backend.Helpers {
 				question.QuestionText = edit.Question;
 			}
 			if (edit.Answer != null) {
+				if (string.IsNullOrEmpty(question.QuestionAnswer)) 
+				{ question.DateAnswered = DateTime.UtcNow; }
+					
 				question.QuestionAnswer = edit.Answer;
 				question.AnsweredById = userId;
+				
 			}
 			if (edit.Category != null) {
 				question.Category = edit.Category;
@@ -95,6 +99,7 @@ namespace DocumentsQA_Backend.Helpers {
 			if (edit.Answer != null) {
 				ApproveAnswer(question, userId, approve);
 			}
+
 		}
 
 		public static void ApproveQuestion(Question question, int userId, bool approve) {
