@@ -138,9 +138,9 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		/// <summary>
-		/// Edits a question
+		/// Edits a question, sent to post temporaily to fix a bug will fix later--- Nat don't change it
 		/// </summary>
-		[HttpPut("edit")]
+		[HttpPost("edit")]
 		public async Task<IActionResult> EditQuestion([FromBody] PostEditDTO dto) {
 			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))

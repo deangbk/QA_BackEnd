@@ -23,17 +23,17 @@ using DocumentsQA_Backend.Extensions;
 using DocumentsQA_Backend.Repository;
 
 namespace DocumentsQA_Backend.Controllers {
-	using JsonTable = Dictionary<string, object>;
-
-	[Route("api/document")]
-	[Authorize]
+    using JsonTable = Dictionary<string, object>;
+    [Route("api/document")]
+    [Authorize]
 	public class DocumentController : Controller {
 		private readonly ILogger<DocumentController> _logger;
 
 		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
+        private readonly IWebHostEnvironment _env;
 
-		private readonly IFileManagerService _fileManager;
+        private readonly IFileManagerService _fileManager;
 		private readonly IProjectRepository _repoProject;
 
 		public DocumentController(
@@ -42,7 +42,8 @@ namespace DocumentsQA_Backend.Controllers {
 			IAccessService access,
 
 			IFileManagerService fileManager,
-			IProjectRepository repoProject)
+            IWebHostEnvironment env,
+            IProjectRepository repoProject)
 		{
 			_dataContext = dataContext;
 			_logger = logger;
@@ -51,7 +52,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_fileManager = fileManager;
 			_repoProject = repoProject;
-		}
+            _env = env;
+        }
 
 		// -----------------------------------------------------
 
@@ -363,22 +365,41 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			List<Document> documents = new();
+            var documentFolder = "Documents";
+            var files = Request.Form.Files;
+            var rootPath = _env.ContentRootPath;
+            var upPath = Path.Combine(rootPath, documentFolder);
+            List<Document> documents = new();
 
 			foreach (var docDto in descs) {
 				var document = DocumentHelpers.CreateFromDTO(project.Id, docDto);
 				document.UploadedById = _access.GetUserID();
 
-				if (await DocumentHelpers.CheckDuplicate(_dataContext, document))
-					return BadRequest($"File {document.FileName} already exists");
+				///updating the file name if it already exists
+               var fName = System.IO.Path.GetFileNameWithoutExtension(document.FileName);
+                var finalName = fName;
+                int index = 1;
+                var ext = Path.GetExtension(document.FileName).ToString();
+                while (System.IO.File.Exists(upPath + "/" + fName + ext))
+                {
+                    fName = finalName + "(" + index + ")";
+                    index++;
+                }
+				document.FileName = fName+ext;
+    //            if (await DocumentHelpers.CheckDuplicate(_dataContext, document))
+				//	return BadRequest($"File {document.FileName} already exists");
 
-				{
+				//{
 					var validateRes = _ValidateDocumentType(docDto, document);
 					if (validateRes != null) {
 						return BadRequest(validateRes);
 					}
-				}
+				//	}
+				document.AssocQuestionId = descs[0].AssocQuestion;
+				document.AssocAccountId = descs[0].AssocAccount;
+                DocumentType documentType = (DocumentType)Enum.Parse(typeof(DocumentType), descs[0].Type);
 
+                document.Type= documentType;
 				documents.Add(document);
 			}
 
@@ -387,6 +408,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 				try {
 					foreach (var (doc, file) in documents.Zip(dto.Files)) {
+
 						string path = DocumentHelpers.GetDocumentFileRoute(doc);
 
 						var stream = file.OpenReadStream();

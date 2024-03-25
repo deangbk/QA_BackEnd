@@ -467,9 +467,9 @@ namespace DocumentsQA_Backend.Controllers {
 		[HttpPost("upQDoc")]
         public async Task<IActionResult> UploadQestionDocs( [FromForm] fileUploadDTO uploadDetails)
         {
-			var documentFolder= "Documents";
+			var documentFolder= "Documents/1/";
             var files = Request.Form.Files;
-			var rootPath = _env.ContentRootPath;
+			var rootPath =  _env.ContentRootPath;
 			var upPath = Path.Combine(rootPath, documentFolder);
 			var docList= new List<DocumentsQA_Backend.Models.Document>();
 			var docType = uploadDetails.upType;
@@ -504,8 +504,9 @@ namespace DocumentsQA_Backend.Controllers {
 						ProjectId = 1,   ///fixneeded 
 					Type= enumType,
 						FileName = fullName,
-						FileUrl = "/Documents/"+ fullName, ///fix needed
-						Description = "file",
+						FileUrl = fullName,//"/Documents/"+ fullName, ///fix needed
+
+                        Description = "file",
 						FileType= ext
                 };
 					//docDetails.Type = Enum.Parse<DocumentType>("Account"); 
