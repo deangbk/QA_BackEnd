@@ -43,15 +43,17 @@ namespace DocumentsQA_Backend.Helpers {
 			}
 		}
 
-		public static string GeneratePassword(Random rand, int length) {
+		public static string GeneratePassword(Random rand, int length, bool requireDigit = true) {
 			const string passwordChars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 			
 			var pass = string.Concat(Enumerable.Range(0, length)
 				.Select(x => passwordChars[rand.Next() % passwordChars.Length]));
 
-			// Must contain at least 1 digit
-			if (!pass.Any(x => Char.IsDigit(x))) {
-				pass = pass.ReplaceAt(0, '0');
+			if (requireDigit) {
+				// Must contain at least 1 digit
+				if (!pass.Any(x => Char.IsDigit(x))) {
+					pass = pass.ReplaceAt(0, '0');
+				}
 			}
 
 			return pass;
