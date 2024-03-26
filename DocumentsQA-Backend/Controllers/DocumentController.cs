@@ -344,11 +344,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-            var documentFolder = "Documents";
-            var files = Request.Form.Files;
-            var rootPath = _env.ContentRootPath;
-            var upPath = Path.Combine(rootPath, documentFolder);
-            List<Document> documents = new();
+			List<Document> documents = new();
 
 			{
 				List<string> uploaded = new();
