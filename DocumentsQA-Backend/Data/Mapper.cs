@@ -81,13 +81,13 @@ namespace DocumentsQA_Backend.Data {
 
 				["q_text"] = obj.QuestionText,
 				["a_text"] = obj.QuestionAnswer!,
-				
 
                 ["post_by"] = obj.PostedBy.ToJsonTable(0),
 
 				["date_post"] = obj.DatePosted,
 				["date_sent"] = obj.DateSent,
 				["date_edit"] = obj.DateLastEdited,
+				["date_answered"] = obj.DateAnswered!,
 
 				["attachments"] = obj.Attachments
 					.OrderBy(x => x.DateUploaded)
