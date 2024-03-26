@@ -441,7 +441,9 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok(listPostTables);
 		}
 
-
+		/// <summary>
+		/// <para>Deprecated, please use <see cref="PostController.EditQuestion"/> instead.</para>
+		/// </summary>
 		[HttpPost("editq")]
 		public async Task<IActionResult> EditQestion([FromBody] PostEditQuestionDTO questionDetails)
 		{
