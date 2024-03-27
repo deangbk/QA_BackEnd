@@ -272,8 +272,13 @@ namespace DocumentsQA_Backend.Controllers {
 						return Forbid($"No access to tranche \"{t.Name}\" (id={t.Id})");
 				}
 
-				if (!isStaff && dtos.Where(x => x.PostAs != null).Any()) {
-					return Forbid($"post_as can only be used by managers");
+				if (!isStaff) {
+					if (dtos.Where(x => x.PostAs != null).Any()) {
+						return Forbid($"post_as can only be used by managers");
+					}
+					if (dtos.Where(x => x.Approve == true).Any()) {
+						return Forbid($"approve can only be used by managers");
+					}
 				}
 			}
 
@@ -291,13 +296,12 @@ namespace DocumentsQA_Backend.Controllers {
 					question.Type = QuestionType.Account;
 					question.AccountId = d.AccountId;
 				}
-				
 
 				// Increment num with each question added
 				question.QuestionNum = ++maxQuestionNo;
 
 				// Auto-approve if the request is made by a manager
-				if (isStaff) {
+				if (isStaff && d.Approve == true) {
 					PostHelpers.ApproveQuestion(question, userId, true);
 				}
 
