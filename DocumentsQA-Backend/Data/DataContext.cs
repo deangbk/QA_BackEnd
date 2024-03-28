@@ -16,6 +16,9 @@ namespace DocumentsQA_Backend.Data {
 		public DbSet<Comment> Comments { get; set; }
 		public DbSet<Note> Notes { get; set; }
 
+		public DbSet<LogInEvent> EventLogs_Login { get; set; }
+		public DbSet<ViewEvent> EventLogs_View { get; set; }
+
 		/*
 		/// <summary>
 		/// (UserId, ProjectId)

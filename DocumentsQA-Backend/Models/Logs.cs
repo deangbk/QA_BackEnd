@@ -11,10 +11,19 @@ namespace DocumentsQA_Backend.Models {
 	public class LogInEvent {
 		public DateTime Timestamp { get; set; }
 
-		public int UserId { get; set; }					// FK to User
-		public AppUser User { get; set; } = null!;		// Reference navigation to FK
+		public int UserId { get; set; }							// FK to User
+		public virtual AppUser User { get; set; } = null!;		// Reference navigation to FK
+
+		public int ProjectId { get; set; }						// FK to Project
+		public virtual Project Project { get; set; } = null!;	// Reference navigation to FK
 
 		public IPAddress IPAddress { get; set; } = null!;
+	}
+
+	public enum ViewType : int {
+		Question,
+		Account,
+		Tranche,
 	}
 
 	[Table("EventLog_View")]
@@ -23,12 +32,12 @@ namespace DocumentsQA_Backend.Models {
 		public DateTime Timestamp { get; set; }
 
 		public int UserId { get; set; }							// FK to User
-		public AppUser User { get; set; } = null!;				// Reference navigation to FK
+		public virtual AppUser User { get; set; } = null!;		// Reference navigation to FK
 
-		public int? ViewedAccountId { get; set; }				// FK to Account
-		public Account? ViewedAccount { get; set; } = null!;	// Reference navigation to FK
+		public int ProjectId { get; set; }						// FK to Project
+		public virtual Project Project { get; set; } = null!;	// Reference navigation to FK
 
-		public int? ViewedTrancheId { get; set; }				// FK to User
-		public Tranche? ViewedTranche { get; set; } = null!;	// Reference navigation to FK
+		public ViewType Type { get; set; }
+		public int ViewId { get; set; }							// Polymorphic association foreign key depending on Type
 	}
 }
