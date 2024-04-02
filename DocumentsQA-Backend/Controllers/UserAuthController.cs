@@ -22,6 +22,7 @@ using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.DTO;
 using DocumentsQA_Backend.Helpers;
 using DocumentsQA_Backend.Extensions;
+using DocumentsQA_Backend.Repository;
 
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
@@ -30,20 +31,25 @@ namespace DocumentsQA_Backend.Controllers {
 	[ApiController]
 	public class UserAuthController : ControllerBase {
 		private readonly ILogger<UserAuthController> _logger;
-		
+
 		private readonly DataContext _dataContext;
-		
 
 		private readonly UserManager<AppUser> _userManager;
 		private readonly SignInManager<AppUser> _signinManager;
 		private readonly RoleManager<AppRole> _roleManager;
 
+		private readonly IEventLogRepository _repoEventLog;
+
 		public UserAuthController(
-			ILogger<UserAuthController> logger, 
+			ILogger<UserAuthController> logger,
+
 			DataContext dataContext, 
+
 			UserManager<AppUser> userManager, 
 			SignInManager<AppUser> signinManager, 
-			RoleManager<AppRole> roleManager)
+			RoleManager<AppRole> roleManager,
+
+			IEventLogRepository repoEventLog)
 		{
 			_logger = logger;
 
@@ -52,6 +58,8 @@ namespace DocumentsQA_Backend.Controllers {
 			_userManager = userManager;
 			_signinManager = signinManager;
 			_roleManager = roleManager;
+
+			_repoEventLog = repoEventLog;
 		}
 
 		// -----------------------------------------------------
@@ -97,6 +105,8 @@ namespace DocumentsQA_Backend.Controllers {
 		public async Task<IActionResult> Login(int pid, [FromBody] LoginDTO uc) {
 			var user = await _TrySignIn(pid, uc);
 			if (user != null) {
+				await _repoEventLog.AddLoginEvent(pid);
+
 				var claims = new List<Claim>();
 
 				{
