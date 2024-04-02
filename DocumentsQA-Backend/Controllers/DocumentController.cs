@@ -23,17 +23,18 @@ using DocumentsQA_Backend.Extensions;
 using DocumentsQA_Backend.Repository;
 
 namespace DocumentsQA_Backend.Controllers {
-    using JsonTable = Dictionary<string, object>;
-    [Route("api/document")]
-    [Authorize]
+	using JsonTable = Dictionary<string, object>;
+
+	[Route("api/document")]
+	[Authorize]
 	public class DocumentController : Controller {
 		private readonly ILogger<DocumentController> _logger;
 
 		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
-        private readonly IWebHostEnvironment _env;
 
-        private readonly IFileManagerService _fileManager;
+		private readonly IFileManagerService _fileManager;
+
 		private readonly IProjectRepository _repoProject;
 
 		public DocumentController(
@@ -42,8 +43,8 @@ namespace DocumentsQA_Backend.Controllers {
 			IAccessService access,
 
 			IFileManagerService fileManager,
-            IWebHostEnvironment env,
-            IProjectRepository repoProject)
+
+			IProjectRepository repoProject)
 		{
 			_dataContext = dataContext;
 			_logger = logger;
@@ -52,8 +53,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_fileManager = fileManager;
 			_repoProject = repoProject;
-            _env = env;
-        }
+		}
 
 		// -----------------------------------------------------
 

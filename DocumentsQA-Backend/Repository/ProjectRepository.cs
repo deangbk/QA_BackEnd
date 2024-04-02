@@ -2,17 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
-
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.DTO;
-using Microsoft.AspNetCore.Identity;
 
 namespace DocumentsQA_Backend.Repository {
 	public class ProjectRepository : IProjectRepository {

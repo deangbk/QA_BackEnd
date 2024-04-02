@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.ComponentModel.DataAnnotations;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -15,5 +14,12 @@ namespace DocumentsQA_Backend.Repository {
 	public interface IProjectRepository {
 		Task<Project> GetProjectAsync();
 		Task<Tranche?> GetTrancheAsync(int id);
+	}
+
+	public interface IEventLogRepository {
+		Task AddLoginEvent();
+		Task AddLoginEvent(int projectId);
+
+		Task AddViewEvent(ViewType type, int id);
 	}
 }

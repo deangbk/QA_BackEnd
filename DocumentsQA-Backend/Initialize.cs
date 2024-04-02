@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.HttpOverrides;
 
 using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.Helpers;
@@ -130,6 +131,9 @@ namespace DocumentsQA_Backend {
 			// Register repository services
 			{
 				services.AddTransient<IProjectRepository, ProjectRepository>();
+				
+				// TODO: Enable telemetry when it's done
+				services.AddTransient<IEventLogRepository, EventLogRepository_Null>();
 			}
 
 			// Register email services
@@ -177,6 +181,12 @@ namespace DocumentsQA_Backend {
 
 			app.UseEndpoints(endpoints => {
 				endpoints.MapControllers();
+			});
+
+			app.UseForwardedHeaders(new ForwardedHeadersOptions {
+				ForwardedHeaders = 
+					ForwardedHeaders.XForwardedFor | 
+					ForwardedHeaders.XForwardedProto,
 			});
 		}
 	}
