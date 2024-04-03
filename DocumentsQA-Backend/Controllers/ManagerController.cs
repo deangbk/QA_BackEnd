@@ -156,6 +156,13 @@ namespace DocumentsQA_Backend.Controllers {
 			int projectId = project.Id;
 			DateTime date = DateTime.Now;
 
+			// Extra user constraints
+			{
+				if (users.Any(x => !x.Staff && x.Tranches != null && x.Tranches.Count == 0)) {
+					throw new InvalidDataException("Illegal to create a normal user with no tranche access");
+				}
+			}
+
 			// Wrap all operations in a transaction so failure would revert the entire thing
 			using (var transaction = _dataContext.Database.BeginTransaction()) {
 				// Warning: Inefficient
