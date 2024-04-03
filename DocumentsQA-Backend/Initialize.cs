@@ -83,7 +83,12 @@ namespace DocumentsQA_Backend {
 				});
 			}
 
-			services.AddCors();
+			services.AddCors(options => {
+				options.AddDefaultPolicy(
+					policy => {
+						policy.AllowAnyHeader().AllowAnyOrigin().AllowAnyMethod();
+					});
+			});
 
 			if (useAuthorization) {
 				JwtKey = _configuration.GetSection("AppSettings:Token").Value!;
@@ -173,7 +178,7 @@ namespace DocumentsQA_Backend {
 				app.UseMiddleware<ProjectAccessMiddleware>();
 			}
 
-			app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+			app.UseCors();
 
 			app.UseEndpoints(endpoints => {
 				endpoints.MapControllers();

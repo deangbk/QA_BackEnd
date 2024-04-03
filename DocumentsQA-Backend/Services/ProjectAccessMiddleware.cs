@@ -39,6 +39,8 @@ namespace DocumentsQA_Backend.Services {
 
 		// DataContext and IAccessService are scoped services, and cannot be injected into the middleware ctor
 		public async Task Invoke(HttpContext context, DataContext dataContext, IAccessService access) {
+			context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+
 			var controllerValue = context.GetRouteValue("controller");
 
 			if (controllerValue != null) {
