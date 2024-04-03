@@ -23,6 +23,6 @@ namespace DocumentsQA_Backend.Models {
 
 		// NOTE: Also available as dbfunc "ufnGetAccountIdentifierName"
 		// Get the format "A_0001", "C_0032", "D_9999" and the such
-		public string GetIdentifierName() => string.Format("{0}_{1:D4}", Tranche.Name, AccountNo);
+		public string GetIdentifierName() => string.Format("{0}_{1:D3}", Tranche.Name, AccountNo);
 	}
 }
