@@ -50,19 +50,22 @@ namespace DocumentsQA_Backend.Services {
 				if (!AllowUnauthRoutes.Contains(controller)) {
 					Project? project = await Queries.GetProjectFromId(dataContext, access.GetProjectID());
 
-					if (project == null) {
+					var _CreateErrorResp = async (HttpStatusCode code, string text) => {
 						context.Response.ContentType = "text/plain";
-						context.Response.StatusCode = (int)HttpStatusCode.NotFound;
+						context.Response.StatusCode = (int)code;
 
-						await context.Response.WriteAsync("Project not found.");
+						await context.Response.WriteAsync(text);
+					};
+
+					if (project == null) {
+						await _CreateErrorResp(HttpStatusCode.NotFound, 
+							"Project not found");
 						return;
 					}
 
 					if (!access.IsValidUser()) {
-						context.Response.ContentType = "text/plain";
-						context.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-
-						await context.Response.WriteAsync("Invalid login token.");
+						await _CreateErrorResp(HttpStatusCode.Unauthorized, 
+							"Invalid login token");
 						return;
 					}
 
@@ -72,11 +75,9 @@ namespace DocumentsQA_Backend.Services {
 						access.AllowToProject(project);
 
 					if (!bAllow) {
-						context.Response.ContentType = "text/plain";
-						context.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-
-						await context.Response.WriteAsync("No permission to access project. "
-							+ "Contact project staff if you think this is an error.");
+						await _CreateErrorResp(HttpStatusCode.Forbidden,
+							"No permission to access project; " +
+							"contact project staff if you think this is an error.");
 						return;
 					}
 				}
