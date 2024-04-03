@@ -22,7 +22,7 @@ namespace DocumentsQA_Backend.Models {
 		public virtual List<Document> Documents { get; set; } = new();      // One-to-many with Document
 
 		// NOTE: Also available as dbfunc "ufnGetAccountIdentifierName"
-		// Get the format "A_0001", "C_0032", "D_9999" and the such
+		// Get the format "A_001", "C_032", "D_999" and the such
 		public string GetIdentifierName() => string.Format("{0}_{1:D3}", Tranche.Name, AccountNo);
 	}
 }
