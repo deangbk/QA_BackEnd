@@ -103,6 +103,7 @@ namespace DocumentsQA_Backend.Services {
 
 		public bool AllowToProject(Project project) {
 			return AllowToProject(id => ProjectHelpers.CanUserAccessProject(project, id));
+			//return AllowToProject(id => GetProjectID() == project.Id);
 		}
 		public bool AllowToProject(Func<int, bool> userAllowPolicy) {
 			if (!IsValidUser())
