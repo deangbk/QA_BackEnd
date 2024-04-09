@@ -35,6 +35,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly IFileManagerService _fileManager;
 
+		private readonly AuthHelpers _authHelper;
 		private readonly IProjectRepository _repoProject;
 
 		public DocumentController(
@@ -44,6 +45,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			IFileManagerService fileManager,
 
+			AuthHelpers authHelper,
 			IProjectRepository repoProject)
 		{
 			_dataContext = dataContext;
@@ -52,6 +54,8 @@ namespace DocumentsQA_Backend.Controllers {
 			_access = access;
 
 			_fileManager = fileManager;
+
+			_authHelper = authHelper;
 			_repoProject = repoProject;
 		}
 
@@ -70,7 +74,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.AllowToProject(project))
 				return Forbid();
-			AuthHelpers.GuardDetailsLevel(_access, details, 4);
+			_authHelper.GuardDetailsLevel(details, 4);
 
 			return Ok(document.ToJsonTable(details));
 		}
@@ -136,7 +140,7 @@ namespace DocumentsQA_Backend.Controllers {
 		public async Task<IActionResult> GetDocuments_General([FromQuery] int details = 0) {
 			var project = await _repoProject.GetProjectAsync();
 
-			AuthHelpers.GuardDetailsLevel(_access, details, 4);
+			_authHelper.GuardDetailsLevel(details, 4);
 
 			var listDocuments = await _dataContext.Documents
 				.Where(x => x.ProjectId == project.Id)
@@ -163,7 +167,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!PostHelpers.AllowUserReadPost(_access, question))
 				return Forbid();
 
-			AuthHelpers.GuardDetailsLevel(_access, details, 4);
+			_authHelper.GuardDetailsLevel(details, 4);
 
 			var listDocuments = question.Attachments
 				.OrderBy(x => x.DateUploaded);
@@ -184,7 +188,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (!_access.AllowToTranche(account.Tranche))
 				return Forbid();
-			AuthHelpers.GuardDetailsLevel(_access, details, 4);
+			_authHelper.GuardDetailsLevel(details, 4);
 
 			var listDocuments = account.Documents
 				.OrderBy(x => x.DateUploaded);
@@ -202,7 +206,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var project = await _repoProject.GetProjectAsync();
 			var projectId = project.Id;
 
-			AuthHelpers.GuardDetailsLevel(_access, details, 4);
+			_authHelper.GuardDetailsLevel(details, 4);
 
 			var baseQuery = _dataContext.Documents
 				.Where(x => x.ProjectId == projectId);

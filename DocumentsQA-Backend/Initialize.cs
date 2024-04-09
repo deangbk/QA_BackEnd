@@ -133,6 +133,11 @@ namespace DocumentsQA_Backend {
 				services.AddTransient<IAccessService, AccessAllowAll>();
 			}
 
+			// Register helper services
+			{
+				services.AddTransient<AuthHelpers, AuthHelpers>();
+			}
+
 			// Register repository services
 			{
 				services.AddTransient<IProjectRepository, ProjectRepository>();

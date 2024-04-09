@@ -12,9 +12,27 @@ using Microsoft.AspNetCore.Identity;
 using DocumentsQA_Backend.Models;
 using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Extensions;
+using DocumentsQA_Backend.Data;
 
 namespace DocumentsQA_Backend.Helpers {
-	public static class AuthHelpers {
+	public class AuthHelpers {
+		private readonly DataContext _dataContext;
+		private readonly IAccessService _access;
+
+		private readonly UserManager<AppUser> _userManager;
+
+		public AuthHelpers(
+			DataContext dataContext, IAccessService access, 
+			UserManager<AppUser> userManager)
+		{
+			_dataContext = dataContext;
+			_access = access;
+
+			_userManager = userManager;
+		}
+
+		// -----------------------------------------------------
+
 		public static string ComposeUsername(int projectId, string name) {
 			return $"{projectId}:{name}";
 		}
@@ -37,8 +55,8 @@ namespace DocumentsQA_Backend.Helpers {
 		/// Throws an AccessForbiddenException if the requested details level is higher than the maximum allowed.
 		/// <para>Does nothing if the user has manager access.</para>
 		/// </summary>
-		public static void GuardDetailsLevel(IAccessService access, int details, int maxDetails) {
-			if (details >= maxDetails && !access.IsSuperUser()) {
+		public void GuardDetailsLevel(int details, int maxDetails) {
+			if (details >= maxDetails && !_access.IsSuperUser()) {
 				throw new AccessForbiddenException($"Insufficient credentials to get details level {details}");
 			}
 		}
@@ -59,6 +77,35 @@ namespace DocumentsQA_Backend.Helpers {
 			return pass;
 		}
 
+		/// <summary>
+		/// Returns true if the current user is able to "manage" the specified user
+		/// </summary>
+		public async Task<bool> CanManageUser(int target) {
+			AppUser? user = await Queries.GetUserFromId(_dataContext, target);
+			if (user == null)
+				return false;
 
+			return await CanManageUser(user);
+		}
+		/// <summary>
+		/// Returns true if the current user is able to "manage" the specified user
+		/// </summary>
+		public async Task<bool> CanManageUser(AppUser target) {
+			var selfRole = _access.UserGetRole() ?? AppRole.Empty;
+			var targetRole = (await UserHelpers.GetHighestRole(_userManager, target))
+				?? AppRole.Empty;
+
+			// Self must have higher privilege than target user
+			if (selfRole.CompareTo(targetRole) <= 0)
+				return false;
+
+			int targetProjectId = DecomposeUsername(target.UserName).Item1;
+			var targetProject = await Queries.GetProjectFromId(_dataContext, targetProjectId);
+
+			if (targetProject == null)
+				return false;
+			
+			return _access.AllowManageProject(targetProject);
+		}
 	}
 }
