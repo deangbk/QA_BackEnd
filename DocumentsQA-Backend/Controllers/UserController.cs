@@ -30,6 +30,8 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
+		private readonly UserManager<AppUser> _userManager;
+
 		private readonly AuthHelpers _authHelper;
 		private readonly IProjectRepository _repoProject;
 
@@ -39,7 +41,7 @@ namespace DocumentsQA_Backend.Controllers {
 			DataContext dataContext, 
 			IAccessService access,
 
-			SignInManager<AppUser> signinManager,
+			UserManager<AppUser> userManager,
 
 			AuthHelpers authHelper,
 			IProjectRepository repoProject)
@@ -48,6 +50,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_dataContext = dataContext;
 			_access = access;
+
+			_userManager = userManager;
 
 			_authHelper = authHelper;
 			_repoProject = repoProject;
@@ -98,6 +102,28 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var table = _UserToResTable(user, details);
 			return Ok(table);
+		}
+
+		/// <summary>
+		/// Deletes a user
+		/// </summary>
+		[HttpDelete("{uid}")]
+		public async Task<IActionResult> DeleteUser(int uid) {
+			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
+			if (user == null)
+				return BadRequest("User not found");
+
+			if (uid == _access.GetUserID())
+				return BadRequest("Cannot delete self");
+
+			//if (!await _authHelper.CanManageUser(user))
+			if (_access.IsAdmin())
+				return Forbid();
+
+			// DeleteAsync internally saves changes
+			await _userManager.DeleteAsync(user);
+
+			return Ok();
 		}
 	}
 }
