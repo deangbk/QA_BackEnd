@@ -82,14 +82,14 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <para>Admins are not included</para>
 		/// </summary>
 		[HttpGet("users")]
-		public async Task<IActionResult> GetProjectUsers([FromQuery] int details = 0) {
+		public async Task<IActionResult> GetProjectUsers([FromQuery] int details = -1) {
 			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
 			var listUserIds = ProjectHelpers.GetProjectUserAccesses(project);
 
-			if (details > 0) {
+			if (details >= 0) {
 				// TODO: Maybe optimize these
 
 				var trancheUsersMap = ProjectHelpers.GetTrancheUserAccessesMap(project);
