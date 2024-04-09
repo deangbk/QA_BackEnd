@@ -20,6 +20,7 @@ namespace DocumentsQA_Backend.Services {
 	public interface IAccessService {
 		public int GetProjectID();
 		public int GetUserID();
+		public AppRole? UserGetRole();
 		public bool UserHasRole(AppRole role);
 
 		public bool IsValidUser();
@@ -36,9 +37,6 @@ namespace DocumentsQA_Backend.Services {
 	public class AccessService : IAccessService {
 		private readonly ILogger<AccessService> _logger;
 
-		private readonly DataContext _dataContext;
-		private readonly SignInManager<AppUser> _signinManager;
-
 		private readonly IHttpContextAccessor _httpContextAccessor;
 
 		private int? _projectId;
@@ -46,13 +44,9 @@ namespace DocumentsQA_Backend.Services {
 
 		public AccessService(
 			ILogger<AccessService> logger,
-			DataContext dataContext, SignInManager<AppUser> signinManager, 
-			
 			IHttpContextAccessor httpContextAccessor)
 		{
-			_dataContext = dataContext;
 			_logger = logger;
-			_signinManager = signinManager;
 
 			_httpContextAccessor = httpContextAccessor;
 		}
@@ -90,6 +84,18 @@ namespace DocumentsQA_Backend.Services {
 			return _userId.Value;
 		}
 
+		public AppRole? UserGetRole() {
+			if (!IsValidUser()) return null;
+
+			HttpContext ctx = _httpContextAccessor.HttpContext!;
+			var claims = ctx.User;
+
+			if (claims.IsInRole(AppRole.Admin.Name))
+				return AppRole.Admin;
+			else if (claims.IsInRole(AppRole.Manager.Name))
+				return AppRole.Manager;
+			return AppRole.User;
+		}
 		public bool UserHasRole(AppRole role) {
 			HttpContext ctx = _httpContextAccessor.HttpContext!;
 			var claims = ctx.User;
@@ -152,6 +158,7 @@ namespace DocumentsQA_Backend.Services {
 	public class AccessAllowAll : IAccessService {
 		public int GetProjectID() => -1;
 		public int GetUserID() => -1;
+		public AppRole UserGetRole() => AppRole.Admin;
 		public bool UserHasRole(AppRole role) => true;
 
 		public bool IsValidUser() => true;
