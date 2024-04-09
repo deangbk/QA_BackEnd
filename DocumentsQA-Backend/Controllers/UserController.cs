@@ -30,14 +30,18 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
-		private readonly SignInManager<AppUser> _signinManager;
-
+		private readonly AuthHelpers _authHelper;
 		private readonly IProjectRepository _repoProject;
 
 		public UserController(
 			ILogger<UserController> logger,
-			DataContext dataContext, IAccessService access,
+
+			DataContext dataContext, 
+			IAccessService access,
+
 			SignInManager<AppUser> signinManager,
+
+			AuthHelpers authHelper,
 			IProjectRepository repoProject)
 		{
 			_logger = logger;
@@ -45,8 +49,7 @@ namespace DocumentsQA_Backend.Controllers {
 			_dataContext = dataContext;
 			_access = access;
 
-			_signinManager = signinManager;
-
+			_authHelper = authHelper;
 			_repoProject = repoProject;
 		}
 
@@ -84,13 +87,14 @@ namespace DocumentsQA_Backend.Controllers {
 		/// </summary>
 		[HttpGet("{uid}")]
 		public async Task<IActionResult> GetUserFromId(int uid, [FromQuery] int details = 0) {
-			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
-
 			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
 			if (user == null)
 				return BadRequest("User not found");
+
+			if (uid != _access.GetUserID()) {
+				if (!await _authHelper.CanManageUser(user))
+					return Forbid();
+			}
 
 			var table = _UserToResTable(user, details);
 			return Ok(table);

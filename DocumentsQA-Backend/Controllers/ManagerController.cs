@@ -32,6 +32,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly UserManager<AppUser> _userManager;
 
+		private readonly AuthHelpers _authHelper;
 		private readonly IProjectRepository _repoProject;
 
 		public ManagerController(
@@ -39,6 +40,7 @@ namespace DocumentsQA_Backend.Controllers {
 			IWebHostEnvironment env,
 			DataContext dataContext, IAccessService access,
 			UserManager<AppUser> userManager,
+			AuthHelpers authHelper,
 			IProjectRepository repoProject)
 		{
 			_logger = logger;
@@ -50,6 +52,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_userManager = userManager;
 
+			_authHelper = authHelper;
 			_repoProject = repoProject;
 		}
 
@@ -68,6 +71,9 @@ namespace DocumentsQA_Backend.Controllers {
 			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
 			if (user == null)
 				return BadRequest("User not found");
+
+			if (!await _authHelper.CanManageUser(user))
+				return Forbid();
 
 			if (!tranche.UserAccesses.Exists(x => x.Id == uid))
 				tranche.UserAccesses.Add(user);
@@ -92,6 +98,9 @@ namespace DocumentsQA_Backend.Controllers {
 		[HttpPut("grant/access/file/{tid}")]
 		[RequestSizeLimit(bytes: 4 * 1024 * 1024)]  // 4MB
 		public async Task<IActionResult> GrantTrancheAccessFromFile(int tid, [FromForm] IFormFile file) {
+			// TODO: Figure out bulk CanManageUser check later
+			return StatusCode((int)HttpStatusCode.NotImplemented);
+
 			var tranche = await _repoProject.GetTrancheAsync(tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
@@ -130,11 +139,15 @@ namespace DocumentsQA_Backend.Controllers {
 			if (tranche == null)
 				return BadRequest("Tranche not found");
 
-			if (tranche.Project.UserManagers.Exists(x => x.Id == uid)) {
-				return BadRequest("Cannot remove access: user has elevated rights");
-			}
+			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
+			if (user == null)
+				return BadRequest("User not found");
 
-			tranche.UserAccesses.RemoveAll(x => x.Id == uid);
+			if (!await _authHelper.CanManageUser(user))
+				return Forbid();
+
+			AdminHelpers.RemoveUsersTrancheAccess(_dataContext, tid, 
+				new List<int> { uid });
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
