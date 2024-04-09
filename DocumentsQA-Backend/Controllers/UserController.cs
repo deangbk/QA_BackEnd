@@ -117,7 +117,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("Cannot delete self");
 
 			//if (!await _authHelper.CanManageUser(user))
-			if (_access.IsAdmin())
+			if (!_access.IsAdmin())
 				return Forbid();
 
 			// DeleteAsync internally saves changes
