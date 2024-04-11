@@ -11,8 +11,8 @@ namespace DocumentsQA_Backend.Models {
 	public class LogInEvent {
 		public DateTime Timestamp { get; set; }
 
-		public int UserId { get; set; }							// FK to User
-		public virtual AppUser User { get; set; } = null!;		// Reference navigation to FK
+		public int? UserId { get; set; }						// FK to User
+		public virtual AppUser? User { get; set; }				// Reference navigation to FK
 
 		public int ProjectId { get; set; }						// FK to Project
 		public virtual Project Project { get; set; } = null!;	// Reference navigation to FK
@@ -31,8 +31,8 @@ namespace DocumentsQA_Backend.Models {
 	public class ViewEvent {
 		public DateTime Timestamp { get; set; }
 
-		public int UserId { get; set; }							// FK to User
-		public virtual AppUser User { get; set; } = null!;		// Reference navigation to FK
+		public int? UserId { get; set; }						// FK to User
+		public virtual AppUser? User { get; set; }				// Reference navigation to FK
 
 		public int ProjectId { get; set; }						// FK to Project
 		public virtual Project Project { get; set; } = null!;	// Reference navigation to FK

@@ -256,6 +256,42 @@ namespace DocumentsQA_Backend.Data {
 					.OnDelete(DeleteBehavior.Cascade)
 					.IsRequired(false);
 			}
+
+			// Model: LogInEvent
+			{
+				// Map LogInEvent:Project as N:1
+				modelBuilder.Entity<LogInEvent>()
+					.HasOne(e => e.Project)
+					.WithMany()
+					.HasForeignKey(e => e.ProjectId)
+					.OnDelete(DeleteBehavior.Cascade);
+
+				// Map LogInEvent:User as N:1
+				modelBuilder.Entity<LogInEvent>()
+					.HasOne(e => e.User)
+					.WithMany()
+					.HasForeignKey(e => e.UserId)
+					.OnDelete(DeleteBehavior.SetNull)
+					.IsRequired(false);
+			}
+
+			// Model: ViewEvent
+			{
+				// Map ViewEvent:Project as N:1
+				modelBuilder.Entity<ViewEvent>()
+					.HasOne(e => e.Project)
+					.WithMany()
+					.HasForeignKey(e => e.ProjectId)
+					.OnDelete(DeleteBehavior.Cascade);
+
+				// Map ViewEvent:User as N:1
+				modelBuilder.Entity<ViewEvent>()
+					.HasOne(e => e.User)
+					.WithMany()
+					.HasForeignKey(e => e.UserId)
+					.OnDelete(DeleteBehavior.SetNull)
+					.IsRequired(false);
+			}
 		}
 
 		//--------------------------------------------------------------------------
