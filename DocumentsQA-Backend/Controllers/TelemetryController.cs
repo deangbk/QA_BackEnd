@@ -96,5 +96,15 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok();
 		}
+
+		/// <summary>
+		/// 
+		/// </summary>
+		[HttpPost("add/document/{id}")]
+		public async Task<IActionResult> AddDocumentView(int id) {
+			await _repoEventLog.AddViewEvent(ViewType.Document, id);
+
+			return Ok();
+		}
 	}
 }

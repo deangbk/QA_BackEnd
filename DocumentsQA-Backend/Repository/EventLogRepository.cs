@@ -89,6 +89,15 @@ namespace DocumentsQA_Backend.Repository {
 
 					break;
 				}
+				case ViewType.Document: {
+					var document = await Queries.GetDocumentFromId(_dataContext, id);
+					if (document == null)
+						throw new ArgumentException("Invalid id");
+
+					log.ProjectId = document.ProjectId;
+
+					break;
+				}
 				default:
 					throw new ArgumentException("Invalid type");
 			}

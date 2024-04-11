@@ -24,6 +24,7 @@ namespace DocumentsQA_Backend.Models {
 		Question,
 		Account,
 		Tranche,
+		Document,
 	}
 
 	[Table("EventLog_View")]
