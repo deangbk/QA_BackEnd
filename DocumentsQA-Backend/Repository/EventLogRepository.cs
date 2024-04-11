@@ -89,6 +89,8 @@ namespace DocumentsQA_Backend.Repository {
 
 					break;
 				}
+				default:
+					throw new ArgumentException("Invalid type");
 			}
 
 			_dataContext.EventLogs_View.Add(log);
