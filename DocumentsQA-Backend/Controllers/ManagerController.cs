@@ -32,6 +32,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly UserManager<AppUser> _userManager;
 
+		private readonly AdminHelpers _adminHelper;
 		private readonly AuthHelpers _authHelper;
 		private readonly IProjectRepository _repoProject;
 
@@ -40,6 +41,7 @@ namespace DocumentsQA_Backend.Controllers {
 			IWebHostEnvironment env,
 			DataContext dataContext, IAccessService access,
 			UserManager<AppUser> userManager,
+			AdminHelpers adminHelper,
 			AuthHelpers authHelper,
 			IProjectRepository repoProject)
 		{
@@ -52,6 +54,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_userManager = userManager;
 
+			_adminHelper = adminHelper;
 			_authHelper = authHelper;
 			_repoProject = repoProject;
 		}
@@ -116,7 +119,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			{
 				// Clear existing access first to not cause insert conflicts
-				AdminHelpers.RemoveUsersTrancheAccess(_dataContext, tid, userIdsGrant);
+				_adminHelper.RemoveUsersTrancheAccess(tid, userIdsGrant);
 
 				var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
 				dbSetTranche.AddRange(userIdsGrant.Select(u => new EJoinClass {
@@ -146,8 +149,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!await _authHelper.CanManageUser(user))
 				return Forbid();
 
-			AdminHelpers.RemoveUsersTrancheAccess(_dataContext, tid, 
-				new List<int> { uid });
+			_adminHelper.RemoveUsersTrancheAccess(tid, new List<int> { uid });
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
@@ -222,8 +224,7 @@ namespace DocumentsQA_Backend.Controllers {
 						.Select(x => x.User!)
 						.ToList();
 					if (newStaffs.Count > 0) {
-						await AdminHelpers.MakeProjectManagers(_dataContext, _userManager,
-							project, newStaffs);
+						await _adminHelper.MakeProjectManagers(project, newStaffs);
 					}
 				}
 

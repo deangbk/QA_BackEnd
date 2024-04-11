@@ -29,9 +29,12 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly UserManager<AppUser> _userManager;
 		private readonly RoleManager<AppRole> _roleManager;
 
+		private readonly AdminHelpers _adminHelper;
+
 		public AdminController(ILogger<AdminController> logger, 
 			DataContext dataContext, IAccessService access, 
-			UserManager<AppUser> userManager, RoleManager<AppRole> roleManager)
+			UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, 
+			AdminHelpers adminHelper)
 		{
 			_logger = logger;
 
@@ -40,6 +43,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_userManager = userManager;
 			_roleManager = roleManager;
+
+			_adminHelper = adminHelper;
 
 			if (!_access.IsAdmin())
 				throw new AccessForbiddenException();
@@ -58,7 +63,10 @@ namespace DocumentsQA_Backend.Controllers {
 		[HttpPut("gen_roles")]
 		public async Task<IActionResult> CreateDefaultRoles() {
 			AppRole[] roles = new[] {
-				AppRole.User, AppRole.Manager, AppRole.Admin };
+				AppRole.User, 
+				AppRole.Manager, 
+				AppRole.Admin 
+			};
 
 			foreach (var role in roles) {
 				string roleName = role.Name;
@@ -100,7 +108,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (roleFind == null)
 				return BadRequest("Role not found");
 
-			await AdminHelpers.GrantUserRole(_userManager, user, roleFind);
+			await _adminHelper.GrantUserRole(user, roleFind);
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
@@ -119,7 +127,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (roleFind == null)
 				return BadRequest("Role not found");
 
-			await AdminHelpers.RemoveUserRole(_userManager, user, roleFind);
+			await _adminHelper.RemoveUserRole(user, roleFind);
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
@@ -140,8 +148,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			int rowsAdded;
 			using (var transaction = _dataContext.Database.BeginTransaction()) {
-				await AdminHelpers.MakeProjectManagers(_dataContext, _userManager,
-					project, users);
+				await _adminHelper.MakeProjectManagers(project, users);
 
 				rowsAdded = await _dataContext.SaveChangesAsync();
 				await transaction.CommitAsync();
@@ -182,8 +189,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			int rowsAdded;
 			using (var transaction = _dataContext.Database.BeginTransaction()) {
-				await AdminHelpers.MakeProjectManagers(_dataContext, _userManager,
-					project, userIds);
+				await _adminHelper.MakeProjectManagers(project, userIds);
 
 				rowsAdded = await _dataContext.SaveChangesAsync();
 				await transaction.CommitAsync();
@@ -202,8 +208,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (project == null)
 				return BadRequest("Project not found");
 
-			AdminHelpers.ClearUsersTrancheAccess(_dataContext, new List<int> { uid });
-			AdminHelpers.RemoveProjectManagers(_dataContext, pid, new List<int> { uid });
+			_adminHelper.ClearUsersTrancheAccess(new List<int> { uid });
+			_adminHelper.RemoveProjectManagers(pid, new List<int> { uid });
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);

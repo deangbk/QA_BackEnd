@@ -16,41 +16,51 @@ using DocumentsQA_Backend.Extensions;
 using DocumentsQA_Backend.Data;
 
 namespace DocumentsQA_Backend.Helpers {
-	public static class AdminHelpers {
+	public class AdminHelpers {
+		private readonly DataContext _dataContext;
+
+		private readonly UserManager<AppUser> _userManager;
+
+		public AdminHelpers(
+			DataContext dataContext,
+			UserManager<AppUser> userManager)
+		{
+			_dataContext = dataContext;
+
+			_userManager = userManager;
+		}
+
+		// -----------------------------------------------------
+
 		/// <summary>
 		/// Grants a role to a user
-		/// /// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
-		public static async Task GrantUserRole(UserManager<AppUser> userManager, AppUser user, AppRole role) {
-			var roleExists = await userManager.IsInRoleAsync(user, role.Name);
+		public async Task GrantUserRole(AppUser user, AppRole role) {
+			var roleExists = await _userManager.IsInRoleAsync(user, role.Name);
 			if (!roleExists) {
-				await userManager.AddClaimAsync(user, new Claim("role", role.Name));
-				await userManager.AddToRoleAsync(user, role.Name);
+				await _userManager.AddClaimAsync(user, new Claim("role", role.Name));
+				await _userManager.AddToRoleAsync(user, role.Name);
 			}
 		}
 		/// <summary>
 		/// Grants a role to a user
-		/// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
-		public static async Task RemoveUserRole(UserManager<AppUser> userManager, AppUser user, AppRole role) {
-			var claims = await userManager.GetClaimsAsync(user);
+		public async Task RemoveUserRole(AppUser user, AppRole role) {
+			var claims = await _userManager.GetClaimsAsync(user);
 			var roleClaims = claims
 				.Where(x => x.ValueType == "role")
 				.Where(x => x.Value == role.Name);
 
-			await userManager.RemoveClaimsAsync(user, roleClaims);
-			await userManager.RemoveFromRoleAsync(user, role.Name);
+			await _userManager.RemoveClaimsAsync(user, roleClaims);
+			await _userManager.RemoveFromRoleAsync(user, role.Name);
 		}
 
 		/// <summary>
 		/// Removes tranche read access from users
 		/// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
-		public static void RemoveUsersTrancheAccess(
-			DataContext dataContext,
-			int trancheId, List<int> userIds)
-		{
-			var dbSetTranche = dataContext.Set<EJoinClass>("TrancheUserAccess");
+		public void RemoveUsersTrancheAccess(int trancheId, List<int> userIds) {
+			var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
 
 			dbSetTranche.RemoveRange(
 				dbSetTranche
@@ -62,11 +72,8 @@ namespace DocumentsQA_Backend.Helpers {
 		/// Clears all tranche read access from users
 		/// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
-		public static void ClearUsersTrancheAccess(
-			DataContext dataContext, 
-			List<int> userIds)
-		{
-			var dbSetTranche = dataContext.Set<EJoinClass>("TrancheUserAccess");
+		public void ClearUsersTrancheAccess(List<int> userIds) {
+			var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
 
 			dbSetTranche.RemoveRange(
 				dbSetTranche
@@ -77,11 +84,8 @@ namespace DocumentsQA_Backend.Helpers {
 		/// Removes project manager rights from users
 		/// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
-		public static void RemoveProjectManagers(
-			DataContext dataContext,
-			int projectId, List<int> userIds)
-		{
-			var dbSetManager = dataContext.Set<EJoinClass>("ProjectUserManage");
+		public void RemoveProjectManagers(int projectId, List<int> userIds) {
+			var dbSetManager = _dataContext.Set<EJoinClass>("ProjectUserManage");
 
 			dbSetManager.RemoveRange(
 				dbSetManager
@@ -93,11 +97,8 @@ namespace DocumentsQA_Backend.Helpers {
 		/// Makes users the managers of a project
 		/// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
-		public static async Task MakeProjectManagers(
-			DataContext dataContext, UserManager<AppUser> userManager, 
-			Project project, List<int> userIds)
-		{
-			var mapUsers = (await Queries.GetUsersMapFromIds(dataContext, userIds))!;
+		public async Task MakeProjectManagers(Project project, List<int> userIds) {
+			var mapUsers = (await Queries.GetUsersMapFromIds(_dataContext, userIds))!;
 
 			// Verify user IDs
 			{
@@ -108,27 +109,24 @@ namespace DocumentsQA_Backend.Helpers {
 				}
 			}
 
-			await MakeProjectManagers(dataContext, userManager, project, mapUsers.Keys.ToList());
+			await MakeProjectManagers(project, mapUsers.Keys.ToList());
 		}
 		/// <summary>
 		/// Makes users the managers of a project
 		/// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
-		public static async Task MakeProjectManagers(
-			DataContext dataContext, UserManager<AppUser> userManager, 
-			Project project, List<AppUser> users)
-		{
+		public async Task MakeProjectManagers(Project project, List<AppUser> users) {
 			var userIds = users.Select(x => x.Id).ToList();
 
 			// Make the users managers if they're not already one
 			foreach (var user in users) {
-				await GrantUserRole(userManager, user, AppRole.Manager);
+				await GrantUserRole(user, AppRole.Manager);
 			}
 
 			// Grant elevated access (manager) to all tranches in the project
 			{
-				var dbSetTranche = dataContext.Set<EJoinClass>("TrancheUserAccess");
-				var dbSetManager = dataContext.Set<EJoinClass>("ProjectUserManage");
+				var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
+				var dbSetManager = _dataContext.Set<EJoinClass>("ProjectUserManage");
 
 				/*
 				// Remove existing accesses for users
