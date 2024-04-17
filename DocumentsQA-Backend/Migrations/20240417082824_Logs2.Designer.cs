@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DocumentsQA_Backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240411072641_Logs2")]
+    [Migration("20240417082824_Logs2")]
     partial class Logs2
     {
         /// <inheritdoc />
@@ -266,11 +266,11 @@ namespace DocumentsQA_Backend.Migrations
 
             modelBuilder.Entity("DocumentsQA_Backend.Models.LogInEvent", b =>
                 {
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("UserId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("IPAddress")
                         .IsRequired()
@@ -279,7 +279,13 @@ namespace DocumentsQA_Backend.Migrations
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
-                    b.HasKey("Timestamp", "UserId");
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
 
@@ -487,22 +493,28 @@ namespace DocumentsQA_Backend.Migrations
 
             modelBuilder.Entity("DocumentsQA_Backend.Models.ViewEvent", b =>
                 {
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("UserId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ProjectId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.Property<int>("ViewId")
                         .HasColumnType("int");
 
-                    b.HasKey("Timestamp", "UserId");
+                    b.HasKey("Id");
 
                     b.HasIndex("ProjectId");
 

@@ -7,8 +7,11 @@ using Microsoft.AspNetCore.Identity;
 
 namespace DocumentsQA_Backend.Models {
 	[Table("EventLog_Login")]
-	[PrimaryKey(nameof(Timestamp), nameof(UserId))]
+	[PrimaryKey(nameof(Id))]
 	public class LogInEvent {
+		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+		public int Id { get; set; }
+
 		public DateTime Timestamp { get; set; }
 
 		public int? UserId { get; set; }						// FK to User
@@ -28,8 +31,11 @@ namespace DocumentsQA_Backend.Models {
 	}
 
 	[Table("EventLog_View")]
-	[PrimaryKey(nameof(Timestamp), nameof(UserId))]
+	[PrimaryKey(nameof(Id))]
 	public class ViewEvent {
+		[DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+		public int Id { get; set; }
+
 		public DateTime Timestamp { get; set; }
 
 		public int? UserId { get; set; }						// FK to User
