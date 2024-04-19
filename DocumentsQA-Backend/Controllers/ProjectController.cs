@@ -96,7 +96,7 @@ namespace DocumentsQA_Backend.Controllers {
 				var trancheDataMap = project.Tranches
 					.ToDictionary(x => x.Id, x => x.ToJsonTable(0));
 
-				var mapUsers = (await Queries.GetUsersMapFromIds(_dataContext, listUserIds))!;
+				var mapUsers = await Queries.GetUsersMapFromIds(_dataContext, listUserIds);
 				var listRes = mapUsers
 					.Select(x => {
 						var tableBase = x.Value.ToJsonTable(details);
@@ -131,7 +131,7 @@ namespace DocumentsQA_Backend.Controllers {
 				var trancheDataMap = project.Tranches
 					.ToDictionary(x => x.Id, x => x.ToJsonTable(0));
 
-				var mapUsers = (await Queries.GetUsersMapFromIds(_dataContext, listManagerIds))!;
+				var mapUsers = await Queries.GetUsersMapFromIds(_dataContext, listManagerIds);
 				var listRes = mapUsers
 					.Select(x => {
 						var tableBase = x.Value.ToJsonTable(details);

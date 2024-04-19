@@ -39,31 +39,33 @@ namespace DocumentsQA_Backend.Data {
 			return res;
 		}
 
-		public static async Task<Dictionary<int, AppUser>?> GetUsersMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
+		public static async Task<Dictionary<int, AppUser>> GetUsersMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
 			return await dataContext.Users
 				.Where(x => ids.Contains(x.Id))
 				.ToDictionaryAsync(x => x.Id, x => x);
 		}
-		public static async Task<Dictionary<int, Account>?> GetAccountsMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
+		public static async Task<Dictionary<int, Account>> GetAccountsMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
 			return await dataContext.Accounts
 				.Where(x => ids.Contains(x.Id))
 				.ToDictionaryAsync(x => x.Id, x => x);
 		}
-		public static async Task<Dictionary<int, Account>?> GetAccountsMapFromIdNames(DataContext dataContext, IEnumerable<string> ids) {
+		public static async Task<Dictionary<int, Account>> GetAccountsMapFromIdNames(DataContext dataContext, IEnumerable<string> ids) {
 			return await dataContext.Accounts
 				.Where(x => ids.Contains(dataContext.GetAccountIdentifierName(x.Id)))
 				.ToDictionaryAsync(x => x.Id, x => x);
 		}
-		public static async Task<Dictionary<int, Question>?> GetQuestionsMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
+		public static async Task<Dictionary<int, Question>> GetQuestionsMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
 			return await dataContext.Questions
 				.Where(x => ids.Contains(x.Id))
 				.ToDictionaryAsync(x => x.Id, x => x);
 		}
-		public static async Task<Dictionary<int, Document>?> GetDocumentsMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
+		public static async Task<Dictionary<int, Document>> GetDocumentsMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
 			return await dataContext.Documents
 				.Where(x => ids.Contains(x.Id))
 				.ToDictionaryAsync(x => x.Id, x => x);
 		}
+
+		// -----------------------------------------------------
 
 		/// <summary>
 		/// Gets query of all approved questions in the project

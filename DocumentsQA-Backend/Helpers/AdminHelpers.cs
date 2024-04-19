@@ -98,7 +98,7 @@ namespace DocumentsQA_Backend.Helpers {
 		/// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
 		public async Task MakeProjectManagers(Project project, List<int> userIds) {
-			var mapUsers = (await Queries.GetUsersMapFromIds(_dataContext, userIds))!;
+			var mapUsers = await Queries.GetUsersMapFromIds(_dataContext, userIds);
 
 			// Verify user IDs
 			{

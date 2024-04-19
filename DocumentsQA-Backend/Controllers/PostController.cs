@@ -194,7 +194,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("mode must be either \"q\" or \"a\"");
 			}
 
-			var questions = (await Queries.GetQuestionsMapFromIds(_dataContext, dto.Questions))!;
+			var questions = await Queries.GetQuestionsMapFromIds(_dataContext, dto.Questions);
 			{
 				// Check invalid IDs and duplicate IDs
 
@@ -252,7 +252,7 @@ namespace DocumentsQA_Backend.Controllers {
 				.Where(x => x.AccountId != null)
 				.Select(x => x.AccountId!.Value)
 				.ToList();
-			var mapAccounts = (await Queries.GetAccountsMapFromIds(_dataContext, accountIds))!;
+			var mapAccounts = await Queries.GetAccountsMapFromIds(_dataContext, accountIds);
 
 			if (accountIds.Count > 0) {
 				// Detect invalid accounts + check access
@@ -331,7 +331,7 @@ namespace DocumentsQA_Backend.Controllers {
 			// Detect invalid questions
 			{
 				var err = ValueHelpers.CheckInvalidIds(
-					ids, mapQuestions!.Keys, "Question");
+					ids, mapQuestions.Keys, "Question");
 				if (err != null) {
 					return BadRequest(err);
 				}
@@ -364,7 +364,7 @@ namespace DocumentsQA_Backend.Controllers {
 			// Detect invalid questions
 			{
 				var err = ValueHelpers.CheckInvalidIds(
-					ids, mapQuestions!.Keys, "Question");
+					ids, mapQuestions.Keys, "Question");
 				if (err != null) {
 					return BadRequest(err);
 				}
