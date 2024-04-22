@@ -36,7 +36,7 @@ namespace DocumentsQA_Backend.Data {
 				table["url_banner"] = obj.BannerUrl!;
 			}
 			if (detail >= 2) {
-				table["tranches"] = obj.Tranches.Select(x => x.Name).ToList();
+				table["tranches"] = obj.Tranches.Select(x => x.ToJsonTable(0)).ToList();
 			}
 
 			return table;
