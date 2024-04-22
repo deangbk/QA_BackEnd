@@ -80,28 +80,31 @@ namespace DocumentsQA_Backend.Services {
 				await _next.Invoke(context);
 			}
 			catch (Exception e) {
-				context.Response.ContentType = "text/plain";
+				await HandleException(context, e);
+			}
+		}
 
-				HttpStatusCode code = HttpStatusCode.InternalServerError;
-				switch (e) {
-					case AccessUnauthorizedException _:
-						code = HttpStatusCode.Unauthorized;		break;
-					case AccessForbiddenException _:
-						code = HttpStatusCode.Forbidden;		break;
-					case InvalidModelStateException _:
-						code = HttpStatusCode.BadRequest;		break;
-				}
-				context.Response.StatusCode = (int)code;
+		public static async Task HandleException(HttpContext context, Exception? e) {
+			if (e is null)
+				return;
+
+			context.Response.ContentType = "text/plain";
+
+			context.Response.StatusCode = (int)(e switch {
+				AccessUnauthorizedException		=> HttpStatusCode.Unauthorized,
+				AccessForbiddenException		=> HttpStatusCode.Forbidden,
+				InvalidModelStateException		=> HttpStatusCode.BadRequest,
+				_ => HttpStatusCode.InternalServerError,
+			});
 
 			if (e is IFormattableException ece) {
-					var resp = ece.GetFormattedResponse();
-					//resp["status"] = (int)code;
+				var resp = ece.GetFormattedResponse();
+				//resp["status"] = (int)code;
 
-					await context.Response.WriteAsync(JsonSerializer.Serialize(resp));
-				}
-				else {
-					await context.Response.WriteAsync(e.Message);
-				}
+				await context.Response.WriteAsync(JsonSerializer.Serialize(resp));
+			}
+			else {
+				await context.Response.WriteAsync(e.Message);
 			}
 		}
 	}
