@@ -19,7 +19,7 @@ using DocumentsQA_Backend.Extensions;
 namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
-	[Route("api/comment")]
+	[Route("api/post")]
 	[Authorize]
 	public class CommentController : Controller {
 		private readonly ILogger<CommentController> _logger;
@@ -42,7 +42,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Get question comments, ordered by number
 		/// </summary>
-		[HttpGet("{id}")]
+		[HttpGet("{id}/comment")]
 		public async Task<IActionResult> GetComments(int id) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
@@ -61,7 +61,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Add comment to question
 		/// </summary>
-		[HttpPost("{id}")]
+		[HttpPost("{id}/comment")]
 		public async Task<IActionResult> AddComment(int id, [FromBody] PostAddCommentDTO dto) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
@@ -90,7 +90,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Remove comment question
 		/// </summary>
-		[HttpDelete("{id}")]
+		[HttpDelete("{id}/comment")]
 		public async Task<IActionResult> DeleteComment(int id, [FromQuery] int num) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
@@ -113,7 +113,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Remove all comment questions from a post
 		/// </summary>
-		[HttpDelete("all/{id}")]
+		[HttpDelete("{id}/comment/all")]
 		public async Task<IActionResult> DeleteAllComments(int id) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
