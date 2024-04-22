@@ -13,11 +13,11 @@ using DocumentsQA_Backend.Extensions;
 namespace DocumentsQA_Backend.Services {
 	using JsonTable = Dictionary<string, object>;
 
-	public interface IControllerException {
+	public interface IFormattableException {
 		JsonTable GetFormattedResponse();
 	}
 
-	public class AccessUnauthorizedException : Exception, IControllerException {
+	public class AccessUnauthorizedException : Exception, IFormattableException {
 		public AccessUnauthorizedException() : base("Unauthorized access, please add a valid credentials token.") { }
 		public AccessUnauthorizedException(string message) : base(message) { }
 		public AccessUnauthorizedException(string message, Exception inner) 
@@ -31,7 +31,7 @@ namespace DocumentsQA_Backend.Services {
 			};
 		}
 	}
-	public class AccessForbiddenException : Exception, IControllerException {
+	public class AccessForbiddenException : Exception, IFormattableException {
 		public AccessForbiddenException() : base("Insufficient credentials for action.") { }
 		public AccessForbiddenException(string message) : base(message) { }
 		public AccessForbiddenException(string message, Exception inner)
@@ -45,7 +45,7 @@ namespace DocumentsQA_Backend.Services {
 			};
 		}
 	}
-	public class InvalidModelStateException : Exception, IControllerException {
+	public class InvalidModelStateException : Exception, IFormattableException {
 		public ModelStateDictionary ModelState { get; set; }
 
 		public InvalidModelStateException(ModelStateDictionary model) 
@@ -92,7 +92,7 @@ namespace DocumentsQA_Backend.Services {
 				}
 				context.Response.StatusCode = (int)code;
 
-				if (e is IControllerException ece) {
+			if (e is IFormattableException ece) {
 					var resp = ece.GetFormattedResponse();
 					//resp["status"] = (int)code;
 
