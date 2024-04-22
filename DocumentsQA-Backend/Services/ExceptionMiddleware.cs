@@ -61,6 +61,7 @@ namespace DocumentsQA_Backend.Services {
 			}
 
 			return new() {
+				["status"] = HttpStatusCode.BadRequest,
 				["title"] = Message,
 				["errors"] = errorTables,
 			};
