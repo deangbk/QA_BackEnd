@@ -1,41 +1,46 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using System.Linq;
+
+using Microsoft.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Models;
 
 namespace DocumentsQA_Backend.Data {
 	public static class Queries {
-		public static async Task<Project?> GetProjectFromId(DataContext dataContext, int id) {
-			var res = await dataContext.Projects.FindAsync(id);
-			return res;
+		public static async Task<T?> GetEntityFromId<T>(DbSet<T> source, object id)
+			where T : class
+		{
+			return await source.FindAsync(id);
 		}
-		public static async Task<Tranche?> GetTrancheFromId(DataContext dataContext, int id) {
-			var res = await dataContext.Tranches.FindAsync(id);
-			return res;
+		/*
+		// TODO: Maybe figure this out later
+		public static async Task<Dictionary<K, T>> GetEntitiesMapFromIds<T, K>(
+			DbSet<T> source, Func<T, K> keySelector, IEnumerable<K> ids
+		)
+			where T : class
+			where K : notnull
+		{
+			return await source
+				.Where(x => ids.Contains(keySelector(x)))	// keySelector(x) cannot be translated into a query
+				.ToDictionaryAsync(x => keySelector(x), x => x);
 		}
-		public static async Task<Account?> GetAccountFromId(DataContext dataContext, int id) {
-			var res = await dataContext.Accounts.FindAsync(id);
-			return res;
-		}
+		*/
+
+		public static Task<Project?> GetProjectFromId(DataContext dataContext, int id)
+			=> GetEntityFromId(dataContext.Projects, id);
+		public static Task<Account?> GetAccountFromId(DataContext dataContext, int id)
+			=> GetEntityFromId(dataContext.Accounts, id);
+		public static Task<AppUser?> GetUserFromId(DataContext dataContext, int id)
+			=> GetEntityFromId(dataContext.Users, id);
+		public static Task<Question?> GetQuestionFromId(DataContext dataContext, int id)
+			=> GetEntityFromId(dataContext.Questions, id);
+		public static Task<Comment?> GetCommentFromId(DataContext dataContext, int id)
+			=> GetEntityFromId(dataContext.Comments, id);
+		public static Task<Document?> GetDocumentFromId(DataContext dataContext, int id)
+			=> GetEntityFromId(dataContext.Documents, id);
+
 		public static async Task<Account?> GetAccountFromIdName(DataContext dataContext, string id) {
 			var res = await dataContext.Accounts
 				.FirstAsync(x => id == dataContext.GetAccountIdentifierName(x.Id));
-			return res;
-		}
-		public static async Task<AppUser?> GetUserFromId(DataContext dataContext, int id) {
-			var res = await dataContext.Users.FindAsync(id);
-			return res;
-		}
-		public static async Task<Question?> GetQuestionFromId(DataContext dataContext, int id) {
-			var res = await dataContext.Questions.FindAsync(id);
-			return res;
-		}
-		public static async Task<Comment?> GetCommentFromId(DataContext dataContext, int id) {
-			var res = await dataContext.Comments.FindAsync(id);
-			return res;
-		}
-		public static async Task<Document?> GetDocumentFromId(DataContext dataContext, int id) {
-			var res = await dataContext.Documents.FindAsync(id);
 			return res;
 		}
 
