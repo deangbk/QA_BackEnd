@@ -73,27 +73,25 @@ namespace DocumentsQA_Backend.Data {
 		// -----------------------------------------------------
 
 		/// <summary>
+		/// Gets query of all questions in the project
+		/// </summary>
+		public static IQueryable<Question> GetProjectQuestions(DataContext dataContext, int pid) {
+			return dataContext.Questions
+				.Where(x => x.ProjectId == pid);
+		}
+		/// <summary>
 		/// Gets query of all approved questions in the project
 		/// </summary>
 		public static IQueryable<Question> GetApprovedQuestionsQuery(DataContext dataContext, int pid) {
-			return dataContext.Questions
-				.Where(x => x.ProjectId == pid)
+			return GetProjectQuestions(dataContext, pid)
 				.Where(x => x.QuestionApprovedById != null);
 		}
 		/// <summary>
 		/// Gets query of all unapproved questions in the project
 		/// </summary>
 		public static IQueryable<Question> GetUnapprovedQuestionsQuery(DataContext dataContext, int pid) {
-			return dataContext.Questions
-				.Where(x => x.ProjectId == pid)
+			return GetProjectQuestions(dataContext, pid)
 				.Where(x => x.QuestionApprovedById == null);
 		}
-
-        public static IQueryable<Question> GetSingleQuestionsQuery(DataContext dataContext, int qid)
-        {
-            return dataContext.Questions
-                .Where(x => x.Id == qid);
-
-        }
     }
 }

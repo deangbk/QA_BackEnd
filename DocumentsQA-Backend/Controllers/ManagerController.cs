@@ -473,7 +473,7 @@ namespace DocumentsQA_Backend.Controllers {
 			//var questions = project.Questions
 			//.Where(x => questionDetails.Questions.Any(y => y == x.Id))
 			//.ToList();
-			var quest =  Queries.GetSingleQuestionsQuery(_dataContext, questionDetails.Id).SingleOrDefault();
+			var quest =  await Queries.GetQuestionFromId(_dataContext, questionDetails.Id);
             if (quest == null)
                 return BadRequest("Question not found");
             quest =PostHelpers.updateQuestion(quest, questionDetails, _access.GetUserID());
