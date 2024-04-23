@@ -27,6 +27,8 @@ namespace DocumentsQA_Backend.Data {
 
 		public static Task<Project?> GetProjectFromId(DataContext dataContext, int id)
 			=> GetEntityFromId(dataContext.Projects, id);
+		public static Task<Tranche?> GetTrancheFromId(DataContext dataContext, int id)
+			=> GetEntityFromId(dataContext.Tranches, id);
 		public static Task<Account?> GetAccountFromId(DataContext dataContext, int id)
 			=> GetEntityFromId(dataContext.Accounts, id);
 		public static Task<AppUser?> GetUserFromId(DataContext dataContext, int id)
@@ -44,6 +46,11 @@ namespace DocumentsQA_Backend.Data {
 			return res;
 		}
 
+		public static async Task<Dictionary<int, Tranche>> GetTrancheMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
+			return await dataContext.Tranches
+				.Where(x => ids.Contains(x.Id))
+				.ToDictionaryAsync(x => x.Id, x => x);
+		}
 		public static async Task<Dictionary<int, AppUser>> GetUsersMapFromIds(DataContext dataContext, IEnumerable<int> ids) {
 			return await dataContext.Users
 				.Where(x => ids.Contains(x.Id))
