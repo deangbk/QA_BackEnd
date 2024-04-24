@@ -12,6 +12,7 @@ namespace DocumentsQA_Backend.DTO {
 	}
 
 	public class EditTrancheDTO {
+		[MaxLength(16)]
 		public string? Name { get; set; }
 	}
 }
