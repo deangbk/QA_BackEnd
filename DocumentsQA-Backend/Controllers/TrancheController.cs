@@ -62,17 +62,16 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Gets expanded tranches information
 		/// </summary>
 		[HttpGet("ex")]
-		public async Task<IActionResult> GetTrancheInfoEx([FromQuery] List<int> ids) {
+		public async Task<IActionResult> GetTrancheInfoEx() {
 			var project = await _repoProject.GetProjectAsync();
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
 			var res = new List<JsonTable>();
 
-			var tranches = await Queries.GetTrancheMapFromIds(_dataContext, ids);
 			var queryPosts = Queries.GetProjectQuestions(_dataContext, project.Id);
 
-			foreach (var (_, tranche) in tranches) {
+			foreach (var tranche in project.Tranches) {
 				var table = tranche.ToJsonTable(1);
 
 				table["posts"] = queryPosts
