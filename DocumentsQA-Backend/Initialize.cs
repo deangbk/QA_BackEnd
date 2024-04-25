@@ -143,8 +143,7 @@ namespace DocumentsQA_Backend {
 			{
 				services.AddTransient<IProjectRepository, ProjectRepository>();
 				
-				// TODO: Enable telemetry when it's done
-				services.AddTransient<IEventLogRepository, EventLogRepository_Null>();
+				services.AddTransient<IEventLogRepository, EventLogRepository>();
 			}
 
 			// Register email services
