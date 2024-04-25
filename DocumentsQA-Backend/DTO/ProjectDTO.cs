@@ -23,6 +23,30 @@ namespace DocumentsQA_Backend.DTO {
 		public string InitialTranches { get; set; } = null!;
 	}
 
+	public class EditProjectDTO {
+		public string? Name { get; set; }
+
+		[JsonPropertyName("display_name")] 
+		public string? DisplayName { get; set; }
+
+		public string? Description { get; set; }
+
+		public string? Company { get; set; }
+
+		[JsonPropertyName("date_end")]
+		public DateTime? DateEnd { get; set; }
+
+		[Url]
+		[MaxLength(256)]
+		[JsonPropertyName("url_logo")]
+		public string? LogoUrl { get; set; }
+
+		[Url]
+		[MaxLength(256)]
+		[JsonPropertyName("url_banner")]
+		public string? BannerUrl { get; set; }
+	}
+
 	public class AddNoteDTO {
 		public string Text { get; set; } = null!;
 

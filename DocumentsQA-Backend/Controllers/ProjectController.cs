@@ -214,5 +214,53 @@ namespace DocumentsQA_Backend.Controllers {
 
 			return Ok(project.Id);
 		}
+
+		[HttpPut("edit")]
+		public async Task<IActionResult> EditProject([FromBody] EditProjectDTO dto) {
+			var project = await _repoProject.GetProjectAsync();
+			if (!_access.IsAdmin())
+				return Forbid();
+
+			int projectId = project.Id;
+
+			if (dto.Name != null) {
+				project.Name = dto.Name;
+			}
+			if (dto.DisplayName != null) {
+				project.DisplayName = dto.DisplayName;
+			}
+			if (dto.Description != null) {
+				var sanitizer = new Ganss.Xss.HtmlSanitizer();
+
+				project.Description = sanitizer.Sanitize(dto.Description);
+			}
+			if (dto.Company != null) {
+				project.CompanyName = dto.Company;
+			}
+			if (dto.DateEnd != null) {
+				var date = dto.DateEnd.Value;
+				if (date <= DateTime.Now.AddHours(0.5))
+					return BadRequest("Project end date cannot be in the past");
+
+				project.ProjectEndDate = dto.DateEnd.Value;
+			}
+			if (dto.LogoUrl != null) {
+				project.LogoUrl = dto.LogoUrl;
+			}
+			if (dto.BannerUrl != null) {
+				project.BannerUrl = dto.BannerUrl;
+			}
+
+			{
+				bool duplicate = await _dataContext.Projects
+					.Where(x => x.Id != projectId)
+					.AnyAsync(x => x.Name == dto.Name);
+				if (duplicate)
+					return BadRequest("Duplicated name");
+			}
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
 	}
 }
