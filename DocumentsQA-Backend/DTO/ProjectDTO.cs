@@ -33,6 +33,8 @@ namespace DocumentsQA_Backend.DTO {
 
 		public string? Company { get; set; }
 
+		[JsonPropertyName("date_start")]
+		public DateTime? DateStart { get; set; }
 		[JsonPropertyName("date_end")]
 		public DateTime? DateEnd { get; set; }
 
