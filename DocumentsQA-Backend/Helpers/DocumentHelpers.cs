@@ -55,10 +55,9 @@ namespace DocumentsQA_Backend.Helpers {
 		}
 
 		public static string GetDocumentProjectDirectory(int projectId) {
-			return $"Documents/{projectId}/";
+			return FileHelpers.GetResourceDirectory(projectId, "Documents");
 		}
 		public static string GetDocumentFileRoute(Document document) {
-			//return $"{contentRoot}/prj-{projectId}/{document.FileUrl}";
 			return GetDocumentProjectDirectory(document.ProjectId) 
 				+ $"{document.FileUrl}";
 		}

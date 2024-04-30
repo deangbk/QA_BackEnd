@@ -94,11 +94,7 @@ namespace DocumentsQA_Backend.Controllers {
 			byte[] fileBytes;
 			try {
 				string path = DocumentHelpers.GetDocumentFileRoute(document);
-
-				using var ms = new MemoryStream();
-				await _fileManager.ReadFile(path, ms);
-
-				fileBytes = ms.ToArray();
+				fileBytes = await FileHelpers.GetFileBytes(_fileManager, path);
 			}
 			catch (FileNotFoundException) {
 				return NotFound(document.FileName);
