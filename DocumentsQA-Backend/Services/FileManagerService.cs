@@ -12,6 +12,7 @@ using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Services {
 	public interface IFileManagerService {
+		public Task<bool> Exists(string path);
 		public Task CreateFile(string path, Stream dataStream);
 		public Task ReadFile(string path, Stream outStream);
 		public Task DeleteFile(string path);
@@ -34,6 +35,11 @@ namespace DocumentsQA_Backend.Services {
 		}
 
 		// -----------------------------------------------------
+
+		public Task<bool> Exists(string path) {
+			return Task.FromResult(File.Exists(path));
+		}
+
 		public async Task CreateFile(string path, Stream dataStream) {
 			string? dir = Path.GetDirectoryName(path);
 			if (dir != null && !Directory.Exists(dir))
@@ -47,11 +53,9 @@ namespace DocumentsQA_Backend.Services {
 
 		public async Task ReadFile(string path, Stream outStream) {
 			string finalPath = Path.Combine(RootPath, path);
-			if (File.Exists(finalPath)) {
-				using var fs = File.OpenRead(finalPath);
+			using var fs = File.OpenRead(finalPath);
 
-				await fs.CopyToAsync(outStream);
-			}
+			await fs.CopyToAsync(outStream);
 		}
 
 		public Task DeleteFile(string path) {
@@ -72,6 +76,10 @@ namespace DocumentsQA_Backend.Services {
 		}
 
 		// -----------------------------------------------------
+
+		public Task<bool> Exists(string path) {
+			throw new NotImplementedException();
+		}
 		public Task CreateFile(string path, Stream dataStream) {
 			throw new NotImplementedException();
 		}
