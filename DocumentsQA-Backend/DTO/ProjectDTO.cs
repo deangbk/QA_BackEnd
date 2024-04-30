@@ -37,16 +37,6 @@ namespace DocumentsQA_Backend.DTO {
 		public DateTime? DateStart { get; set; }
 		[JsonPropertyName("date_end")]
 		public DateTime? DateEnd { get; set; }
-
-		[Url]
-		[MaxLength(256)]
-		[JsonPropertyName("url_logo")]
-		public string? LogoUrl { get; set; }
-
-		[Url]
-		[MaxLength(256)]
-		[JsonPropertyName("url_banner")]
-		public string? BannerUrl { get; set; }
 	}
 
 	public class AddNoteDTO {
