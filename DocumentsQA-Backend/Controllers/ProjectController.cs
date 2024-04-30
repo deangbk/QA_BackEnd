@@ -7,6 +7,7 @@ using System.Text;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Services;
@@ -28,17 +29,22 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
+		private readonly IFileManagerService _fileManager;
+
 		private readonly IProjectRepository _repoProject;
 
 		public ProjectController(
 			ILogger<ProjectController> logger, 
-			DataContext dataContext, IAccessService access, 
+			DataContext dataContext, IAccessService access,
+			IFileManagerService fileManager, 
 			IProjectRepository repoProject) 
 		{
 			_logger = logger;
 
 			_dataContext = dataContext;
 			_access = access;
+
+			_fileManager = fileManager;
 
 			_repoProject = repoProject;
 		}
@@ -248,12 +254,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 				project.ProjectEndDate = dto.DateEnd.Value;
 			}
-			if (dto.LogoUrl != null) {
-				project.LogoUrl = dto.LogoUrl;
-			}
-			if (dto.BannerUrl != null) {
-				project.BannerUrl = dto.BannerUrl;
-			}
 
 			{
 				if (project.ProjectStartDate >= project.ProjectEndDate)
@@ -264,6 +264,122 @@ namespace DocumentsQA_Backend.Controllers {
 					.AnyAsync(x => x.Name == dto.Name);
 				if (duplicate)
 					return BadRequest("Duplicated name");
+			}
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+
+		// -----------------------------------------------------
+
+		private async Task<FileStreamResult> _GetImage(string url) {
+			byte[] fileBytes = await FileHelpers.GetFileBytes(_fileManager, url);
+
+			var extProvider = new FileExtensionContentTypeProvider();
+			extProvider.TryGetContentType(url, out string? mediaType);
+
+			return new FileStreamResult(new MemoryStream(fileBytes), mediaType ?? "application/octet-stream");
+		}
+
+		[HttpGet("logo")]
+		public async Task<IActionResult> GetLogo() {
+			var project = await _repoProject.GetProjectAsync();
+
+			FileStreamResult streamResult;
+			try {
+				if (project.LogoUrl == null)
+					throw new FileNotFoundException();
+				streamResult = await _GetImage(project.LogoUrl);
+			}
+			catch (FileNotFoundException) {
+				return NotFound();
+			}
+			catch (Exception e) {
+				return StatusCode(500, e.Message);
+			}
+
+			return streamResult;
+		}
+		[HttpGet("banner")]
+		public async Task<IActionResult> GetBanner() {
+			var project = await _repoProject.GetProjectAsync();
+
+			FileStreamResult streamResult;
+			try {
+				if (project.BannerUrl == null)
+					throw new FileNotFoundException();
+				streamResult = await _GetImage(project.BannerUrl);
+			}
+			catch (FileNotFoundException) {
+				return NotFound();
+			}
+			catch (Exception e) {
+				return StatusCode(500, e.Message);
+			}
+
+			return streamResult;
+		}
+
+		private async Task<string> _UploadImage(Project project, IFormFile file, string prefix) {
+			string baseDir = FileHelpers.GetResourceDirectory(project.Id, "Icons");
+			string path = Path.Combine(baseDir, $"{prefix}_{file.FileName}");
+
+			{
+				// If duplicate name, generate random string and add it to the name
+
+				string pathNoExt = Path.GetFileNameWithoutExtension(file.FileName);
+				string pathExt = Path.GetExtension(file.FileName);
+
+				while (await _fileManager.Exists(path)) {
+					string randH = AuthHelpers.GeneratePassword(new Random(GetHashCode()), 4, false);
+
+					path = Path.Combine(baseDir, $"{prefix}_{pathNoExt}_{randH}{pathExt}");
+				}
+			}
+
+			// Upload new image
+			{
+				var stream = file.OpenReadStream();
+
+				await _fileManager.CreateFile(path, stream);
+			}
+
+			return path;
+		}
+
+		[HttpPut("logo/{type}")]
+		public async Task<IActionResult> EditLogo([FromRoute] string type, [FromForm] IFormFile file) {
+			var project = await _repoProject.GetProjectAsync();
+			if (!_access.IsAdmin())
+				return Forbid();
+
+			// TODO: Throw error if file is not an image
+
+			switch (type) {
+				case "logo": {
+					var pathNewImage = await _UploadImage(project, file, "logo");
+
+					if (project.LogoUrl != null) {
+						// Remove previous image
+						await _fileManager.DeleteFile(project.LogoUrl);
+					}
+					project.LogoUrl = pathNewImage;
+
+					break;
+				}
+				case "banner": {
+					var pathNewImage = await _UploadImage(project, file, "banner");
+
+					if (project.BannerUrl != null) {
+						// Remove previous image
+						await _fileManager.DeleteFile(project.BannerUrl);
+					}
+					project.BannerUrl = pathNewImage;
+
+					break;
+				}
+				default:
+					return BadRequest("Unknown type");
 			}
 
 			await _dataContext.SaveChangesAsync();
