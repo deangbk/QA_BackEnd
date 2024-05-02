@@ -93,7 +93,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			var listUserIds = ProjectHelpers.GetProjectUserAccesses(project);
+			//var listUserIds = ProjectHelpers.GetProjectUserAccesses(project);
+			var listUsers = project.Users;
 
 			if (details >= 0) {
 				// TODO: Maybe optimize these
@@ -102,7 +103,7 @@ namespace DocumentsQA_Backend.Controllers {
 				var trancheDataMap = project.Tranches
 					.ToDictionary(x => x.Id, x => x.ToJsonTable(0));
 
-				var mapUsers = await Queries.GetUsersMapFromIds(_dataContext, listUserIds);
+				var mapUsers = listUsers.ToDictionary(x => x.Id, x => x);
 				var listRes = mapUsers
 					.Select(x => {
 						var tableBase = x.Value.ToJsonTable(details);
@@ -116,7 +117,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return Ok(listRes);
 			}
 			else {
-				return Ok(listUserIds);
+				return Ok(listUsers.Select(x => x.Id).ToList());
 			}
 		}
 

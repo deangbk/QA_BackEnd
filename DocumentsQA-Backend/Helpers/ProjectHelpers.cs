@@ -30,6 +30,8 @@ namespace DocumentsQA_Backend.Helpers {
 
 		/// <summary>
 		/// Gets all user IDs who has access to the project
+		/// <para>Admins are excluded</para>
+		/// <para>Note: Users without tranche accesses will not show up</para>
 		/// </summary>
 		public static List<int> GetProjectUserAccesses(Project project) {
 			return project.Tranches
