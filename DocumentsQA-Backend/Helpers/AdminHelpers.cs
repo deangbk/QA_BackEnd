@@ -109,7 +109,7 @@ namespace DocumentsQA_Backend.Helpers {
 				}
 			}
 
-			await MakeProjectManagers(project, mapUsers.Keys.ToList());
+			await MakeProjectManagers(project, mapUsers.Values.ToList());
 		}
 		/// <summary>
 		/// Makes users the managers of a project
