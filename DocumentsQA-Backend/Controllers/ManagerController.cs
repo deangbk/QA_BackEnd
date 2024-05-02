@@ -185,13 +185,11 @@ namespace DocumentsQA_Backend.Controllers {
 				//	rather than repeatedly awaiting CreateAsync
 
 				foreach (var u in users) {
-					string actualEmail = AuthHelpers.ComposeUsername(projectId, u.Email);
-
 					var user = new AppUser {
-						Email = actualEmail,
-						UserName = actualEmail,
+						Email = u.Email,
+						UserName = u.Email,
 						DisplayName = u.Name,
-						Company = u.Company,
+						//Company = u.Company,
 						DateCreated = date,
 					};
 					u.User = user;

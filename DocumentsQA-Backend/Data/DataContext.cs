@@ -94,15 +94,13 @@ namespace DocumentsQA_Backend.Data {
 						b.Property<int>("Id"));
 				});
 
-				/*
 				// Map User:Project as N:1
 				modelBuilder.Entity<AppUser>()
-					.HasOne(e => e.FavouriteProject)
-					.WithMany()
-					.HasForeignKey(e => e.FavouriteProjectId)
+					.HasOne(e => e.Project)
+					.WithMany(e => e.Users)
+					.HasForeignKey(e => e.ProjectId)
 					.OnDelete(DeleteBehavior.SetNull)
 					.IsRequired(false);
-				*/
 
 				// Map User:Tranche as N:M using join entity
 				modelBuilder.Entity<AppUser>()

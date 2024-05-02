@@ -78,17 +78,14 @@ namespace DocumentsQA_Backend.Controllers
 				mapUsers = new();
 				foreach (var dto in dtos) {
 					int projectId = dto.ProjectID!.Value;
-					string actualEmail = AuthHelpers.ComposeUsername(
-						projectId, dto.Email);
 
-					var user = await _userManager.FindByEmailAsync(actualEmail);
+					var user = await _userManager.FindByEmailAsync(dto.Email);
 					if (user == null) {
 						invalidUsers.Add($"(project={projectId}){dto.Email}");
 					}
 					else {
 						// TODO: Verify user project access
 
-						dto.Email = actualEmail;
 						if (user != null) {
 							mapUsers[dto.Email] = user;
 						}

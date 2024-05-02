@@ -64,15 +64,10 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private async Task<AppUser?> _TrySignIn(int pid, LoginDTO uc) {
+		private async Task<AppUser?> _TrySignIn(LoginDTO uc) {
 			// _signinManager.SignInAsync creates a cookie under the hood so don't use that
 
-			string actualEmail = AuthHelpers.ComposeUsername(pid, uc.Email);
-			var user = await _userManager.FindByEmailAsync(actualEmail);
-
-			// Admins don't have a project ID prefixed to their emails
-			if (user == null)
-				user = await _userManager.FindByEmailAsync(uc.Email);
+			var user = await _userManager.FindByEmailAsync(uc.Email);
 
 			if (user != null) {
 				var result = await _signinManager.CheckPasswordSignInAsync(user, uc.Password, false);
@@ -103,7 +98,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		[HttpPost("login/{pid}")]
 		public async Task<IActionResult> Login(int pid, [FromBody] LoginDTO uc) {
-			var user = await _TrySignIn(pid, uc);
+			var user = await _TrySignIn(uc);
 			if (user != null) {
 				await _repoEventLog.AddLoginEvent(pid);
 
@@ -120,6 +115,8 @@ namespace DocumentsQA_Backend.Controllers {
 						claims.AddRange(userClaims.Where(x => x.Type == "role"));
 					}
 				}
+
+				// TODO: Maybe add a guard case where Project == null and user isn't an admin
 
 				var token = _CreateUserToken(claims);
 				return Ok(token);

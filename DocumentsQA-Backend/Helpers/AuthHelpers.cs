@@ -33,24 +33,6 @@ namespace DocumentsQA_Backend.Helpers {
 
 		// -----------------------------------------------------
 
-		public static string ComposeUsername(int projectId, string name) {
-			return $"{projectId}:{name}";
-		}
-		public static (int, string) DecomposeUsername(string name) {
-			int sep = name.IndexOf(':');
-			if (sep == -1) {
-				return (-1, "");
-			}
-
-			int project = -1;
-			try {
-				project = int.Parse(name[..sep]);
-			}
-			catch {}
-
-			return (project, name[(sep + 1)..]);
-		}
-
 		/// <summary>
 		/// Throws an AccessForbiddenException if the requested details level is higher than the maximum allowed.
 		/// <para>Does nothing if the user has manager access.</para>
@@ -99,9 +81,7 @@ namespace DocumentsQA_Backend.Helpers {
 			if (selfRole.CompareTo(targetRole) <= 0)
 				return false;
 
-			int targetProjectId = DecomposeUsername(target.UserName).Item1;
-			var targetProject = await Queries.GetProjectFromId(_dataContext, targetProjectId);
-
+			var targetProject = target.Project;
 			if (targetProject == null)
 				return false;
 			

@@ -35,6 +35,7 @@ namespace DocumentsQA_Backend.Models {
 		public virtual List<Question> Questions { get; set; } = new();			// One-to-many with Question
 		public virtual List<Note> Notes { get; set; } = new();					// One-to-many with Note
 
+		public virtual List<AppUser> Users { get; set; } = new();				// One-to-many with AppUser
 		public virtual List<AppUser> UserManagers { get; set; } = new();		// Reference navigation for many-to-many FK
 	}
 
