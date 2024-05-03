@@ -208,8 +208,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (project == null)
 				return BadRequest("Project not found");
 
-			_adminHelper.ClearUsersTrancheAccess(new List<int> { uid });
-			_adminHelper.RemoveProjectManagers(pid, new List<int> { uid });
+			//_adminHelper.ClearUsersTrancheAccess(project, new List<int> { uid });
+			_adminHelper.RemoveProjectManagers(project, new List<int> { uid });
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
