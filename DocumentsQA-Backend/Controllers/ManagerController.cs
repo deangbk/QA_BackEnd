@@ -117,16 +117,7 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest("File parse error: " + e.Message);
 			}
 
-			{
-				// Clear existing access first to not cause insert conflicts
-				_adminHelper.RemoveUsersTrancheAccess(tid, userIdsGrant);
-
-				var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
-				dbSetTranche.AddRange(userIdsGrant.Select(u => new EJoinClass {
-					Id1 = tid,
-					Id2 = u,
-				}));
-			}
+			await _adminHelper.GrantUsersTrancheAccess(tranche, userIdsGrant);
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
@@ -149,7 +140,7 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!await _authHelper.CanManageUser(user))
 				return Forbid();
 
-			_adminHelper.RemoveUsersTrancheAccess(tid, new List<int> { uid });
+			_adminHelper.RemoveUsersTrancheAccess(tranche, new List<int> { uid });
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);

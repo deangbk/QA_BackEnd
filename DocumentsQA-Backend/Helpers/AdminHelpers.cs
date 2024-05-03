@@ -56,41 +56,50 @@ namespace DocumentsQA_Backend.Helpers {
 		}
 
 		/// <summary>
+		/// Grants tranche read access to users
+		/// <para>Does not call SaveChangesAsync</para>
+		/// </summary>
+		public async Task GrantUsersTrancheAccess(Tranche tranche, List<int> userIds) {
+			var mapUsers = await Queries.GetUsersMapFromIds(_dataContext, userIds);
+
+			GrantUsersTrancheAccess(tranche, mapUsers.Values.ToList());
+		}
+		/// <summary>
+		/// Grants tranche read access to users
+		/// <para>Does not call SaveChangesAsync</para>
+		/// </summary>
+		public void GrantUsersTrancheAccess(Tranche tranche, List<AppUser> users) {
+			// Remove users who can already access the tranche
+			var adding = users.Where(
+				x => tranche.UserAccesses.Find(y => x.Id == y.Id) == null);
+
+			// Add to tranche users
+			tranche.UserAccesses.AddRange(adding);
+		}
+
+		/// <summary>
 		/// Removes tranche read access from users
 		/// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
-		public void RemoveUsersTrancheAccess(int trancheId, List<int> userIds) {
-			var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
-
-			dbSetTranche.RemoveRange(
-				dbSetTranche
-					.Where(x => x.Id1 == trancheId)
-					.Where(x => userIds.Any(y => y == x.Id2)));
+		public void RemoveUsersTrancheAccess(Tranche tranche, List<int> userIds) {
+			tranche.UserAccesses.RemoveAll(x => userIds.Any(y => y == x.Id));
 		}
 
 		/// <summary>
 		/// Clears all tranche read access from users
 		/// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
-		public void ClearUsersTrancheAccess(List<int> userIds) {
-			var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
-
-			dbSetTranche.RemoveRange(
-				dbSetTranche
-					.Where(x => userIds.Any(y => y == x.Id2)));
+		public void ClearUsersTrancheAccess(Project project, List<int> userIds) {
+			foreach (var tranche in project.Tranches)
+				RemoveUsersTrancheAccess(tranche, userIds);
 		}
 
 		/// <summary>
 		/// Removes project manager rights from users
 		/// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
-		public void RemoveProjectManagers(int projectId, List<int> userIds) {
-			var dbSetManager = _dataContext.Set<EJoinClass>("ProjectUserManage");
-
-			dbSetManager.RemoveRange(
-				dbSetManager
-					.Where(x => x.Id2 == projectId)
-					.Where(x => userIds.Any(y => y == x.Id1)));
+		public void RemoveProjectManagers(Project project, List<int> userIds) {
+			project.UserManagers.RemoveAll(x => userIds.Any(y => y == x.Id));
 		}
 
 		/// <summary>
@@ -100,15 +109,6 @@ namespace DocumentsQA_Backend.Helpers {
 		public async Task MakeProjectManagers(Project project, List<int> userIds) {
 			var mapUsers = await Queries.GetUsersMapFromIds(_dataContext, userIds);
 
-			// Verify user IDs
-			{
-				var err = ValueHelpers.CheckInvalidIds(
-					userIds, mapUsers.Keys, "User");
-				if (err != null) {
-					throw new ArgumentException(err);
-				}
-			}
-
 			await MakeProjectManagers(project, mapUsers.Values.ToList());
 		}
 		/// <summary>
@@ -116,8 +116,6 @@ namespace DocumentsQA_Backend.Helpers {
 		/// <para>Does not call SaveChangesAsync</para>
 		/// </summary>
 		public async Task MakeProjectManagers(Project project, List<AppUser> users) {
-			var userIds = users.Select(x => x.Id).ToList();
-
 			// Make the users managers if they're not already one
 			foreach (var user in users) {
 				await GrantUserRole(user, AppRole.Manager);
@@ -125,40 +123,12 @@ namespace DocumentsQA_Backend.Helpers {
 
 			// Grant elevated access (manager) to all tranches in the project
 			{
-				var dbSetTranche = _dataContext.Set<EJoinClass>("TrancheUserAccess");
-				var dbSetManager = _dataContext.Set<EJoinClass>("ProjectUserManage");
-
-				/*
-				// Remove existing accesses for users
-				dbSetTranche.RemoveRange(
-					dbSetTranche
-						.Where(x => userIds.Any(y => y == x.Id2)));
-				*/
-
-				// Remove existing manager rights for users
-				dbSetManager.RemoveRange(
-					dbSetManager
-						.Where(x => userIds.Any(y => y == x.Id1)));
-
-				/*
-				// Add access for each tranche in project
-				{
-					var adds = project.Tranches.SelectMany(x => userIds, (t, u) => new EJoinClass {
-						Id1 = t.Id,
-						Id2 = u,
-					});
-					dbSetTranche.AddRange(adds);
-				}
-				*/
+				// Remove existing managers
+				var adding = users.Where(
+					x => project.UserManagers.Find(y => x.Id == y.Id) == null);
 
 				// Add to project managers
-				{
-					var adds = userIds.Select(u => new EJoinClass {
-						Id1 = u,
-						Id2 = project.Id,
-					});
-					dbSetManager.AddRange(adds);
-				}
+				project.UserManagers.AddRange(adding);
 			}
 		}
 	}
