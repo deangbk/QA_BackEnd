@@ -93,8 +93,9 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.AllowManageProject(project))
 				return Forbid();
 
-			//var listUserIds = ProjectHelpers.GetProjectUserAccesses(project);
-			var listUsers = project.Users;
+			// Exclude managers
+			var listUsers = project.Users
+				.Where(x => !project.UserManagers.Any(y => x.Id == y.Id));
 
 			if (details >= 0) {
 				// TODO: Maybe optimize these
