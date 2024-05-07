@@ -105,6 +105,42 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		/// <summary>
+		/// Edits a user
+		/// </summary>
+		[HttpPut("edit/{uid}")]
+		public async Task<IActionResult> EditUser(int uid, [FromBody] EditUserDTO edit) {
+			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
+			if (user == null)
+				return BadRequest("User not found");
+
+			if (!await _authHelper.CanManageUser(user)) {
+				if (uid != _access.GetUserID())
+					return Forbid("Unauthorized to edit other users");
+				if (edit.Tranches != null)
+					return Forbid("Unauthorized to edit own tranche access");
+			}
+
+			var project = await _repoProject.GetProjectAsync();
+
+			if (edit.DisplayName != null) {
+				user.DisplayName = edit.DisplayName;
+			}
+			if (edit.Tranches != null) {
+				var tranches = project.Tranches
+					.Where(x => edit.Tranches.Any(y => x.Name == y))
+					.ToList();
+				if (tranches.Count == 0) {
+					return BadRequest("Illegal to set tranche accesses to empty");
+				}
+
+				user.TrancheAccesses = tranches;
+			}
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+
+		/// <summary>
 		/// Deletes a user
 		/// </summary>
 		[HttpDelete("{uid}")]
