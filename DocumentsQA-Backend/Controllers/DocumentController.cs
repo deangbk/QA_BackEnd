@@ -36,6 +36,7 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly IFileManagerService _fileManager;
 
 		private readonly AuthHelpers _authHelper;
+		private readonly DocumentHelpers _documentHelpers;
 		private readonly IProjectRepository _repoProject;
 
 		public DocumentController(
@@ -46,6 +47,7 @@ namespace DocumentsQA_Backend.Controllers {
 			IFileManagerService fileManager,
 
 			AuthHelpers authHelper,
+			DocumentHelpers documentHelpers,
 			IProjectRepository repoProject)
 		{
 			_dataContext = dataContext;
@@ -56,6 +58,7 @@ namespace DocumentsQA_Backend.Controllers {
 			_fileManager = fileManager;
 
 			_authHelper = authHelper;
+			_documentHelpers = documentHelpers;
 			_repoProject = repoProject;
 		}
 
@@ -204,93 +207,9 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_authHelper.GuardDetailsLevel(details, 4);
 
-			var baseQuery = _dataContext.Documents
-				.Where(x => x.ProjectId == projectId);
+			var documents = await _documentHelpers.GetDocuments(dto);
 
-			var filterDTO = dto.Filter;
-			var pageDTO = dto.Paginate;
-
-			if (filterDTO != null) {
-				if (filterDTO.SearchTerm != null) {
-					baseQuery = baseQuery.Where(x => EF.Functions.Contains(x.FileName, filterDTO.SearchTerm));
-				}
-				if (filterDTO.UploaderID != null) {
-					baseQuery = baseQuery.Where(x => x.UploadedById == filterDTO.UploaderID);
-				}
-				if (filterDTO.PostedFrom is not null) {
-					baseQuery = baseQuery.Where(x => x.DateUploaded >= filterDTO.PostedFrom);
-				}
-				if (filterDTO.PostedTo is not null) {
-					baseQuery = baseQuery.Where(x => x.DateUploaded < filterDTO.PostedTo);
-				}
-				if (filterDTO.AllowPrint != null) {
-					baseQuery = baseQuery.Where(x => x.AllowPrint == filterDTO.AllowPrint);
-				}
-
-				if (filterDTO.Category != null) {
-					var typeMatch = DocumentHelpers.ParseDocumentType(filterDTO.Category)
-						?? DocumentType.Bid;
-					baseQuery = baseQuery.Where(x => x.Type == typeMatch);
-				}
-				if (filterDTO.AssocQuestion != null) {
-					baseQuery = baseQuery.Where(x => x.Type == DocumentType.Question
-						&& x.AssocQuestionId == filterDTO.AssocQuestion);
-				}
-				if (filterDTO.AssocAccount != null) {
-					baseQuery = baseQuery.Where(x => x.Type == DocumentType.Account
-						&& x.AssocAccountId == filterDTO.AssocAccount);
-				}
-				if (filterDTO.AssocTranche != null) {
-					// TODO: Test this
-					try {
-						int trancheId = await _dataContext.Tranches
-							.Where(x => x.Name == filterDTO.AssocTranche)
-							.Select(x => x.Id)
-							.FirstAsync();
-						baseQuery = baseQuery.Where(x =>
-							(x.Type == DocumentType.Account && x.AssocAccount!.TrancheId == trancheId) ||
-							(x.Type == DocumentType.Question && x.AssocQuestion!.Account!.TrancheId == trancheId));
-					}
-					catch (InvalidOperationException) { }
-				}
-			}
-
-			baseQuery = baseQuery.OrderByDescending(x => x.DateUploaded);
-			var listDocuments = await baseQuery.ToListAsync();
-
-			// Allow staff to everything, but filter based on access for regular users
-			if (!_access.IsSuperUser()) {
-				AppUser user = (await Queries.GetUserFromId(_dataContext, _access.GetUserID()))!;
-				var trancheAccesses = ProjectHelpers.GetUserTrancheAccessesInProject(
-					user, projectId);
-
-				var listAllowedAccounts = trancheAccesses
-					.SelectMany(x => x.Accounts.Select(x => x.Id))
-					.ToHashSet();
-
-				listDocuments = listDocuments
-					.Where(x => x.Type switch {
-						DocumentType.Account => listAllowedAccounts.Contains((int)x.AssocAccountId!),
-						DocumentType.Question => x.AssocQuestion!.AccountId == null
-							|| listAllowedAccounts.Contains((int)x.AssocQuestion!.AccountId),
-						_ => true,
-					})
-					.ToList();
-			}
-
-			// Paginate result; but return everything if paginate DTO doesn't exist
-			if (pageDTO != null) {
-				int countPerPage = pageDTO.CountPerPage;
-				int maxPages = (int)Math.Ceiling(listDocuments.Count / (double)countPerPage);
-
-				listDocuments = listDocuments
-					.Skip(pageDTO.Page!.Value * countPerPage)
-					.Take(countPerPage)
-					.ToList();
-			}
-
-			var listDocumentTables = listDocuments.Select(x => x.ToJsonTable(details));
-
+			var listDocumentTables = documents.Select(x => x.ToJsonTable(details));
 			return Ok(listDocumentTables);
 		}
 
@@ -371,7 +290,7 @@ namespace DocumentsQA_Backend.Controllers {
 							{
 								string nameNoExt = Path.GetFileNameWithoutExtension(fileName);
 
-								while (await DocumentHelpers.CheckDuplicate(_dataContext, document)) {
+								while (await _documentHelpers.CheckDuplicate(document)) {
 									string randH = AuthHelpers.GeneratePassword(new Random(GetHashCode()), 4, false);
 									document.FileUrl = $"{nameNoExt}_{randH}.{document.FileType}";
 								}
@@ -429,7 +348,7 @@ namespace DocumentsQA_Backend.Controllers {
 				{
 					string nameNoExt = Path.GetFileNameWithoutExtension(document.FileName);
 
-					while (await DocumentHelpers.CheckDuplicate(_dataContext, document)) {
+					while (await _documentHelpers.CheckDuplicate(document)) {
 						string randH = AuthHelpers.GeneratePassword(new Random(GetHashCode()), 4);
 						document.FileUrl = $"{nameNoExt}_{randH}.{document.FileType}";
 					}
