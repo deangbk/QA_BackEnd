@@ -220,5 +220,52 @@ namespace DocumentsQA_Backend.Helpers {
 				return access.AllowManageTranche(tranche);
 			}
 		}
+
+		/// <summary>
+		/// Filters list of questions based on the current user's access level
+		/// </summary>
+		public static List<Question> FilterUserReadPost(IAccessService access, IEnumerable<Question> questions) {
+			if (access.IsAdmin()) {
+				return questions.ToList();
+			}
+			else {
+				List<Question> res = new();
+
+				// Still not optimal, but better than calling AllowUserReadPost on every single Questions
+
+				var mapQuestionByProject = questions
+					.GroupBy(x => x.Project)
+					.ToDictionary(x => x.Key, x => x.ToList());
+
+				foreach (var (project, projectQuestions) in mapQuestionByProject) {
+					var accessProject = access.AllowToProject(project);
+
+					// Early return if no project access
+					if (accessProject) {
+						// Managers can read the entire project
+						if (access.AllowManageProject(project)) {
+							res.AddRange(projectQuestions);
+						}
+						else {
+							var accessByTranche = project.Tranches
+								.Where(x => access.AllowToTranche(x))
+								.Select(x => x.Id)
+								.ToHashSet();
+
+							var allowQuestions = projectQuestions
+								.Where(q => {
+									return q.Type == QuestionType.General ?
+										accessProject :
+										accessByTranche.Contains(q.Account!.TrancheId);
+								})
+								.ToList();
+							res.AddRange(allowQuestions);
+						}
+					}
+				}
+
+				return res;
+			}
+		}
 	}
 }

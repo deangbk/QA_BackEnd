@@ -82,10 +82,7 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			// Then filter based on access
-			//    NOTE: Might be a little inefficient, but the access logic is too complicated to be handled on the DB
-			var listPosts = (await query.ToListAsync())
-				.Where(x => PostHelpers.AllowUserReadPost(_access, x))
-				.ToList();
+			var listPosts = PostHelpers.FilterUserReadPost(_access, await query.ToListAsync());
 			int countTotal = listPosts.Count;
 
 			// Paginate result; but return everything if paginate DTO doesn't exist
