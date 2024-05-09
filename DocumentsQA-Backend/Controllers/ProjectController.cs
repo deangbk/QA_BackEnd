@@ -31,12 +31,14 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly IFileManagerService _fileManager;
 
+		private readonly DocumentHelpers _documentHelpers;
 		private readonly IProjectRepository _repoProject;
 
 		public ProjectController(
 			ILogger<ProjectController> logger, 
 			DataContext dataContext, IAccessService access,
 			IFileManagerService fileManager, 
+			DocumentHelpers documentHelpers,
 			IProjectRepository repoProject) 
 		{
 			_logger = logger;
@@ -46,6 +48,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_fileManager = fileManager;
 
+			_documentHelpers = documentHelpers;
 			_repoProject = repoProject;
 		}
 
@@ -161,15 +164,43 @@ namespace DocumentsQA_Backend.Controllers {
 		public async Task<IActionResult> CountContent() {
 			var project = await _repoProject.GetProjectAsync();
 
-			int countGeneralPosts = project.Questions
-				.Where(x => x.Type == QuestionType.General)
-				.Count();
-			int countAccountPosts = project.Questions
-				.Where(x => x.Type == QuestionType.Account)
-				.Count();
-			int countDocuments = await _dataContext.Documents
-				.Where(x => x.ProjectId == project.Id)
-				.CountAsync();
+			int countGeneralPosts = 0;
+			int countAccountPosts = 0;
+			int countDocuments = 0;
+
+			if (_access.IsSuperUser()) {
+				var queryPosts = Queries.GetProjectQuestions(_dataContext, project.Id);
+
+				countGeneralPosts = await queryPosts
+					.Where(x => x.Type == QuestionType.General)
+					.CountAsync();
+				countAccountPosts = await queryPosts
+					.Where(x => x.Type == QuestionType.Account)
+					.CountAsync();
+				countDocuments = await _dataContext.Documents
+					.Where(x => x.ProjectId == project.Id)
+					.CountAsync();
+			}
+			else {
+				int userId = _access.GetUserID();
+				var user = await Queries.GetUserFromId(_dataContext, userId);
+
+				var tranchesAccess = ProjectHelpers.GetUserTrancheAccessesInProject(user!, project.Id)
+					.Select(x => x.Id)
+					.ToList();
+
+				var listPosts = await Queries.GetApprovedQuestionsQuery(_dataContext, project.Id)
+					.ToListAsync();
+				var listAllowPosts = PostHelpers.FilterUserReadPost(_access, listPosts);
+
+				countGeneralPosts = listAllowPosts
+					.Where(x => x.Type == QuestionType.General)
+					.Count();
+				countAccountPosts = listAllowPosts
+					.Where(x => x.Type == QuestionType.Account)
+					.Count();
+				countDocuments = (await _documentHelpers.GetDocuments(new())).Count;
+			}
 
 			return Ok(new JsonTable {
 				["gen_posts"] = countGeneralPosts,
