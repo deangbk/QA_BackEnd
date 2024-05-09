@@ -133,19 +133,19 @@ namespace DocumentsQA_Backend.Helpers {
 
 			// Allow staff to everything, but filter based on access for regular users
 			if (!_access.IsSuperUser()) {
-				var user = await Queries.GetUserFromId(_dataContext, _access.GetUserID());
-				var trancheAccesses = ProjectHelpers.GetUserTrancheAccessesInProject(
-					user!, project.Id);
-
-				var listAllowedAccounts = trancheAccesses
-					.SelectMany(x => x.Accounts.Select(x => x.Id))
+				var allowedTranches = project.Tranches
+					.Where(x => _access.AllowToTranche(x))
+					.ToHashSet();
+				var allowedAccounts = allowedTranches
+					.SelectMany(x => x.Accounts)
+					.Select(x => x.Id)
 					.ToHashSet();
 
 				listDocuments = listDocuments
 					.Where(x => x.Type switch {
-						DocumentType.Account => listAllowedAccounts.Contains((int)x.AssocAccountId!),
+						DocumentType.Account => allowedAccounts.Contains(x.AssocAccountId!.Value),
 						DocumentType.Question => x.AssocQuestion!.AccountId == null
-							|| listAllowedAccounts.Contains((int)x.AssocQuestion!.AccountId),
+							|| allowedAccounts.Contains((int)x.AssocQuestion!.AccountId),
 						_ => true,
 					})
 					.ToList();
