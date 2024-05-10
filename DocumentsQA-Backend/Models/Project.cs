@@ -11,7 +11,10 @@ namespace DocumentsQA_Backend.Models {
 		public int Id { get; set; }
 
 		[MaxLength(256)]
+		[MinLength(4)]
+		[RegularExpression(@"[a-zA-Z0-9_-]+")]
 		public string Name { get; set; } = null!;
+
 		[MaxLength(256)]
 		public string? DisplayName { get; set; }
 

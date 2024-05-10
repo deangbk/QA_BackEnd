@@ -63,6 +63,11 @@ namespace DocumentsQA_Backend.Data {
 		private void ConfigureRelationships(ModelBuilder modelBuilder) {
 			// Model: Project
 			{
+				// Configure Name to be unique
+				modelBuilder.Entity<Project>()
+					.HasIndex(p => p.Name)
+					.IsUnique(true);
+
 				// Map Project:User as N:M using join entity
 				modelBuilder.Entity<Project>()
 					.HasMany(e => e.UserManagers)

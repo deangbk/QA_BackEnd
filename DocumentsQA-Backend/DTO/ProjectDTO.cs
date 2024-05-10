@@ -9,10 +9,15 @@ namespace DocumentsQA_Backend.DTO {
 	// Required properties must be nullable otherwise they'll be default-initialized if missing when used with FromBody
 
 	public class CreateProjectDTO {
+		[MaxLength(256)]
+		[MinLength(4)]
+		[RegularExpression(@"[a-zA-Z0-9_-]+")]
 		public string Name { get; set; } = null!;
 
+		[MaxLength(256)]
 		public string DisplayName { get; set; } = null!;
 
+		[MaxLength(256)]
 		public string Company { get; set; } = null!;
 
 		[JsonPropertyName("date_start")]

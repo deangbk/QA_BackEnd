@@ -40,6 +40,11 @@ namespace DocumentsQA_Backend.Data {
 		public static Task<Document?> GetDocumentFromId(DataContext dataContext, int id)
 			=> GetEntityFromId(dataContext.Documents, id);
 
+		public static async Task<Project?> GetProjectFromName(DataContext dataContext, string name) {
+			var res = await dataContext.Projects
+				.FirstAsync(x => EF.Functions.Like(x.Name, $"%{name}%"));
+			return res;
+		}
 		public static async Task<Account?> GetAccountFromIdName(DataContext dataContext, string id) {
 			var res = await dataContext.Accounts
 				.FirstAsync(x => id == dataContext.GetAccountIdentifierName(x.Id));
