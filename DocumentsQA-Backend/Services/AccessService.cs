@@ -55,7 +55,7 @@ namespace DocumentsQA_Backend.Services {
 
 		private static int _ParseIntID(string? idClaim) {
 			try {
-				return int.Parse(idClaim!);     // Ignore null so ArgumentNullException would return -1
+				return int.Parse(idClaim!);		// Ignore null so ArgumentNullException would return -1
 			}
 			catch (Exception) {
 				return -1;

@@ -96,33 +96,43 @@ namespace DocumentsQA_Backend.Controllers {
 			};
 		}
 
-		[HttpPost("login/{pid}")]
-		public async Task<IActionResult> Login(int pid, [FromBody] LoginDTO uc) {
+		private async Task<AuthResponse> _TryLogin(string? projectName, LoginDTO uc) {
+			var project = await Queries.GetProjectFromName(_dataContext, projectName ?? "");
+			if (project == null)
+				throw new InvalidDataException("Invalid project");
+
 			var user = await _TrySignIn(uc);
-			if (user != null) {
-				await _repoEventLog.AddLoginEvent(pid);
+			if (user == null)
+				throw new InvalidDataException("Incorrect login");
 
-				var claims = new List<Claim>();
+			var claims = new List<Claim>();
+			{
+				claims.Add(new Claim("id", user.Id.ToString()));
+				claims.Add(new Claim("name", user.DisplayName));
+				claims.Add(new Claim("project", project.Id.ToString()));
+				claims.Add(new Claim("project_name", projectName!.ToString()));
 
+				// Add role claims for the user
 				{
-					claims.Add(new Claim("id", user.Id.ToString()));
-					claims.Add(new Claim("name", user.DisplayName));
-					claims.Add(new Claim("project", pid.ToString()));
-
-					// Add role claims for the user
-					{
-						var userClaims = await _userManager.GetClaimsAsync(user);
-						claims.AddRange(userClaims.Where(x => x.Type == "role"));
-					}
+					var userClaims = await _userManager.GetClaimsAsync(user);
+					claims.AddRange(userClaims.Where(x => x.Type == "role"));
 				}
+			}
 
-				// TODO: Maybe add a guard case where Project == null and user isn't an admin
+			await _repoEventLog.AddLoginEvent(project.Id);
 
-				var token = _CreateUserToken(claims);
+			var token = _CreateUserToken(claims);
+			return token;
+		}
+
+		[HttpPost("login/{pname}")]
+		public async Task<IActionResult> Login([FromRoute] string pname, [FromBody] LoginDTO uc) {
+			try {
+				var token = await _TryLogin(pname, uc);
 				return Ok(token);
 			}
-			else {
-				return BadRequest("Incorrect login");
+			catch (InvalidDataException e) {
+				return BadRequest(e.Message);
 			}
 		}
 	}
