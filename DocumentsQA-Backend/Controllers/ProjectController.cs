@@ -218,7 +218,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var project = new Project {
 				Name = dto.Name,
-				DisplayName = dto.Name,
+				DisplayName = dto.DisplayName,
 				CompanyName = dto.Company,
 				ProjectStartDate = dto.DateStart!.Value,
 				ProjectEndDate = dto.DateEnd!.Value,

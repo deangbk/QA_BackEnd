@@ -11,6 +11,8 @@ namespace DocumentsQA_Backend.DTO {
 	public class CreateProjectDTO {
 		public string Name { get; set; } = null!;
 
+		public string DisplayName { get; set; } = null!;
+
 		public string Company { get; set; } = null!;
 
 		[JsonPropertyName("date_start")]
