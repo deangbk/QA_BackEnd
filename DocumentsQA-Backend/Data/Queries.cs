@@ -42,7 +42,7 @@ namespace DocumentsQA_Backend.Data {
 
 		public static async Task<Project?> GetProjectFromName(DataContext dataContext, string name) {
 			var res = await dataContext.Projects
-				.FirstAsync(x => EF.Functions.Like(x.Name, $"%{name}%"));
+				.FirstOrDefaultAsync(x => EF.Functions.Like(x.Name, $"%{name}%"));
 			return res;
 		}
 		public static async Task<Account?> GetAccountFromIdName(DataContext dataContext, string id) {
