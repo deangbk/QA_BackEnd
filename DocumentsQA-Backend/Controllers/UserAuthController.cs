@@ -79,6 +79,8 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
+		// TODO: Rework the sign-in system to use dual auth and refresh token
+
 		private AuthResponse _CreateUserToken(List<Claim> claims) {
 			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Initialize.JwtKey));
 			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
@@ -86,7 +88,7 @@ namespace DocumentsQA_Backend.Controllers {
 			var tokenDescriptor = new JwtSecurityToken(
 				issuer: null, audience: null,
 				claims: claims,
-				expires: DateTime.Now.AddDays(2),
+				expires: DateTime.Now.AddDays(1),
 				signingCredentials: creds
 			);
 
@@ -105,12 +107,15 @@ namespace DocumentsQA_Backend.Controllers {
 			if (user == null)
 				throw new InvalidDataException("Incorrect login");
 
+			if (user.ProjectId != null && user.ProjectId != project.Id)
+				throw new InvalidDataException("No access");
+
 			var claims = new List<Claim>();
 			{
 				claims.Add(new Claim("id", user.Id.ToString()));
 				claims.Add(new Claim("name", user.DisplayName));
-				claims.Add(new Claim("project", project.Id.ToString()));
-				claims.Add(new Claim("project_name", projectName!.ToString()));
+				claims.Add(new Claim("proj", project.Id.ToString()));
+				claims.Add(new Claim("projn", projectName!.ToString()));
 
 				// Add role claims for the user
 				{

@@ -66,7 +66,7 @@ namespace DocumentsQA_Backend.Services {
 				HttpContext ctx = _httpContextAccessor.HttpContext!;
 
 				var claims = ctx.User;
-				var idClaim = claims.FindFirst("project")?.Value;
+				var idClaim = claims.FindFirst("proj")?.Value;
 
 				_projectId =  _ParseIntID(idClaim);
 			}

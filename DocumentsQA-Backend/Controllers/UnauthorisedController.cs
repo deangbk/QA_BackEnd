@@ -43,10 +43,10 @@ namespace DocumentsQA_Backend.Controllers
 
 		// -----------------------------------------------------
 
-        /// <summary>
-        /// Posts general questions in bulk
-        /// </summary>
-        [HttpPost("post_question_g_multiple")]
+		/// <summary>
+		/// Posts general questions in bulk
+		/// </summary>
+		[HttpPost("post_question_g_multiple")]
         public async Task<IActionResult> PostGeneralQuestionMultiple([FromBody] List<Unauth_PostCreateDTO> dtos)
         {
 			Dictionary<int, Project> mapProject;
