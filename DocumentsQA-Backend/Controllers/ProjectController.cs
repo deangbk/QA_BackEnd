@@ -305,8 +305,11 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private async Task<FileStreamResult> _GetImage(string url) {
-			byte[] fileBytes = await FileHelpers.GetFileBytes(_fileManager, url);
+		public static async Task<FileStreamResult> GetImage(IFileManagerService fileManager, string? url) {
+			if (url == null)
+				throw new FileNotFoundException();
+
+			byte[] fileBytes = await FileHelpers.GetFileBytes(fileManager, url);
 
 			var extProvider = new FileExtensionContentTypeProvider();
 			extProvider.TryGetContentType(url, out string? mediaType);
@@ -320,9 +323,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			FileStreamResult streamResult;
 			try {
-				if (project.LogoUrl == null)
-					throw new FileNotFoundException();
-				streamResult = await _GetImage(project.LogoUrl);
+				streamResult = await GetImage(_fileManager, project.LogoUrl);
 			}
 			catch (FileNotFoundException) {
 				return NotFound();
@@ -339,9 +340,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			FileStreamResult streamResult;
 			try {
-				if (project.BannerUrl == null)
-					throw new FileNotFoundException();
-				streamResult = await _GetImage(project.BannerUrl);
+				streamResult = await GetImage(_fileManager, project.BannerUrl);
 			}
 			catch (FileNotFoundException) {
 				return NotFound();

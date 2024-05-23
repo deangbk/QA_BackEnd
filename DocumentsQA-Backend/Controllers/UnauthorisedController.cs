@@ -32,16 +32,57 @@ namespace DocumentsQA_Backend.Controllers
 
 		private readonly UserManager<AppUser> _userManager;
 
-		public UnauthorisedController(DataContext dataContext, ILogger<PostController> logger,
-			UserManager<AppUser> userManager) {
+		private readonly IFileManagerService _fileManager;
 
-            _dataContext = dataContext;
+		public UnauthorisedController(
+			DataContext dataContext, ILogger<PostController> logger,
+			UserManager<AppUser> userManager, 
+			IFileManagerService fileManager
+		) {
+			_dataContext = dataContext;
 			_logger = logger;
 
 			_userManager = userManager;
+
+			_fileManager = fileManager;
 		}
 
 		// -----------------------------------------------------
+
+		/// <summary>
+		/// Gets project information
+		/// </summary>
+		[HttpGet("project")]
+		public async Task<IActionResult> GetProjectInfo([FromQuery] string name) {
+			var project = await Queries.GetProjectFromName(_dataContext, name);
+			if (project == null)
+				return NotFound();
+
+			return Ok(project.ToJsonTable(0));
+		}
+
+		/// <summary>
+		/// Gets project logo
+		/// </summary>
+		[HttpGet("project/logo")]
+		public async Task<IActionResult> GetProjectLogo([FromQuery] string name) {
+			var project = await Queries.GetProjectFromName(_dataContext, name);
+			if (project == null)
+				return NotFound();
+
+			FileStreamResult streamResult;
+			try {
+				streamResult = await ProjectController.GetImage(_fileManager, project.LogoUrl);
+			}
+			catch (FileNotFoundException) {
+				return NotFound();
+			}
+			catch (Exception e) {
+				return StatusCode(500, e.Message);
+			}
+
+			return streamResult;
+		}
 
 		/// <summary>
 		/// Posts general questions in bulk

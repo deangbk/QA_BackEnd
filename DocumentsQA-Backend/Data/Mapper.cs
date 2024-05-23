@@ -24,16 +24,16 @@ namespace DocumentsQA_Backend.Data {
 				["id"] = obj.Id,
 				["name"] = obj.Name,
 				["display_name"] = obj.DisplayName ?? obj.Name,
-				["date_start"] = obj.ProjectStartDate,
-				["date_end"] = obj.ProjectEndDate,
 			};
 
 			if (detail >= 1) {
+				table["date_start"] = obj.ProjectStartDate;
+				table["date_end"] = obj.ProjectEndDate;
 				table["description"] = obj.Description ?? "";
 				table["company"] = obj.CompanyName;
 
-				table["url_logo"] = obj.LogoUrl!;
-				table["url_banner"] = obj.BannerUrl!;
+				//table["url_logo"] = obj.LogoUrl!;
+				//table["url_banner"] = obj.BannerUrl!;
 			}
 			if (detail >= 2) {
 				table["tranches"] = obj.Tranches.Select(x => x.ToJsonTable(0)).ToList();
