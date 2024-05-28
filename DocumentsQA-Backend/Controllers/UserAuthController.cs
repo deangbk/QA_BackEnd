@@ -81,14 +81,14 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// TODO: Rework the sign-in system to use dual auth and refresh token
 
-		private AuthResponse _CreateUserToken(List<Claim> claims) {
+		private AuthResponse _CreateUserToken(List<Claim> claims, TimeSpan clockSkew) {
 			var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Initialize.JwtKey));
 			var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256Signature);
 
 			var tokenDescriptor = new JwtSecurityToken(
 				issuer: null, audience: null,
 				claims: claims,
-				expires: DateTime.Now.AddDays(1),
+				expires: DateTime.Now.Add(clockSkew),
 				signingCredentials: creds
 			);
 
@@ -126,7 +126,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			await _repoEventLog.AddLoginEvent(project.Id);
 
-			var token = _CreateUserToken(claims);
+			var token = _CreateUserToken(claims, TimeSpan.FromDays(1));
 			return token;
 		}
 
@@ -161,7 +161,7 @@ namespace DocumentsQA_Backend.Controllers {
 				claims.AddRange(userRoleClaims);
 			}
 
-			var token = _CreateUserToken(claims);
+			var token = _CreateUserToken(claims, TimeSpan.FromHours(1));
 			return token;
 		}
 
