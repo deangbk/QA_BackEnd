@@ -98,8 +98,8 @@ namespace DocumentsQA_Backend.Controllers {
 			};
 		}
 
-		private async Task<AuthResponse> _TryLogin(string? projectName, LoginDTO uc) {
-			var project = await Queries.GetProjectFromName(_dataContext, projectName ?? "");
+		private async Task<AuthResponse> _TryLoginToProject(string projectName, LoginDTO uc) {
+			var project = await Queries.GetProjectFromName(_dataContext, projectName);
 			if (project == null)
 				throw new InvalidDataException("Invalid project");
 
@@ -115,7 +115,7 @@ namespace DocumentsQA_Backend.Controllers {
 				claims.Add(new Claim("id", user.Id.ToString()));
 				claims.Add(new Claim("name", user.DisplayName));
 				claims.Add(new Claim("proj", project.Id.ToString()));
-				claims.Add(new Claim("projn", projectName!.ToString()));
+				claims.Add(new Claim("projn", project.Name.ToString()));
 
 				// Add role claims for the user
 				{
@@ -133,7 +133,42 @@ namespace DocumentsQA_Backend.Controllers {
 		[HttpPost("login/{pname}")]
 		public async Task<IActionResult> Login([FromRoute] string pname, [FromBody] LoginDTO uc) {
 			try {
-				var token = await _TryLogin(pname, uc);
+				var token = await _TryLoginToProject(pname, uc);
+				return Ok(token);
+			}
+			catch (InvalidDataException e) {
+				return BadRequest(e.Message);
+			}
+		}
+
+		private async Task<AuthResponse> _TryLoginToAdmin(LoginDTO uc) {
+			var user = await _TrySignIn(uc);
+			if (user == null)
+				throw new InvalidDataException("Incorrect login");
+
+			var userClaims = await _userManager.GetClaimsAsync(user);
+			var userRoleClaims = userClaims.Where(x => x.Type == "role").ToList();
+
+			if (user.ProjectId != null || !userRoleClaims.Any(x => x.Value == AppRole.Admin.Name))
+				throw new InvalidDataException("Incorrect login");
+
+			var claims = new List<Claim>();
+			{
+				claims.Add(new Claim("id", user.Id.ToString()));
+				claims.Add(new Claim("name", user.DisplayName));
+
+				// Add role claims for the user
+				claims.AddRange(userRoleClaims);
+			}
+
+			var token = _CreateUserToken(claims);
+			return token;
+		}
+
+		[HttpPost("login")]
+		public async Task<IActionResult> Login([FromBody] LoginDTO uc) {
+			try {
+				var token = await _TryLoginToAdmin(uc);
 				return Ok(token);
 			}
 			catch (InvalidDataException e) {
