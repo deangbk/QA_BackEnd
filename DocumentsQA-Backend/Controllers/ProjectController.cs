@@ -57,6 +57,21 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Gets project information
 		/// </summary>
+		[HttpGet("all")]
+		public async Task<IActionResult> GetAllProjects() {
+			if (!_access.IsAdmin())
+				return Forbid();
+
+			var projects = await _dataContext.Projects
+				.OrderBy(x => x.Id)
+				.ToListAsync();
+
+			return Ok(projects.Select(x => x.ToJsonTable(2)));
+		}
+
+		/// <summary>
+		/// Gets project information
+		/// </summary>
 		[HttpGet("")]
 		public async Task<IActionResult> GetProjectInfo() {
 			var project = await _repoProject.GetProjectAsync();
