@@ -61,6 +61,7 @@ namespace DocumentsQA_Backend.Helpers {
 
 		/// <summary>
 		/// Returns true if the current user is able to "manage" the specified user
+		/// Will return false if target is self
 		/// </summary>
 		public async Task<bool> CanManageUser(int target) {
 			AppUser? user = await Queries.GetUserFromId(_dataContext, target);
@@ -71,6 +72,7 @@ namespace DocumentsQA_Backend.Helpers {
 		}
 		/// <summary>
 		/// Returns true if the current user is able to "manage" the specified user
+		/// Will return false if target is self
 		/// </summary>
 		public async Task<bool> CanManageUser(AppUser target) {
 			var selfRole = _access.UserGetRole() ?? AppRole.Empty;
