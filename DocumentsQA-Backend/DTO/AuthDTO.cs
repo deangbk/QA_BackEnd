@@ -27,4 +27,9 @@ namespace DocumentsQA_Backend.DTO {
 
 		public string Password { get; set; } = null!;
 	}
+
+	public class PasswordChangeDTO {
+		public string Old { get; set; } = null!;
+		public string New { get; set; } = null!;
+	}
 }
