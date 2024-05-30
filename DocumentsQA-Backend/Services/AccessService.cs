@@ -90,11 +90,14 @@ namespace DocumentsQA_Backend.Services {
 			HttpContext ctx = _httpContextAccessor.HttpContext!;
 			var claims = ctx.User;
 
-			if (claims.IsInRole(AppRole.Admin.Name))
-				return AppRole.Admin;
-			else if (claims.IsInRole(AppRole.Manager.Name))
-				return AppRole.Manager;
-			return AppRole.User;
+			var roles = new[] {
+				AppRole.User,
+				AppRole.Manager,
+				AppRole.Admin,
+			};
+			var hasRoles = roles.Where(x => claims.IsInRole(x.Name));
+
+			return hasRoles.Any() ? hasRoles.Max() : null;
 		}
 		public bool UserHasRole(AppRole role) {
 			HttpContext ctx = _httpContextAccessor.HttpContext!;
