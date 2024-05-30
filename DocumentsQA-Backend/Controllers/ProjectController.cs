@@ -54,6 +54,16 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
+		private async Task<JsonTable> _GetProjectInfo(Project project) {
+			var table = project.ToJsonTable(2);
+
+			if (_access.IsSuperUser()) {
+				table["tranches"] = project.Tranches.Select(x => x.ToJsonTable(0)).ToList();
+			}
+
+			return table;
+		}
+
 		/// <summary>
 		/// Gets project information
 		/// </summary>
@@ -66,7 +76,11 @@ namespace DocumentsQA_Backend.Controllers {
 				.OrderBy(x => x.Id)
 				.ToListAsync();
 
-			return Ok(projects.Select(x => x.ToJsonTable(2)));
+			var res = projects
+				.Select(async x => await _GetProjectInfo(x))
+				.Select(x => x.Result)
+				.ToList();
+			return Ok(res);
 		}
 
 		/// <summary>
@@ -76,17 +90,14 @@ namespace DocumentsQA_Backend.Controllers {
 		public async Task<IActionResult> GetProjectInfo() {
 			var project = await _repoProject.GetProjectAsync();
 
-			return Ok(project.ToJsonTable(2));
+			return Ok(await _GetProjectInfo(project));
 		}
 
-		/// <summary>
-		/// Gets project tranches information
-		/// </summary>
-		[HttpGet("tranches")]
-		public async Task<IActionResult> GetProjectTranches() {
-			var project = await _repoProject.GetProjectAsync();
+		// -----------------------------------------------------
 
+		private async Task<List<Tranche>> _GetProjectTranches(Project project) {
 			List<Tranche> tranches = new();
+
 			if (!_access.IsSuperUser()) {
 				var user = await Queries.GetUserFromId(_dataContext, _access.GetUserID());
 				if (user != null) {
@@ -97,9 +108,51 @@ namespace DocumentsQA_Backend.Controllers {
 				tranches = project.Tranches;
 			}
 
-			var resTable = tranches.Select(x => x.ToJsonTable(1));
-			return Ok(resTable);
+			return tranches;
 		}
+
+		private async Task<List<JsonTable>> _GetProjectTranchesEx(Project project) {
+			var res = new List<JsonTable>();
+
+			var queryPosts = Queries.GetProjectQuestions(_dataContext, project.Id);
+
+			foreach (var tranche in project.Tranches) {
+				var table = tranche.ToJsonTable(1);
+
+				table["posts"] = await queryPosts
+					.Where(x => x.Account != null && x.Account.TrancheId == tranche.Id)
+					.Select(x => x.Id)
+					.ToListAsync();
+
+				res.Add(table);
+			}
+
+			return res;
+		}
+
+		/// <summary>
+		/// Gets project tranches information
+		/// </summary>
+		[HttpGet("tranches")]
+		public async Task<IActionResult> GetProjectTranches() {
+			var project = await _repoProject.GetProjectAsync();
+
+			var tranches = await _GetProjectTranches(project);
+			return Ok(tranches.Select(x => x.ToJsonTable(1)));
+		}
+
+		/// <summary>
+		/// Gets expanded project tranches information
+		/// </summary>
+		[HttpGet("tranches/ex")]
+		public async Task<IActionResult> GetProjectTranchesEx() {
+			var project = await _repoProject.GetProjectAsync();
+
+			var res = await _GetProjectTranchesEx(project);
+			return Ok(res);
+		}
+
+		// -----------------------------------------------------
 
 		/// <summary>
 		/// Gets list of all users with project read access
