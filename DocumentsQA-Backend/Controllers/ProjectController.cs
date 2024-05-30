@@ -54,7 +54,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private async Task<JsonTable> _GetProjectInfo(Project project) {
+		private JsonTable _GetProjectInfo(Project project) {
 			var table = project.ToJsonTable(2);
 
 			if (_access.IsSuperUser()) {
@@ -76,11 +76,7 @@ namespace DocumentsQA_Backend.Controllers {
 				.OrderBy(x => x.Id)
 				.ToListAsync();
 
-			var res = projects
-				.Select(async x => await _GetProjectInfo(x))
-				.Select(x => x.Result)
-				.ToList();
-			return Ok(res);
+			return Ok(projects.Select(x => _GetProjectInfo(x)));
 		}
 
 		/// <summary>
@@ -90,7 +86,21 @@ namespace DocumentsQA_Backend.Controllers {
 		public async Task<IActionResult> GetProjectInfo() {
 			var project = await _repoProject.GetProjectAsync();
 
-			return Ok(await _GetProjectInfo(project));
+			return Ok(_GetProjectInfo(project));
+		}
+
+		/// <summary>
+		/// Gets project information
+		/// </summary>
+		[HttpGet("{id}")]
+		public async Task<IActionResult> GetProjectInfo(int id) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, id);
+			if (project == null)
+				return BadRequest("Project not found");
+			if (!_access.AllowToProject(project))
+				return Forbid();
+
+			return Ok(_GetProjectInfo(project));
 		}
 
 		// -----------------------------------------------------
@@ -142,11 +152,41 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		/// <summary>
+		/// Gets project tranches information
+		/// </summary>
+		[HttpGet("{id}/tranches")]
+		public async Task<IActionResult> GetProjectTranches(int id) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, id);
+			if (project == null)
+				return BadRequest("Project not found");
+			if (!_access.AllowToProject(project))
+				return Forbid();
+
+			var tranches = await _GetProjectTranches(project);
+			return Ok(tranches.Select(x => x.ToJsonTable(1)));
+		}
+
+		/// <summary>
 		/// Gets expanded project tranches information
 		/// </summary>
 		[HttpGet("tranches/ex")]
 		public async Task<IActionResult> GetProjectTranchesEx() {
 			var project = await _repoProject.GetProjectAsync();
+
+			var res = await _GetProjectTranchesEx(project);
+			return Ok(res);
+		}
+
+		/// <summary>
+		/// Gets expanded project tranches information
+		/// </summary>
+		[HttpGet("{id}/tranches/ex")]
+		public async Task<IActionResult> GetProjectTranchesEx(int id) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, id);
+			if (project == null)
+				return BadRequest("Project not found");
+			if (!_access.AllowManageProject(project))
+				return Forbid();
 
 			var res = await _GetProjectTranchesEx(project);
 			return Ok(res);
