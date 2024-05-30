@@ -201,8 +201,6 @@ namespace DocumentsQA_Backend.Controllers {
 		[HttpGet("users")]
 		public async Task<IActionResult> GetProjectUsers([FromQuery] int details = -1) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			// Exclude managers
 			var listUsers = project.Users
@@ -245,26 +243,32 @@ namespace DocumentsQA_Backend.Controllers {
 				.Select(x => x.Id)
 				.ToList();
 
-			if (details >= 0) {
-				var trancheUsersMap = ProjectHelpers.GetTrancheUserAccessesMap(project);
-				var trancheDataMap = project.Tranches
-					.ToDictionary(x => x.Id, x => x.ToJsonTable(0));
+			if (_access.IsSuperUser()) {
+				if (details >= 0) {
+					var trancheUsersMap = ProjectHelpers.GetTrancheUserAccessesMap(project);
+					var trancheDataMap = project.Tranches
+						.ToDictionary(x => x.Id, x => x.ToJsonTable(0));
 
-				var mapUsers = await Queries.GetUsersMapFromIds(_dataContext, listManagerIds);
-				var listRes = mapUsers
-					.Select(x => {
-						var tableBase = x.Value.ToJsonTable(details);
-						tableBase["tranches"] = trancheUsersMap
-							.Where(y => y.Value.Contains(x.Key))
-							.Select(y => trancheDataMap[y.Key.Id])
-							.ToList();
-						return tableBase;
-					});
+					var mapUsers = await Queries.GetUsersMapFromIds(_dataContext, listManagerIds);
+					var listRes = mapUsers
+						.Select(x => {
+							var tableBase = x.Value.ToJsonTable(details);
+							tableBase["tranches"] = trancheUsersMap
+								.Where(y => y.Value.Contains(x.Key))
+								.Select(y => trancheDataMap[y.Key.Id])
+								.ToList();
+							return tableBase;
+						});
 
-				return Ok(listRes);
+					return Ok(listRes);
+				}
+				else {
+					return Ok(listManagerIds);
+				}
 			}
 			else {
-				return Ok(listManagerIds);
+				var mapUsers = await Queries.GetUsersMapFromIds(_dataContext, listManagerIds);
+				return Ok(mapUsers.Values.Select(x => x.Email));
 			}
 		}
 
