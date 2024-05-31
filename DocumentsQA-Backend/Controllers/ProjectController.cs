@@ -324,6 +324,22 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
+		private async Task<string?> _ValidateProject(Project project) {
+			if (project.ProjectEndDate <= DateTime.Now.AddMinutes(10))
+				return "End date cannot be in the past";
+
+			if (project.ProjectStartDate >= project.ProjectEndDate)
+				return "Start date must be before end date";
+
+			bool duplicate = await _dataContext.Projects
+				.Where(x => x.Id != project.Id)
+				.AnyAsync(x => x.Name == project.Name);
+			if (duplicate)
+				return "Project ID must be unique";
+
+			return null;
+		}
+
 		[HttpPost("create")]
 		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> CreateProject([FromBody] CreateProjectDTO dto) {
@@ -335,6 +351,10 @@ namespace DocumentsQA_Backend.Controllers {
 				ProjectEndDate = dto.DateEnd!.Value,
 				LastEmailSentDate = DateTime.MinValue,
 			};
+
+			var error = await _ValidateProject(project);
+			if (error != null)
+				return BadRequest(error);
 
 			// Wrap all operations in a transaction so failure would revert the entire thing
 			using (var transaction = _dataContext.Database.BeginTransaction()) {
@@ -360,8 +380,6 @@ namespace DocumentsQA_Backend.Controllers {
 			if (!_access.IsAdmin())
 				return Forbid();
 
-			int projectId = project.Id;
-
 			if (dto.Name != null) {
 				project.Name = dto.Name;
 			}
@@ -370,34 +388,21 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 			if (dto.Description != null) {
 				var sanitizer = new Ganss.Xss.HtmlSanitizer();
-
 				project.Description = sanitizer.Sanitize(dto.Description);
 			}
 			if (dto.Company != null) {
 				project.CompanyName = dto.Company;
 			}
 			if (dto.DateStart != null) {
-				var date = dto.DateStart.Value;
 				project.ProjectStartDate = dto.DateStart.Value;
 			}
 			if (dto.DateEnd != null) {
-				var date = dto.DateEnd.Value;
-				if (date <= DateTime.Now.AddHours(0.5))
-					return BadRequest("End date cannot be in the past");
-
 				project.ProjectEndDate = dto.DateEnd.Value;
 			}
 
-			{
-				if (project.ProjectStartDate >= project.ProjectEndDate)
-					return BadRequest("Start date must be before end date");
-
-				bool duplicate = await _dataContext.Projects
-					.Where(x => x.Id != projectId)
-					.AnyAsync(x => x.Name == dto.Name);
-				if (duplicate)
-					return BadRequest("Duplicated name");
-			}
+			var error = _ValidateProject(project);
+			if (error != null)
+				return BadRequest(error);
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
