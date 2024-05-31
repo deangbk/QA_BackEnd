@@ -336,27 +336,16 @@ namespace DocumentsQA_Backend.Controllers {
 				LastEmailSentDate = DateTime.MinValue,
 			};
 
-			List<string> tranches;
-			try {
-				tranches = dto.InitialTranches
-					.Split(",")
-					.Select(x => x.Trim().Truncate(16))
-					.Where(x => x.Length > 0)
-					.ToList();
-			}
-			catch (Exception) {
-				return BadRequest("Tranches: incorrect input format");
-			}
-
 			// Wrap all operations in a transaction so failure would revert the entire thing
 			using (var transaction = _dataContext.Database.BeginTransaction()) {
 				_dataContext.Projects.Add(project);
 				await _dataContext.SaveChangesAsync();
 
-				project.Tranches = tranches.Select(x => new Tranche {
-					ProjectId = project.Id,
-					Name = x,
-				}).ToList();
+				project.Tranches = dto.InitialTranches
+					.Select(x => new Tranche {
+						ProjectId = project.Id,
+						Name = x,
+					}).ToList();
 				await _dataContext.SaveChangesAsync();
 
 				await transaction.CommitAsync();

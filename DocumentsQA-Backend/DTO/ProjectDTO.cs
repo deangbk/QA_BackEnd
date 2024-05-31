@@ -15,6 +15,7 @@ namespace DocumentsQA_Backend.DTO {
 		public string Name { get; set; } = null!;
 
 		[MaxLength(256)]
+		[JsonPropertyName("display_name")]
 		public string DisplayName { get; set; } = null!;
 
 		[MaxLength(256)]
@@ -27,10 +28,13 @@ namespace DocumentsQA_Backend.DTO {
 		[Required] public DateTime? DateEnd { get; set; }
 
 		[JsonPropertyName("tranches")]
-		public string InitialTranches { get; set; } = null!;
+		public List<string> InitialTranches { get; set; } = new();
 	}
 
 	public class EditProjectDTO {
+		[MaxLength(256)]
+		[MinLength(4)]
+		[RegularExpression(@"[a-zA-Z0-9_-]+")]
 		public string? Name { get; set; }
 
 		[JsonPropertyName("display_name")] 
