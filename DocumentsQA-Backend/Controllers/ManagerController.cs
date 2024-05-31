@@ -21,7 +21,7 @@ using DocumentsQA_Backend.Extensions;
 
 namespace DocumentsQA_Backend.Controllers {
 	[Route("api/manage")]
-	[Authorize]
+	[Authorize(Policy = "Project_Manage")]
 	public class ManagerController : Controller {
 		private readonly ILogger<ManagerController> _logger;
 

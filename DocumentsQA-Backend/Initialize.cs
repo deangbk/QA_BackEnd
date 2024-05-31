@@ -115,16 +115,19 @@ namespace DocumentsQA_Backend {
 						};
 					});
 
-				/*
 				services.AddAuthorization(options => {
-					options.AddPolicy("IsAdmin", 
-						policy => policy.RequireClaim("role", AppRole.Admin.Name));
-					options.AddPolicy("IsManager", 
-						policy => policy.RequireClaim("role", AppRole.Manager.Name));
-					options.AddPolicy("IsStaff", 
-						policy => policy.RequireClaim("role", AppRole.Admin.Name, AppRole.Manager.Name));
+					options.AddPolicy("Project_Access", 
+						policy => policy.Requirements.Add(new ProjectAccessRequirement(false)));
+					options.AddPolicy("Project_Manage",
+						policy => policy.Requirements.Add(new ProjectAccessRequirement(true)));
+
+					options.AddPolicy("Role_Staff",
+						policy => policy.Requirements.Add(new RoleRequirement(AppRole.Manager)));
+					options.AddPolicy("Role_Admin",
+						policy => policy.Requirements.Add(new RoleRequirement(AppRole.Admin)));
 				});
-				*/
+				services.AddTransient<IAuthorizationHandler, ProjectAccessPolicyHandler>();
+				services.AddTransient<IAuthorizationHandler, RolePolicyHandler>();
 
 				services.AddScoped<IAccessService, AccessService>();
 			}
@@ -174,18 +177,18 @@ namespace DocumentsQA_Backend {
 
 			// Configure middlewares
 			{
-			app.UseAuthentication();
+				app.UseAuthentication();
 
-			app.UseHttpsRedirection();
+				app.UseHttpsRedirection();
 
-			app.UseRouting();
+				app.UseRouting();
 
-			app.UseAuthorization();
+				app.UseAuthorization();
 
 				// Custom middlewares
 
 				app.UseMiddleware<ExceptionMiddleware>();
-				app.UseMiddleware<ProjectAccessMiddleware>();
+				//app.UseMiddleware<ProjectAccessMiddleware>();
 			}
 
 			app.UseCors();

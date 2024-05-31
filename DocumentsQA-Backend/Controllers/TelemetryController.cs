@@ -22,7 +22,7 @@ using DocumentsQA_Backend.Repository;
 namespace DocumentsQA_Backend.Controllers {
 	[Route("api/log")]
 	[ApiController]
-	[Authorize]
+	[Authorize(Policy = "Project_Access")]
 	public class TelemetryController : Controller {
 		private readonly ILogger<TelemetryController> _logger;
 

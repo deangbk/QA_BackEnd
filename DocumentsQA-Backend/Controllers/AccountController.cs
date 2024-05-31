@@ -21,7 +21,7 @@ namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/account")]
-	[Authorize]
+	[Authorize(Policy = "Project_Access")]
 	public class AccountController : Controller {
 		private readonly ILogger<AccountController> _logger;
 
@@ -58,13 +58,11 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPost("{pid}")]
+		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> CreateAccount(int pid, [FromBody] CreateAccountDTO dto) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
 			if (project == null)
 				return BadRequest("Project not found");
-
-			if (!_access.IsAdmin())
-				return Forbid();
 
 			Tranche? tranche = project.Tranches.Find(x => x.Name == dto.Name);
 			if (tranche == null)
@@ -89,13 +87,11 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPut("edit/{aid}")]
+		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> EditAccount(int aid, [FromBody] EditAccountDTO dto) {
 			Account? account = await Queries.GetAccountFromId(_dataContext, aid);
 			if (account == null)
 				return BadRequest("Account not found");
-
-			if (!_access.IsAdmin())
-				return Forbid();
 
 			Project project = account.Project;
 			Tranche tranche = account.Tranche;
@@ -136,13 +132,11 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpDelete("{aid}")]
+		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> DeleteAccount(int aid) {
 			Account? account = await Queries.GetAccountFromId(_dataContext, aid);
 			if (account == null)
 				return BadRequest("Account not found");
-
-			if (!_access.IsAdmin())
-				return Forbid();
 
 			_dataContext.Accounts.Remove(account);
 

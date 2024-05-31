@@ -25,6 +25,8 @@ namespace DocumentsQA_Backend.Data {
 		}
 		*/
 
+		// TODO: Add project guards so callers cannot access objects from other projects
+
 		public static Task<Project?> GetProjectFromId(DataContext dataContext, int id)
 			=> GetEntityFromId(dataContext.Projects, id);
 		public static Task<Tranche?> GetTrancheFromId(DataContext dataContext, int id)

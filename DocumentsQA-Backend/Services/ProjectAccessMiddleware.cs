@@ -16,75 +16,74 @@ using DocumentsQA_Backend.Data;
 using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Services {
-	public class ProjectAccessMiddleware {
-		// List of controllers to not (automatically) check for project ID claim
-		private static readonly string[] AllowUnauthRoutes = new[] {
-			"Admin",		// Don't unnecessarily restrict admins
-			"UserAuth",
-			"Unauthorised",
-		};
+	public class ProjectAccessRequirement : IAuthorizationRequirement {
+		public bool Manager { get; set; }
 
-		// List of controllers where manager access is required
-		private static readonly string[] RequireElevatedRoutes = new[] {
-			"Manager",
-		};
+		public ProjectAccessRequirement() => Manager = false;
+		public ProjectAccessRequirement(bool manager) => Manager = manager;
+	}
+	public class ProjectAccessPolicyHandler : AuthorizationHandler<ProjectAccessRequirement> {
+		private readonly DataContext _dataContext;
+		private readonly IAccessService _access;
 
-		// -----------------------------------------------------
-
-		private readonly RequestDelegate _next;
-
-		public ProjectAccessMiddleware(RequestDelegate next) {
-			_next = next;
+		public ProjectAccessPolicyHandler(DataContext dataContext, IAccessService access) {
+			_dataContext = dataContext;
+			_access = access;
 		}
 
-		// DataContext and IAccessService are scoped services, and cannot be injected into the middleware ctor
-		public async Task Invoke(HttpContext context, DataContext dataContext, IAccessService access) {
-			context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+		protected override async Task HandleRequirementAsync(
+			AuthorizationHandlerContext context, ProjectAccessRequirement requirement)
+		{
+			if (!_access.IsValidUser()) {
+				context.Fail(new AuthorizationFailureReason(this, "Invalid credentials"));
+				return;
+			}
 
-			var controllerValue = context.GetRouteValue("controller");
+			Project? project = await Queries.GetProjectFromId(_dataContext, _access.GetProjectID());
+			if (project == null) {
+				context.Fail(new AuthorizationFailureReason(this, "Project not found"));
+				return;
+			}
+			else {
+				bool bAllow = requirement.Manager ?
+					_access.AllowManageProject(project) :
+					_access.AllowToProject(project);
 
-			if (controllerValue != null) {
-				string controller = controllerValue
-					.ToString()!;
-
-				if (!AllowUnauthRoutes.Contains(controller)) {
-					Project? project = await Queries.GetProjectFromId(dataContext, access.GetProjectID());
-
-					var _CreateErrorResp = async (HttpStatusCode code, string text) => {
-						context.Response.ContentType = "text/plain";
-						context.Response.StatusCode = (int)code;
-
-						await context.Response.WriteAsync(text);
-					};
-
-					if (project == null) {
-						await _CreateErrorResp(HttpStatusCode.NotFound, 
-							"Project not found");
-						return;
-					}
-
-					if (!access.IsValidUser()) {
-						await _CreateErrorResp(HttpStatusCode.Unauthorized, 
-							"Invalid login token");
-						return;
-					}
-
-					bool bRequireElevated = RequireElevatedRoutes.Contains(controller);
-					bool bAllow = bRequireElevated ?
-						access.AllowManageProject(project) :
-						access.AllowToProject(project);
-
-					if (!bAllow) {
-						await _CreateErrorResp(HttpStatusCode.Forbidden,
-							"No permission to access project; " +
-							"contact project staff if you think this is an error.");
-						return;
-					}
+				if (!bAllow) {
+					context.Fail(new AuthorizationFailureReason(this, "No permission to access project"));
+					return;
 				}
 			}
 
-			// Everything OK, pass request to the next processor
-			await _next.Invoke(context);
+			context.Succeed(requirement);
+		}
+	}
+
+	public class RoleRequirement : IAuthorizationRequirement {
+		public AppRole Role { get; set; }
+
+		public RoleRequirement(AppRole role) => Role = role;
+	}
+	public class RolePolicyHandler : AuthorizationHandler<RoleRequirement> {
+		private readonly DataContext _dataContext;
+		private readonly IAccessService _access;
+
+		public RolePolicyHandler(DataContext dataContext, IAccessService access) {
+			_dataContext = dataContext;
+			_access = access;
+		}
+
+		protected override Task HandleRequirementAsync(
+			AuthorizationHandlerContext context, RoleRequirement requirement)
+		{
+			var role = _access.UserGetRole();
+			if (role != null && role.CompareTo(requirement.Role) >= 0) {
+				context.Succeed(requirement);
+			}
+			else {
+				context.Fail(new AuthorizationFailureReason(this, "Forbidden"));
+			}
+			return Task.CompletedTask;
 		}
 	}
 }

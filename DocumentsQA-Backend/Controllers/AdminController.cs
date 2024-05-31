@@ -19,7 +19,7 @@ using DocumentsQA_Backend.Repository;
 namespace DocumentsQA_Backend.Controllers {
 	[Route("api/admin")]
 	[ApiController]
-	[Authorize]
+	[Authorize(Policy = "Role_Admin")]
 	public class AdminController : Controller {
 		private readonly ILogger<AdminController> _logger;
 
@@ -45,9 +45,6 @@ namespace DocumentsQA_Backend.Controllers {
 			_roleManager = roleManager;
 
 			_adminHelper = adminHelper;
-
-			if (!_access.IsAdmin())
-				throw new AccessForbiddenException();
 		}
 
 		// -----------------------------------------------------

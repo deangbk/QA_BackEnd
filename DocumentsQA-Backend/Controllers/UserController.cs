@@ -24,6 +24,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 	[Route("api/user")]
 	[Authorize]
+	[Authorize(Policy = "Project_Access")]
 	public class UserController : Controller {
 		private readonly ILogger<UserController> _logger;
 
@@ -144,6 +145,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Deletes a user
 		/// </summary>
 		[HttpDelete("{uid}")]
+		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> DeleteUser(int uid) {
 			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
 			if (user == null)
@@ -151,10 +153,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 			if (uid == _access.GetUserID())
 				return BadRequest("Cannot delete self");
-
-			//if (!await _authHelper.CanManageUser(user))
-			if (!_access.IsAdmin())
-				return Forbid();
 
 			// DeleteAsync internally saves changes
 			await _userManager.DeleteAsync(user);
@@ -183,6 +181,7 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPut("reset/password/{uid}")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> ResetPassword(int uid) {
 			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
 			if (user == null)

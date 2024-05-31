@@ -20,7 +20,7 @@ namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/post")]
-	[Authorize]
+	[Authorize(Policy = "Project_Access")]
 	public class CommentController : Controller {
 		private readonly ILogger<CommentController> _logger;
 
@@ -62,6 +62,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Add comment to question
 		/// </summary>
 		[HttpPost("{id}/comment")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> AddComment(int id, [FromBody] PostAddCommentDTO dto) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
@@ -91,6 +92,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Remove comment question
 		/// </summary>
 		[HttpDelete("{id}/comment")]
+		[Authorize(Policy = "Role_Staff")]
 		public async Task<IActionResult> DeleteComment(int id, [FromQuery] int num) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
@@ -114,6 +116,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Remove all comment questions from a post
 		/// </summary>
 		[HttpDelete("{id}/comment/all")]
+		[Authorize(Policy = "Role_Staff")]
 		public async Task<IActionResult> DeleteAllComments(int id) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)

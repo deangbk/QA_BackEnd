@@ -21,7 +21,7 @@ namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/note")]
-	[Authorize]
+	[Authorize(Policy = "Project_Access")]
 	public class NoteController : Controller {
 		private readonly ILogger<NoteController> _logger;
 
@@ -86,10 +86,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Adds a project note
 		/// </summary>
 		[HttpPost("")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> AddNote([FromBody] AddNoteDTO dto) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			var note = new Note {
 				ProjectId = project.Id,
@@ -116,10 +115,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Removes a project note
 		/// </summary>
 		[HttpDelete("{num}")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> DeleteNote(int num) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			Note? note = project.Notes.Find(x => x.Num == num);
 			if (note == null)

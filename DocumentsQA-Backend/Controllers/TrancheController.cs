@@ -20,7 +20,7 @@ namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/tranche")]
-	[Authorize]
+	[Authorize(Policy = "Project_Access")]
 	public class TrancheController : Controller {
 		private readonly ILogger<TrancheController> _logger;
 
@@ -62,10 +62,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Adds new tranche
 		/// </summary>
 		[HttpPost("add")]
+		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> CreateTranche([FromBody] CreateTrancheDTO dto) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.IsAdmin())
-				return Forbid();
 
 			if (project.Tranches.Any(x => x.Name == dto.Name)) {
 				return BadRequest("Duplicated tranche name");
@@ -85,14 +84,13 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Edits tranche information
 		/// </summary>
 		[HttpPut("edit/{id}")]
+		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> EditTranche([FromRoute] int id, [FromBody] EditTrancheDTO dto) {
 			var project = await _repoProject.GetProjectAsync();
 
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, id);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
-			if (!_access.IsAdmin())
-				return Forbid();
 
 			if (dto.Name != null && dto.Name != tranche.Name) {
 				if (project.Tranches.Any(x => x.Name == dto.Name)) {
@@ -109,12 +107,11 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Deletes tranche
 		/// </summary>
 		[HttpDelete("{id}")]
+		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> DeleteTranche([FromRoute] int id) {
 			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, id);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
-			if (!_access.IsAdmin())
-				return Forbid();
 
 			_dataContext.Tranches.Remove(tranche);
 			await _dataContext.SaveChangesAsync();

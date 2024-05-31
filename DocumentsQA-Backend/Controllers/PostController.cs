@@ -21,7 +21,7 @@ namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/post")]
-	[Authorize]
+	[Authorize(Policy = "Project_Access")]
 	public class PostController : Controller {
 		private readonly ILogger<PostController> _logger;
 
@@ -110,10 +110,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Adds an answer to a question
 		/// </summary>
 		[HttpPut("answer")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> SetAnswer([FromBody] PostSetAnswerDTO dto) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			Question? question = await Queries.GetQuestionFromId(_dataContext, dto.Id!.Value);
 			if (question == null)
@@ -138,10 +137,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Edits a question, sent to post temporaily to fix a bug will fix later--- Nat don't change it
 		/// </summary>
 		[HttpPost("edit")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> EditQuestion([FromBody] PostEditDTO dto) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			Question? question = await Queries.GetQuestionFromId(_dataContext, dto.Id!.Value);
 			if (question == null)
@@ -157,6 +155,7 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpDelete("{id}")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> DeleteQuestion(int id) {
 			Question? question = await Queries.GetQuestionFromId(_dataContext, id);
 			if (question == null)
@@ -177,10 +176,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Sets the approval status of questions or answers
 		/// </summary>
 		[HttpPut("approve")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> SetPostsApproval([FromBody] PostSetApproveDTO dto, [FromQuery] string mode) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			int modeI = mode switch {
 				"q" => 0,
@@ -317,10 +315,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Edit questions in bulk
 		/// </summary>
 		[HttpPut("bulk/edit")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> EditQuestionMultiple([FromBody] List<PostEditDTO> dtos) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			var ids = dtos.Select(x => x.Id!.Value);
 			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);
@@ -350,10 +347,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Adds answers to questions in bulk
 		/// </summary>
 		[HttpPut("bulk/answer")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> SetAnswerMultiple([FromBody] List<PostSetAnswerDTO> dtos) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			var ids = dtos.Select(x => x.Id!.Value);
 			var mapQuestions = await Queries.GetQuestionsMapFromIds(_dataContext, ids);

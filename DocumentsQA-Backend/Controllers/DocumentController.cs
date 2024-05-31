@@ -26,7 +26,7 @@ namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/document")]
-	[Authorize]
+	[Authorize(Policy = "Project_Access")]
 	public class DocumentController : Controller {
 		private readonly ILogger<DocumentController> _logger;
 
@@ -258,10 +258,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Uploads documents
 		/// </summary>
 		[HttpPost("upload/file")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> UploadDocument([FromForm] DocumentUploadWithFileDTO dto) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			List<Document> documents = new();
 
@@ -334,10 +333,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Uploads documents by adding new entries to the system. No file is created anywhere
 		/// </summary>
 		[HttpPost("upload")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> UploadDocumentEntryOnly([FromBody] List<DocumentUploadDTO> dtos) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			List<Document> documents = new();
 
@@ -400,10 +398,9 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Bulk edits documents info
 		/// </summary>
 		[HttpPut("bulk/edit")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> EditDocuments([FromBody] List<DocumentEditDTO> dtos) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			var ids = dtos.Select(x => x.Id!.Value).ToList();
 			var mapDocuments = await _GetDocumentsMapAndCheckAccess(project, ids);
@@ -454,10 +451,9 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		[HttpDelete("{id}")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> DeleteDocument(int id) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			Document? document = await Queries.GetDocumentFromId(_dataContext, id);
 			if (document == null)
@@ -473,10 +469,9 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPost("bulk/delete")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> DeleteDocumentMultiple([FromBody] List<int> docIds) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.AllowManageProject(project))
-				return Forbid();
 
 			var mapDocuments = await _GetDocumentsMapAndCheckAccess(project, docIds);
 

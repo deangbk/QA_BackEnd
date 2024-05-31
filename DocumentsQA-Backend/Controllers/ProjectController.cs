@@ -22,7 +22,7 @@ namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/project")]
-	[Authorize]
+	[Authorize(Policy = "Project_Access")]
 	public class ProjectController : Controller {
 		private readonly ILogger<ProjectController> _logger;
 
@@ -68,10 +68,8 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Gets project information
 		/// </summary>
 		[HttpGet("all")]
+		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> GetAllProjects() {
-			if (!_access.IsAdmin())
-				return Forbid();
-
 			var projects = await _dataContext.Projects
 				.OrderBy(x => x.Id)
 				.ToListAsync();
@@ -170,6 +168,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Gets expanded project tranches information
 		/// </summary>
 		[HttpGet("tranches/ex")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> GetProjectTranchesEx() {
 			var project = await _repoProject.GetProjectAsync();
 
@@ -181,6 +180,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// Gets expanded project tranches information
 		/// </summary>
 		[HttpGet("{id}/tranches/ex")]
+		[Authorize(Policy = "Role_Staff")]
 		public async Task<IActionResult> GetProjectTranchesEx(int id) {
 			Project? project = await Queries.GetProjectFromId(_dataContext, id);
 			if (project == null)
@@ -199,6 +199,7 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <para>Admins are not included</para>
 		/// </summary>
 		[HttpGet("users")]
+		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> GetProjectUsers([FromQuery] int details = -1) {
 			var project = await _repoProject.GetProjectAsync();
 
@@ -324,10 +325,8 @@ namespace DocumentsQA_Backend.Controllers {
 		// -----------------------------------------------------
 
 		[HttpPost("create")]
+		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> CreateProject([FromBody] CreateProjectDTO dto) {
-			if (_access.IsAdmin())
-				return Forbid();
-
 			var project = new Project {
 				Name = dto.Name,
 				DisplayName = dto.DisplayName,
