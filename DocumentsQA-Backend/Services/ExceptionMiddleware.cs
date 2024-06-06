@@ -17,6 +17,20 @@ namespace DocumentsQA_Backend.Services {
 		JsonTable GetFormattedResponse();
 	}
 
+	public class BadRequestException : Exception, IFormattableException {
+		public BadRequestException() : base("Bad request") { }
+		public BadRequestException(string message) : base(message) { }
+		public BadRequestException(string message, Exception inner)
+			: base(message, inner) { }
+
+		public JsonTable GetFormattedResponse() {
+			return new() {
+				["status"] = HttpStatusCode.BadRequest,
+				["title"] = "Bad Request",
+				["errors"] = new List<string> { Message },
+			};
+		}
+	}
 	public class AccessUnauthorizedException : Exception, IFormattableException {
 		public AccessUnauthorizedException() : base("Unauthorized access, please add a valid credentials token.") { }
 		public AccessUnauthorizedException(string message) : base(message) { }
@@ -67,6 +81,29 @@ namespace DocumentsQA_Backend.Services {
 			};
 		}
 	}
+	public class CustomCodeException : Exception, IFormattableException {
+		public HttpStatusCode Code { get; set; } = HttpStatusCode.InternalServerError;
+
+		public CustomCodeException() : base("Unknown error") { }
+		public CustomCodeException(HttpStatusCode code, string message) 
+			: base(message)
+		{
+			Code = code;
+		}
+		public CustomCodeException(HttpStatusCode code, string message, Exception inner)
+			: base(message, inner)
+		{
+			Code = code;
+		}
+
+		public JsonTable GetFormattedResponse() {
+			return new() {
+				["status"] = Code,
+				["title"] = "Error",
+				["errors"] = new List<string> { Message },
+			};
+		}
+	}
 
 	public class ExceptionMiddleware {
 		private readonly RequestDelegate _next;
@@ -94,6 +131,7 @@ namespace DocumentsQA_Backend.Services {
 				AccessUnauthorizedException		=> HttpStatusCode.Unauthorized,
 				AccessForbiddenException		=> HttpStatusCode.Forbidden,
 				InvalidModelStateException		=> HttpStatusCode.BadRequest,
+				CustomCodeException cce			=> cce.Code,
 				_ => HttpStatusCode.InternalServerError,
 			});
 
