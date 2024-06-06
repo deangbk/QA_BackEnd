@@ -26,7 +26,9 @@ namespace DocumentsQA_Backend.Services {
 		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
-		public ProjectAccessPolicyHandler(DataContext dataContext, IAccessService access) {
+		public ProjectAccessPolicyHandler(
+			DataContext dataContext, IAccessService access)
+		{
 			_dataContext = dataContext;
 			_access = access;
 		}
@@ -35,23 +37,25 @@ namespace DocumentsQA_Backend.Services {
 			AuthorizationHandlerContext context, ProjectAccessRequirement requirement)
 		{
 			if (!_access.IsValidUser()) {
-				context.Fail(new AuthorizationFailureReason(this, "Invalid credentials"));
+				context.Fail(new AuthorizationFailureReason(this, "Unauthorized"));
 				return;
 			}
 
-			Project? project = await Queries.GetProjectFromId(_dataContext, _access.GetProjectID());
-			if (project == null) {
-				context.Fail(new AuthorizationFailureReason(this, "Project not found"));
-				return;
-			}
-			else {
-				bool bAllow = requirement.Manager ?
-					_access.AllowManageProject(project) :
-					_access.AllowToProject(project);
-
-				if (!bAllow) {
-					context.Fail(new AuthorizationFailureReason(this, "No permission to access project"));
+			if (!_access.IsAdmin()) {
+				Project? project = await Queries.GetProjectFromId(_dataContext, _access.GetProjectID());
+				if (project == null) {
+					context.Fail(new AuthorizationFailureReason(this, "Project not found"));
 					return;
+				}
+				else {
+					bool bAllow = requirement.Manager ?
+						_access.AllowManageProject(project) :
+						_access.AllowToProject(project);
+
+					if (!bAllow) {
+						context.Fail(new AuthorizationFailureReason(this, "Forbidden"));
+						return;
+					}
 				}
 			}
 
@@ -68,12 +72,14 @@ namespace DocumentsQA_Backend.Services {
 		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
-		public RolePolicyHandler(DataContext dataContext, IAccessService access) {
+		public RolePolicyHandler(
+			DataContext dataContext, IAccessService access)
+		{
 			_dataContext = dataContext;
 			_access = access;
 		}
 
-		protected override Task HandleRequirementAsync(
+		protected override async Task HandleRequirementAsync(
 			AuthorizationHandlerContext context, RoleRequirement requirement)
 		{
 			var role = _access.UserGetRole();
@@ -83,7 +89,6 @@ namespace DocumentsQA_Backend.Services {
 			else {
 				context.Fail(new AuthorizationFailureReason(this, "Forbidden"));
 			}
-			return Task.CompletedTask;
 		}
 	}
 }
