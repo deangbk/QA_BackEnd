@@ -4,11 +4,13 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Runtime.ExceptionServices;
 
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 using DocumentsQA_Backend.Extensions;
+using DocumentsQA_Backend.Helpers;
 
 namespace DocumentsQA_Backend.Services {
 	using JsonTable = Dictionary<string, object>;
@@ -125,24 +127,25 @@ namespace DocumentsQA_Backend.Services {
 			if (e is null)
 				return;
 
-			context.Response.ContentType = "text/plain";
-
-			context.Response.StatusCode = (int)(e switch {
+			var code = e switch {
+				BadRequestException				=> HttpStatusCode.BadRequest,
 				AccessUnauthorizedException		=> HttpStatusCode.Unauthorized,
 				AccessForbiddenException		=> HttpStatusCode.Forbidden,
 				InvalidModelStateException		=> HttpStatusCode.BadRequest,
 				CustomCodeException cce			=> cce.Code,
 				_ => HttpStatusCode.InternalServerError,
-			});
+			};
 
 			if (e is IFormattableException ece) {
 				var resp = ece.GetFormattedResponse();
 				//resp["status"] = (int)code;
 
-				await context.Response.WriteAsync(JsonSerializer.Serialize(resp));
+				context.Response.ContentType = "application/json";
+				await context.Response.SetHttpResponseError((int)code, JsonSerializer.Serialize(resp));
 			}
 			else {
-				await context.Response.WriteAsync(e.Message);
+				context.Response.ContentType = "text/plain";
+				await context.Response.SetHttpResponseError((int)code, e.Message);
 			}
 		}
 	}

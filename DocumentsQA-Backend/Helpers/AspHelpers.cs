@@ -22,4 +22,11 @@ namespace DocumentsQA_Backend.Helpers {
 		public static readonly string Name = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name";
 		public static readonly string Role = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/role";
 	}
+
+	public static class AspHelpers {
+		public static async Task SetHttpResponseError(this HttpResponse response, int code, string message) {
+			response.StatusCode = code;
+			await response.WriteAsync(message);
+		}
+	}
 }
