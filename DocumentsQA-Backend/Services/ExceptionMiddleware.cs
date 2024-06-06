@@ -135,6 +135,11 @@ namespace DocumentsQA_Backend.Services {
 				CustomCodeException cce			=> cce.Code,
 				_ => HttpStatusCode.InternalServerError,
 			};
+#if DEBUG
+			if (code == HttpStatusCode.InternalServerError) {
+				ExceptionDispatchInfo.Capture(e.InnerException!).Throw();
+			}
+#endif
 
 			if (e is IFormattableException ece) {
 				var resp = ece.GetFormattedResponse();
