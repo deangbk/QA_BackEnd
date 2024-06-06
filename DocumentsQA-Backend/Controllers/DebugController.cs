@@ -25,25 +25,36 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly DataContext _dataContext;
 		private readonly ILogger<DebugController> _logger;
 
+		private readonly IConfiguration _configuration;
+
 		private readonly UserManager<AppUser> _userManager;
 		private readonly SignInManager<AppUser> _signinManager;
 		private readonly RoleManager<AppRole> _roleManager;
 
 		private readonly IEmailService _emailService;
 
-		public DebugController(DataContext dataContext, ILogger<DebugController> logger,
+		public DebugController(
+			DataContext dataContext, ILogger<DebugController> logger,
+			IConfiguration configuration,
 			UserManager<AppUser> userManager, SignInManager<AppUser> signinManager, RoleManager<AppRole> roleManager,
-			IEmailService emailService)
-		{
+			IEmailService emailService) {
 
 			_dataContext = dataContext;
 			_logger = logger;
+
+			_configuration = configuration;
 
 			_userManager = userManager;
 			_signinManager = signinManager;
 			_roleManager = roleManager;
 
 			_emailService = emailService;
+
+#if !DEBUG
+			{
+				throw new AccessForbiddenException();
+			}
+#endif
 		}
 
 		// -----------------------------------------------------
