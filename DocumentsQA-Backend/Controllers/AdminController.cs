@@ -17,6 +17,8 @@ using DocumentsQA_Backend.Extensions;
 using DocumentsQA_Backend.Repository;
 
 namespace DocumentsQA_Backend.Controllers {
+	using JsonTable = Dictionary<string, object>;
+
 	[Route("api/admin")]
 	[ApiController]
 	[Authorize(Policy = "Role_Admin")]
@@ -26,17 +28,26 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly DataContext _dataContext;
 		private readonly IAccessService _access;
 
+		private readonly IEmailService _emailService;
+
 		private readonly UserManager<AppUser> _userManager;
 		private readonly RoleManager<AppRole> _roleManager;
 
 		private readonly AdminHelpers _adminHelper;
 
-		public AdminController(ILogger<AdminController> logger, 
+		public AdminController(
+			ILogger<AdminController> logger,
 			DataContext dataContext, IAccessService access, 
+
+			IEmailService emailService,
+
 			UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, 
+
 			AdminHelpers adminHelper)
 		{
 			_logger = logger;
+
+			_emailService = emailService;
 
 			_dataContext = dataContext;
 			_access = access;
@@ -210,6 +221,80 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var rows = await _dataContext.SaveChangesAsync();
 			return Ok(rows);
+		}
+
+		// -----------------------------------------------------
+
+		/// <summary>
+		/// Gets list of all admins
+		/// </summary>
+		[HttpGet("list")]
+		public async Task<IActionResult> GetAdmins() {
+			var listAdmin = await _userManager.GetUsersInRoleAsync(AppRole.Admin.Name);
+
+			return Ok(listAdmin.Select(x => x.ToJsonTable(1)));
+		}
+
+		/// <summary>
+		/// Creates an admin
+		/// </summary>
+		[HttpPost("create")]
+		public async Task<IActionResult> CreateAdmin([FromBody] CreateAdminDTO dto) {
+			var date = DateTime.Now;
+			var rnd = new Random(date.GetHashCode());
+
+			var user = new AppUser {
+				Email = dto.Email,
+				UserName = dto.Email,
+				DisplayName = dto.Email,
+				Company = "system",
+				DateCreated = date,
+			};
+
+			var password = AuthHelpers.GeneratePassword(rnd, 12);
+
+			var result = await _userManager.CreateAsync(user, password);
+			if (!result.Succeeded)
+				return BadRequest(result.Errors);
+
+			{
+				await _adminHelper.GrantUserRole(user, AppRole.Admin);
+			}
+
+			{
+				var composer = new MailMessageComposerCreateAdmin() {
+					User = user,
+					Password = password,
+				};
+
+				MailData mailData = new() {
+					Recipients = new() { dto.Email },
+					Subject = composer.GetSubject(),
+					Message = composer.GetMessage(),
+				};
+				await _emailService.SendMail(mailData);
+			}
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+	}
+
+	class MailMessageComposerCreateAdmin : IMailMessageComposer {
+		public AppUser User { get; set; } = null!;
+		public string Password { get; set; } = null!;
+
+		public string GetSubject() => "You have been granted Admin Credentials";
+		public string GetMessage() {
+			// TODO: Make this pretty
+
+			string message = $"<p>Your password is \"{Password}\"</p>";
+
+			string messageHtml = "<html>";
+			messageHtml += "<head><style>p { margin: 4px; }</style></head>";
+			messageHtml += "<body>" + message + "</body></html>";
+
+			return messageHtml;
 		}
 	}
 }

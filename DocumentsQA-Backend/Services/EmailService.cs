@@ -180,6 +180,7 @@ namespace DocumentsQA_Backend.Services {
 
 	public interface IEmailService
 	{
+		public Task<bool> SendMail(MailData data);
 		public Task<bool> SendDailyEmails();
 		public Task<bool> SendNewUserEmail(AppUser user);
 		public Task<bool> SendTestEmail(string email);
@@ -203,7 +204,7 @@ namespace DocumentsQA_Backend.Services {
 
 		// -----------------------------------------------------
 
-		private async Task<bool> _SendMail(MailData data)
+		public async Task<bool> SendMail(MailData data)
 		{
 			/*
 			var (host, from, pass, port, ssl) = (
@@ -522,7 +523,7 @@ namespace DocumentsQA_Backend.Services {
 				Recipients = sendEmails,
 				Message = composer.GetMessage(),
 			};
-			return await _SendMail(mailData);
+			return await SendMail(mailData);
 		}
 	}
 }

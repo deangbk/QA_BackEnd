@@ -6,6 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace DocumentsQA_Backend.DTO {
+	public class CreateAdminDTO {
+		public string Email { get; set; } = null!;
+	}
+
 	public class AddUserDTO {
 		public string Email { get; set; } = null!;
 		public string Name { get; set; } = null!;
