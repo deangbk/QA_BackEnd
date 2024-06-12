@@ -23,7 +23,6 @@ namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/user")]
-	[Authorize]
 	[Authorize(Policy = "Project_Access")]
 	public class UserController : Controller {
 		private readonly ILogger<UserController> _logger;
@@ -162,7 +161,9 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		[HttpPut("edit/password")]
+		[HttpPut("password/change")]
+		[AllowAnonymous]
+		[Authorize]
 		public async Task<IActionResult> ChangePassword([FromBody] PasswordChangeDTO dto) {
 			int userId = _access.GetUserID();
 			AppUser? user = await Queries.GetUserFromId(_dataContext, userId);
@@ -171,16 +172,18 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var res = await _userManager.ChangePasswordAsync(user, dto.Old, dto.New);
 			if (res == null || !res.Succeeded) {
-				return res == null ?
-					StatusCode(500) :
-					BadRequest(res.Errors);
+				if (res == null)
+					return StatusCode(500);
+
+				var topErr = res.Errors.First();
+				return BadRequest($"{topErr.Code}: {topErr.Description}");
 			}
 
 			await _dataContext.SaveChangesAsync();
 			return Ok();
 		}
 
-		[HttpPut("reset/password/{uid}")]
+		[HttpPut("password/reset/{uid}")]
 		[Authorize(Policy = "Project_Manage")]
 		public async Task<IActionResult> ResetPassword(int uid) {
 			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
