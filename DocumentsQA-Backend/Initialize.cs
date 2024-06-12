@@ -74,7 +74,7 @@ namespace DocumentsQA_Backend {
 					options.Password.RequiredUniqueChars = 2;
 
 					options.Password.RequireNonAlphanumeric = false;
-					options.Password.RequireLowercase = true;
+					options.Password.RequireLowercase = false;
 					options.Password.RequireUppercase = false;
 					options.Password.RequireDigit = true;
 
