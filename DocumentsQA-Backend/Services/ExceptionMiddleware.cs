@@ -87,6 +87,7 @@ namespace DocumentsQA_Backend.Services {
 		public HttpStatusCode Code { get; set; } = HttpStatusCode.InternalServerError;
 
 		public CustomCodeException() : base("Unknown error") { }
+		public CustomCodeException(string message) : base(message) { }
 		public CustomCodeException(HttpStatusCode code, string message) 
 			: base(message)
 		{
