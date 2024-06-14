@@ -88,7 +88,7 @@ namespace DocumentsQA_Backend.Services {
 
 		public CustomCodeException() : base("Unknown error") { }
 		public CustomCodeException(string message) : base(message) { }
-		public CustomCodeException(HttpStatusCode code, string message) 
+		public CustomCodeException(HttpStatusCode code, string message)
 			: base(message)
 		{
 			Code = code;
@@ -138,7 +138,7 @@ namespace DocumentsQA_Backend.Services {
 			};
 #if DEBUG
 			if (code == HttpStatusCode.InternalServerError) {
-				ExceptionDispatchInfo.Capture(e.InnerException!).Throw();
+				//ExceptionDispatchInfo.Capture(e.InnerException!).Throw();
 			}
 #endif
 

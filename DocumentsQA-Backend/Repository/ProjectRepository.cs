@@ -22,7 +22,6 @@ namespace DocumentsQA_Backend.Repository {
 
 		/// <summary>
 		/// Project is guaranteed to be non-null
-		/// See <see cref="ProjectAccessMiddleware"/>
 		/// </summary>
 		public async Task<Project> GetProjectAsync() {
 			Project? project = await Queries.GetProjectFromId(_dataContext, _access.GetProjectID());
