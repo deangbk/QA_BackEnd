@@ -454,3 +454,6 @@ $RECYCLE.BIN/
 !.vscode/launch.json
 !.vscode/extensions.json
 /DocumentsQA-Backend/appsettings.json
+
+/DocumentsQA-Backend/Documents/**
+/DocumentsQA-Backend/Icons/**
