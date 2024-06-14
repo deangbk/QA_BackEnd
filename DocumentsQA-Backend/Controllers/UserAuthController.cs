@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Net;
-using System.Data;
 using System.Text;
-
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 
@@ -13,8 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.Identity.Client;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 
 using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Data;
@@ -64,17 +62,37 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private async Task<AppUser?> _TrySignIn(LoginDTO uc) {
-			// _signinManager.SignInAsync creates a cookie under the hood so don't use that
+		private async Task<AppUser?> _FindUser(string email, string? projectName) {
+			var project = projectName != null ?
+				await Queries.GetProjectFromName(_dataContext, projectName) : null;
+			return await _FindUser(email, project);
+		}
+		private async Task<AppUser?> _FindUser(string email, Project? project) {
+			var emailNorm = _userManager.NormalizeEmail(email);
 
-			var user = await _userManager.FindByEmailAsync(uc.Email);
+			AppUser? user = null;
 
-			if (user != null) {
-				var result = await _signinManager.CheckPasswordSignInAsync(user, uc.Password, false);
-				return result.Succeeded ? user : null;
+			var users = await _dataContext.Users
+				.Where(x => x.NormalizedEmail == emailNorm)
+				.ToListAsync();
+			if (users.Count > 1 && project != null) {
+				user = users.Find(x => x.ProjectId == project.Id);
+			}
+			else if (users.Count == 1) {
+				user = users.First();
 			}
 
-			return null;
+			return user;
+		}
+
+		private async Task<bool> _TrySignIn(AppUser? user, string password) {
+			// _signinManager.SignInAsync creates a cookie under the hood so don't use that
+
+			if (user != null) {
+				var result = await _signinManager.CheckPasswordSignInAsync(user, password, false);
+				return result.Succeeded;
+			}
+			return false;
 		}
 
 		// -----------------------------------------------------
@@ -103,12 +121,9 @@ namespace DocumentsQA_Backend.Controllers {
 			if (project == null)
 				throw new InvalidDataException("Invalid project");
 
-			var user = await _TrySignIn(uc);
-			if (user == null)
+			var user = await _FindUser(uc.Email, project);
+			if (user == null || (!await _TrySignIn(user, uc.Password)))
 				throw new InvalidDataException("Incorrect login");
-
-			if (user.ProjectId != null && user.ProjectId != project.Id)
-				throw new InvalidDataException("No access");
 
 			var claims = new List<Claim>();
 			{
@@ -142,15 +157,15 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		private async Task<AuthResponse> _TryLoginToAdmin(LoginDTO uc) {
-			var user = await _TrySignIn(uc);
-			if (user == null)
+			var user = await _FindUser(uc.Email, (Project?)null);
+			if (user == null || (!await _TrySignIn(user, uc.Password)))
 				throw new InvalidDataException("Incorrect login");
 
-			var userClaims = await _userManager.GetClaimsAsync(user);
-			var userRoleClaims = userClaims.Where(x => x.Type == "role").ToList();
-
-			if (user.ProjectId != null || !userRoleClaims.Any(x => x.Value == AppRole.Admin.Name))
-				throw new InvalidDataException("Incorrect login");
+			{
+				var userRoles = await _userManager.GetRolesAsync(user);
+				if (!userRoles.Any(x => x == AppRole.Admin.Name))
+					throw new InvalidDataException("Incorrect login");
+			}
 
 			var claims = new List<Claim>();
 			{
@@ -158,7 +173,10 @@ namespace DocumentsQA_Backend.Controllers {
 				claims.Add(new Claim("name", user.DisplayName));
 
 				// Add role claims for the user
-				claims.AddRange(userRoleClaims);
+				{
+					var userClaims = await _userManager.GetClaimsAsync(user);
+					claims.AddRange(userClaims.Where(x => x.Type == "role"));
+				}
 			}
 
 			var token = _CreateUserToken(claims, TimeSpan.FromHours(1));
