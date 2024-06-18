@@ -185,50 +185,53 @@ namespace DocumentsQA_Backend.Services {
 		public Task<bool> SendNewUserEmail(AppUser user);
 		public Task<bool> SendTestEmail(string email);
 	}
-	public class EmailService : IScopedProcessingService, IEmailService
-	{
-		private readonly DataContext _dataContext;
+	public class EmailService : IScopedProcessingService, IEmailService {
 		private readonly ILogger<EmailService> _logger;
+		private readonly IConfiguration _config;
+
+		private readonly DataContext _dataContext;
 
 		private readonly UserManager<AppUser> _userManager;
 
-		private readonly int _dailyEmailSchedule = 6;       // hour value -> 6:00
+		private readonly int _dailyEmailSchedule = 6;		// hour value -> 6:00
 
-		public EmailService(DataContext dataContext, ILogger<EmailService> logger, UserManager<AppUser> userManager)
-		{
-			_dataContext = dataContext;
+		public EmailService(
+			ILogger<EmailService> logger, 
+			IConfiguration config, 
+			DataContext dataContext, 
+			UserManager<AppUser> userManager
+		) {
 			_logger = logger;
+			_config = config;
+
+			_dataContext = dataContext;
 
 			_userManager = userManager;
 		}
 
 		// -----------------------------------------------------
 
-		public async Task<bool> SendMail(MailData data)
-		{
-			/*
-			var (host, from, pass, port, ssl) = (
-				"smtp.gmail.com",
-				new MailAddress("", "Awoo"),
-				"", 587, true);
-			*/
-			var (host, from, pass, port, ssl) = (
-				"mail.thainpl.com",
-				new MailAddress("eximadmin@thainpl.com", "Dragon"),
-				"annie111", 25, false);
+		public async Task<bool> SendMail(MailData data) {
+			var emailConfig = _config.GetSection("AppSettings:Email");
 
-			using SmtpClient smtp = new()
-			{
+			var host = emailConfig.GetValue<string>("Host");
+			var senderAddress = emailConfig.GetValue<string>("SenderAddress");
+			var senderDisplayName = emailConfig.GetValue<string>("SenderDisplayName");
+			var server = emailConfig.GetValue<string>("Server");
+			var password = emailConfig.GetValue<string>("Password");
+			var port = emailConfig.GetValue<int>("Port");
+			var useSsl = emailConfig.GetValue<bool>("UseSsl");
+
+			using SmtpClient smtp = new() {
 				Host = host,
 				Port = port,
-				Credentials = new NetworkCredential(from.Address, pass),
+				Credentials = new NetworkCredential(server, password),
 				DeliveryMethod = SmtpDeliveryMethod.Network,
-				EnableSsl = ssl,
+				EnableSsl = useSsl,
 			};
 
-			MailMessage message = new()
-			{
-				From = from,
+			MailMessage message = new() {
+				From = new MailAddress(senderAddress, senderDisplayName),
 				Subject = data.Subject,
 				Body = data.Message,
 				IsBodyHtml = true,
@@ -236,27 +239,26 @@ namespace DocumentsQA_Backend.Services {
 			foreach (var i in data.Recipients)
 				message.To.Add(i);
 
-			try
-			{
+			try {
 				await smtp.SendMailAsync(message);
 				return true;
 			}
-			catch (Exception e)
-			{
-				_logger.LogError(e, "Failed to send email");
+			catch (Exception e) {
+				_logger.LogError(e, "Failed to send email: {message}", e.Message);
 				return false;
 			}
 		}
 
 		// -----------------------------------------------------
 
-		public async Task Work(CancellationToken stoppingToken)
-		{
-
-			return;
-			while (!stoppingToken.IsCancellationRequested)
-			{
-				await SendDailyEmails();
+		public async Task Work(CancellationToken stoppingToken) {
+			while (!stoppingToken.IsCancellationRequested) {
+				{
+					var enable = _config.GetSection("AppSettings:Email").GetValue<bool>("EnableDailyTask");
+					if (enable) {
+						await SendDailyEmails();
+					}
+				}
 
 				DateTime now = DateTime.Now;
 				DateTime tomorrow = now.AddDays(1);
