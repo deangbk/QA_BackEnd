@@ -161,52 +161,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		[HttpPut("password/change")]
-		[AllowAnonymous]
-		[Authorize]
-		public async Task<IActionResult> ChangePassword([FromBody] PasswordChangeDTO dto) {
-			int userId = _access.GetUserID();
-			AppUser? user = await Queries.GetUserFromId(_dataContext, userId);
-			if (user == null)
-				return BadRequest("User not found");
 
-			var res = await _userManager.ChangePasswordAsync(user, dto.Old, dto.New);
-			if (res == null || !res.Succeeded) {
-				if (res == null)
-					return StatusCode(500);
-
-				var topErr = res.Errors.First();
-				return BadRequest($"{topErr.Code}: {topErr.Description}");
-			}
-
-			await _dataContext.SaveChangesAsync();
-			return Ok();
-		}
-
-		[HttpPut("password/reset/{uid}")]
-		[Authorize(Policy = "Project_Manage")]
-		public async Task<IActionResult> ResetPassword(int uid) {
-			AppUser? user = await Queries.GetUserFromId(_dataContext, uid);
-			if (user == null)
-				return BadRequest("User not found");
-
-			if (!await _authHelper.CanManageUser(user))
-				return Forbid();
-
-			var newPassword = AuthHelpers.GeneratePassword(
-				new Random(DateTime.Now.GetHashCode()), 8);
-
-			var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-
-			var res = await _userManager.ResetPasswordAsync(user, resetToken, newPassword);
-			if (res == null || !res.Succeeded) {
-				return res == null ?
-					StatusCode(500) :
-					BadRequest(res.Errors);
-			}
-
-			await _dataContext.SaveChangesAsync();
-			return Ok(newPassword);
-		}
 	}
 }

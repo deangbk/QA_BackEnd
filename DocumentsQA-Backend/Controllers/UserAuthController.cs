@@ -29,6 +29,7 @@ namespace DocumentsQA_Backend.Controllers {
 	[ApiController]
 	public class UserAuthController : ControllerBase {
 		private readonly ILogger<UserAuthController> _logger;
+		private readonly IServiceProvider _services;
 
 		private readonly DataContext _dataContext;
 
@@ -36,10 +37,12 @@ namespace DocumentsQA_Backend.Controllers {
 		private readonly SignInManager<AppUser> _signinManager;
 		private readonly RoleManager<AppRole> _roleManager;
 
+		private readonly IEmailService _emailService;
 		private readonly IEventLogRepository _repoEventLog;
 
 		public UserAuthController(
 			ILogger<UserAuthController> logger,
+			IServiceProvider services,
 
 			DataContext dataContext, 
 
@@ -47,9 +50,11 @@ namespace DocumentsQA_Backend.Controllers {
 			SignInManager<AppUser> signinManager, 
 			RoleManager<AppRole> roleManager,
 
-			IEventLogRepository repoEventLog)
-		{
+			IEmailService emailService,
+			IEventLogRepository repoEventLog
+		) {
 			_logger = logger;
+			_services = services;
 
 			_dataContext = dataContext;
 
@@ -57,6 +62,7 @@ namespace DocumentsQA_Backend.Controllers {
 			_signinManager = signinManager;
 			_roleManager = roleManager;
 
+			_emailService = emailService;
 			_repoEventLog = repoEventLog;
 		}
 
@@ -192,6 +198,177 @@ namespace DocumentsQA_Backend.Controllers {
 			catch (InvalidDataException e) {
 				return BadRequest(e.Message);
 			}
+		}
+
+		// -----------------------------------------------------
+
+		[HttpPost("password/change")]
+		[Authorize]
+		public async Task<IActionResult> ChangePassword([FromBody] PasswordChangeDTO dto) {
+			var access = _services.GetRequiredService<IAccessService>();
+
+			int userId = access.GetUserID();
+			AppUser? user = await Queries.GetUserFromId(_dataContext, userId);
+			if (user == null)
+				return BadRequest("User not found");
+
+			var res = await _userManager.ChangePasswordAsync(user, dto.Old, dto.New);
+			if (res == null || !res.Succeeded) {
+				if (res == null)
+					return StatusCode(500);
+
+				var topErr = res.Errors.First();
+				return BadRequest($"{topErr.Code}: {topErr.Description}");
+			}
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+
+		// -----------------------------------------------------
+
+		class PasswordResetToken {
+			public int UserId { get; set; }
+			public string Project { get; set; } = null!;
+			public string Token { get; set; } = null!;
+
+			public string ToBase64() {
+				var combine = $"{UserId}&{Project}&{Token}";
+				return Base64UrlEncoder.Encode(combine);
+			}
+			public static PasswordResetToken? FromBase64(string encoded) {
+				var args = Base64UrlEncoder.Decode(encoded).Split('&');
+				if (args.Length != 3)
+					return null;
+
+				try {
+					return new PasswordResetToken {
+						UserId = int.Parse(args[0]),
+						Project = args[1],
+						Token = args[2]
+					};
+				}
+				catch (Exception) {
+					return null;
+				}
+			}
+		}
+
+		[HttpPost("password/reset")]
+		public async Task<IActionResult> GenerateResetPasswordToken([FromBody] PasswordResetDTO dto) {
+			var user = await _FindUser(dto.Email, dto.Project);
+			if (user == null)
+				return NotFound();
+
+			// Revoke any previous tokens (also logs out the user)
+			await _userManager.UpdateSecurityStampAsync(user);
+
+			var resetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
+			if (resetToken == null)
+				return BadRequest();
+
+			var resetTokenCont = new PasswordResetToken {
+				UserId = user.Id,
+				Project = dto.Project ?? "",
+				Token = resetToken,
+			};
+
+			{
+				var url = $"http://localhost:4200/user/reset/pass/{resetTokenCont.ToBase64()}";
+				var composer = new MailMessageComposerResetPassword() {
+					ResetUrl = url,
+					Project = dto.Project,
+				};
+
+				MailData mailData = new() {
+					Recipients = new() { user.Email },
+					Subject = composer.GetSubject(),
+					Message = composer.GetMessage(),
+				};
+				await _emailService.SendMail(mailData);
+			}
+
+			return Ok();
+		}
+
+		[HttpGet("password/reset2/{token}")]
+		public async Task<IActionResult> VerifyResetPasswordWithToken(string token) {
+			var resetTokenCont = PasswordResetToken.FromBase64(token);
+			if (resetTokenCont == null)
+				return BadRequest("Invalid token");
+
+			AppUser? user = await Queries.GetUserFromId(_dataContext, resetTokenCont.UserId);
+			if (user == null)
+				return BadRequest("User not found");
+
+			var ok = await _userManager.VerifyUserTokenAsync(
+				user, _userManager.Options.Tokens.PasswordResetTokenProvider,
+				"ResetPassword", resetTokenCont.Token);
+			if (ok) {
+				return Ok();
+			}
+			else {
+				return BadRequest("Invalid token");
+			}
+		}
+
+		[HttpPost("password/reset2")]
+		public async Task<IActionResult> ResetPasswordWithToken([FromBody] PasswordResetTokenDTO dto) {
+			var resetTokenCont = PasswordResetToken.FromBase64(dto.Token);
+			if (resetTokenCont == null)
+				return BadRequest("Invalid token");
+
+			AppUser? user = await Queries.GetUserFromId(_dataContext, resetTokenCont.UserId);
+			if (user == null)
+				return BadRequest("User not found");
+
+			// TODO: Invalidate existing login tokens after password reset
+
+			var res = await _userManager.ResetPasswordAsync(user, resetTokenCont.Token, dto.Password);
+			if (res == null || !res.Succeeded) {
+				if (res == null)
+					return StatusCode(500);
+
+				var topErr = res.Errors.First();
+				return BadRequest($"{topErr.Code}: {topErr.Description}");
+			}
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+	}
+
+	class MailMessageComposerResetPassword : IMailMessageComposer {
+		public string ResetUrl { get; set; } = null!;
+		public string? Project { get; set; }
+
+		public string GetSubject() => "Reset Your Password";
+		public string GetMessage() {
+			// TODO: Make this pretty
+
+			string message = "<p>";
+			{
+				message += "You've requested to reset your password";
+				if (Project != null) {
+					message += $" for project \"{Project}\". ";
+				}
+				else {
+					message +=  ". ";
+				}
+
+				message += $"If you did not make such a request, please ignore this message.";
+				message += $"</p>";
+
+				message += $"<p>Otherwise, please click on the link below to reset your password.</p><br>";
+				message += $"<p><a href=\"{ResetUrl}\">Reset Password</a></p><br>";
+				message += $"<p>This link will remain valid for 1 hour.</p>";
+			}
+
+			string messageHtml = "<html>";
+			messageHtml += "<head><style>p { margin: 4px; }</style></head>";
+			messageHtml += "<body>" + message + "</body></html>";
+
+			return messageHtml;
 		}
 	}
 }

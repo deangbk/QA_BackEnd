@@ -32,4 +32,12 @@ namespace DocumentsQA_Backend.DTO {
 		public string Old { get; set; } = null!;
 		public string New { get; set; } = null!;
 	}
+	public class PasswordResetDTO {
+		public string? Project { get; set; }
+		public string Email { get; set; } = null!;
+	}
+	public class PasswordResetTokenDTO {
+		public string Token { get; set; } = null!;
+		public string Password { get; set; } = null!;
+	}
 }

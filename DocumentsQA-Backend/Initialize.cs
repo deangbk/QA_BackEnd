@@ -84,6 +84,10 @@ namespace DocumentsQA_Backend {
 
 					options.Lockout.MaxFailedAccessAttempts = 99999;
 				});
+				services.Configure<DataProtectionTokenProviderOptions>(options => {
+					// Lifetime of GeneratePasswordResetTokenAsync
+					options.TokenLifespan = TimeSpan.FromHours(1);
+				});
 			}
 
 			services.AddCors(options => {
