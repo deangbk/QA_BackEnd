@@ -20,7 +20,6 @@ namespace DocumentsQA_Backend.Controllers {
 	using JsonTable = Dictionary<string, object>;
 
 	[Route("api/admin")]
-	[ApiController]
 	[Authorize(Policy = "Role_Admin")]
 	public class AdminController : Controller {
 		private readonly ILogger<AdminController> _logger;
@@ -37,11 +36,11 @@ namespace DocumentsQA_Backend.Controllers {
 
 		public AdminController(
 			ILogger<AdminController> logger,
-			DataContext dataContext, IAccessService access, 
+			DataContext dataContext, IAccessService access,
 
 			IEmailService emailService,
 
-			UserManager<AppUser> userManager, RoleManager<AppRole> roleManager, 
+			UserManager<AppUser> userManager, RoleManager<AppRole> roleManager,
 
 			AdminHelpers adminHelper)
 		{
@@ -242,6 +241,16 @@ namespace DocumentsQA_Backend.Controllers {
 		public async Task<IActionResult> CreateAdmin([FromBody] CreateAdminDTO dto) {
 			var date = DateTime.Now;
 			var rnd = new Random(date.GetHashCode());
+
+			var emailNorm = _userManager.NormalizeEmail(dto.Email);
+
+			{
+				var exists = await _dataContext.Users
+					.Where(x => x.ProjectId == null && x.NormalizedEmail == emailNorm)
+					.AnyAsync();
+				if (!exists)
+					return BadRequest("Admin with this email already exists");
+			}
 
 			var user = new AppUser {
 				Email = dto.Email,
