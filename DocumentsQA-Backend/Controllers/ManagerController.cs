@@ -34,6 +34,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly AdminHelpers _adminHelper;
 		private readonly AuthHelpers _authHelper;
+		private readonly ProjectHelpers _projectHelper;
 		private readonly IProjectRepository _repoProject;
 
 		public ManagerController(
@@ -43,6 +44,7 @@ namespace DocumentsQA_Backend.Controllers {
 			UserManager<AppUser> userManager,
 			AdminHelpers adminHelper,
 			AuthHelpers authHelper,
+			ProjectHelpers projectHelper,
 			IProjectRepository repoProject)
 		{
 			_logger = logger;
@@ -56,6 +58,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_adminHelper = adminHelper;
 			_authHelper = authHelper;
+			_projectHelper = projectHelper;
 			_repoProject = repoProject;
 		}
 
@@ -148,80 +151,6 @@ namespace DocumentsQA_Backend.Controllers {
 
 		// -----------------------------------------------------
 
-		private class _TmpUserData {
-			public AppUser? User { get; set; } = null;
-			public string Email { get; set; } = string.Empty;
-			public string Password { get; set; } = string.Empty;
-			public string Name { get; set; } = string.Empty;
-			public string Company { get; set; } = string.Empty;
-			public HashSet<int>? Tranches { get; set; }
-			public bool Staff { get; set; }
-		}
-
-		private async Task _AddUsersIntoDatabase(List<_TmpUserData> users, Project project) {
-			int projectId = project.Id;
-			DateTime date = DateTime.Now;
-
-			// Extra user constraints
-			{
-				if (users.Any(x => !x.Staff && x.Tranches != null && x.Tranches.Count == 0)) {
-					throw new InvalidDataException("Illegal to create a normal user with no tranche access");
-				}
-			}
-
-			// Wrap all operations in a transaction so failure would revert the entire thing
-			using (var transaction = _dataContext.Database.BeginTransaction()) {
-				// Warning: Inefficient
-				// If the system is to be scaled in the future, find some way to efficiently bulk-create users
-				//	rather than repeatedly awaiting CreateAsync
-
-				foreach (var u in users) {
-					var user = new AppUser {
-						Email = u.Email,
-						UserName = u.Email,
-						DisplayName = u.Name,
-						//Company = u.Company,
-						DateCreated = date,
-					};
-					u.User = user;
-
-					var result = await _userManager.CreateAsync(user, u.Password);
-					if (!result.Succeeded)
-						throw new Exception(u.Email);
-
-					// Set user role
-					await AppRole.AddRoleToUser(_userManager, user, AppRole.User);
-				}
-
-				await _dataContext.SaveChangesAsync();
-
-				{
-					var normalUsers = users
-						.Where(x => !x.Staff)
-						.ToList();
-					foreach (var iTranche in project.Tranches) {
-						var accesses = normalUsers
-							.Where(x => x.Tranches == null || x.Tranches.Contains(iTranche.Id))
-							.Select(x => x.User!)
-							.ToArray();
-						iTranche.UserAccesses.AddRange(accesses);
-					}
-				}
-				{
-					var newStaffs = users
-						.Where(x => x.Staff)
-						.Select(x => x.User!)
-						.ToList();
-					if (newStaffs.Count > 0) {
-						await _adminHelper.MakeProjectManagers(project, newStaffs);
-					}
-				}
-
-				await _dataContext.SaveChangesAsync();
-				await transaction.CommitAsync();
-			}
-		}
-
 		/// <summary>
 		/// Creates new user in bulk, with access to specific tranches of a project
 		/// <para>Each line is a user data; email, display name [, tranches access...]</para>
@@ -257,7 +186,7 @@ namespace DocumentsQA_Backend.Controllers {
 			DateTime date = DateTime.Now;
 			string projectCompany = project.CompanyName;
 
-			List<_TmpUserData> listUser = new();
+			List<AddUserData> listUser = new();
 			{
 				Dictionary<string, int> trancheMap = project.Tranches
 					.ToDictionary(x => x.Name, x => x.Id);
@@ -291,7 +220,7 @@ namespace DocumentsQA_Backend.Controllers {
 							tranches = new();
 						}
 
-						listUser.Add(new _TmpUserData {
+						listUser.Add(new AddUserData {
 							Email = email,
 							Password = AuthHelpers.GeneratePassword(rnd, 8),
 							Name = displayName,
@@ -312,7 +241,7 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			try {
-				await _AddUsersIntoDatabase(listUser, project);
+				await _projectHelper.AddUsersToProject(project, listUser);
 			}
 			catch (Exception e) {
 				return BadRequest("Users create failed: " + e.Message);
@@ -337,7 +266,7 @@ namespace DocumentsQA_Backend.Controllers {
 			DateTime date = DateTime.Now;
 			string projectCompany = project.CompanyName;
 
-			List<_TmpUserData> listUser = new();
+			List<AddUserData> listUser = new();
 			{
 				Dictionary<string, int> trancheMap = project.Tranches
 					.ToDictionary(x => x.Name, x => x.Id);
@@ -360,7 +289,7 @@ namespace DocumentsQA_Backend.Controllers {
 							tranches = null;
 						}
 
-						listUser.Add(new _TmpUserData {
+						listUser.Add(new AddUserData {
 							Email = user.Email,
 							Password = AuthHelpers.GeneratePassword(rnd, 8),
 							Name = user.Name,
@@ -382,7 +311,7 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 
 			try {
-				await _AddUsersIntoDatabase(listUser, project);
+				await _projectHelper.AddUsersToProject(project, listUser);
 			}
 			catch (Exception e) {
 				return BadRequest("Users create failed: " + e.Message);

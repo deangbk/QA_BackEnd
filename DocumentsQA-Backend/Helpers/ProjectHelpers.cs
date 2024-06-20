@@ -3,16 +3,49 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
-using DocumentsQA_Backend.Models;
+using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Data;
+using DocumentsQA_Backend.Repository;
+using DocumentsQA_Backend.Models;
+using DocumentsQA_Backend.DTO;
+using DocumentsQA_Backend.Helpers;
+using DocumentsQA_Backend.Extensions;
 
 namespace DocumentsQA_Backend.Helpers {
-	public static class ProjectHelpers {
+	public class AddUserData {
+		public AppUser? User { get; set; } = null;
+		public string Email { get; set; } = string.Empty;
+		public string Password { get; set; } = string.Empty;
+		public string Name { get; set; } = string.Empty;
+		public string Company { get; set; } = string.Empty;
+		public HashSet<int>? Tranches { get; set; }
+		public bool Staff { get; set; }
+	}
+
+	public class ProjectHelpers {
+		private readonly DataContext _dataContext;
+
+		private readonly UserManager<AppUser> _userManager;
+
+		private readonly AdminHelpers _adminHelper;
+
+		public ProjectHelpers(
+			DataContext dataContext,
+			UserManager<AppUser> userManager,
+			AdminHelpers adminHelper)
+		{
+			_dataContext = dataContext;
+			_userManager = userManager;
+			_adminHelper = adminHelper;
+		}
+
+		// -----------------------------------------------------
+
 		public static bool CanUserAccessProject(Project project, AppUser user) {
 			return CanUserAccessProject(project, user.Id);
 		}
@@ -64,6 +97,101 @@ namespace DocumentsQA_Backend.Helpers {
 						.ToList(),
 				})
 				.ToDictionary(x => x.tranche, x => x.ids);
+		}
+
+		// -----------------------------------------------------
+
+		public async Task AddUsersToProject(Project project, List<AddUserData> users) {
+			int projectId = project.Id;
+			DateTime date = DateTime.Now;
+
+			// Extra user constraints
+			{
+				var uniqueEmails = users
+					.Select(x => _userManager.NormalizeEmail(x.Email))
+					.ToHashSet();
+				
+				{
+					var exists = await _dataContext.Users
+						.Where(x => x.ProjectId == projectId)
+						.Where(x => uniqueEmails.Any(y => y == x.NormalizedEmail))
+						.ToListAsync();
+					if (exists.Any()) {
+						throw new InvalidDataException("Users already exists: "
+							+ exists.ToStringEx(before: "", after: ""));
+					}
+				}
+
+				// Users with ProjectId == null are reserved and must not be duplicated
+				var reservedEmails = await _dataContext.Users
+					.Where(x => x.ProjectId == null)
+					.Select(x => x.NormalizedEmail)
+					.ToListAsync();
+				{
+					var intersect = uniqueEmails.Intersect(reservedEmails);
+					if (intersect.Any()) {
+						throw new InvalidDataException("Cannot create users with the following emails: "
+							+ intersect.ToStringEx(before: "", after: ""));
+					}
+				}
+
+				if (users.Any(x => !x.Staff && x.Tranches != null && x.Tranches.Count == 0)) {
+					throw new InvalidDataException("Illegal to create a normal user with no tranche access");
+				}
+			}
+
+			// Wrap all operations in a transaction so failure would revert the entire thing
+			using (var transaction = _dataContext.Database.BeginTransaction()) {
+				// Warning: Inefficient
+				// If the system is to be scaled in the future, find some way to efficiently bulk-create users
+				//	rather than repeatedly awaiting CreateAsync
+
+				foreach (var u in users) {
+					var user = new AppUser {
+						Email = u.Email,
+						UserName = u.Email,
+						DisplayName = u.Name,
+						Company = project.CompanyName,
+						DateCreated = date,
+						ProjectId = projectId,
+					};
+					u.User = user;
+
+					var result = await _userManager.CreateAsync(user, u.Password);
+					if (!result.Succeeded)
+						throw new Exception(u.Email);
+
+					// Set user role
+					await AppRole.AddRoleToUser(_userManager, user, AppRole.User);
+				}
+
+				await _dataContext.SaveChangesAsync();
+
+				{
+					var normalUsers = users
+						.Where(x => !x.Staff)
+						.ToList();
+					foreach (var iTranche in project.Tranches) {
+						var accesses = normalUsers
+							.Where(x => x.Tranches == null || x.Tranches.Contains(iTranche.Id))
+							.Select(x => x.User!)
+							.ToArray();
+						iTranche.UserAccesses.AddRange(accesses);
+					}
+				}
+				{
+					var newStaffs = users
+						.Where(x => x.Staff)
+						.Select(x => x.User!)
+						.ToList();
+					if (newStaffs.Count > 0) {
+						await _adminHelper.MakeProjectManagers(project, newStaffs);
+					}
+				}
+
+				await _dataContext.SaveChangesAsync();
+				await transaction.CommitAsync();
+			}
 		}
 	}
 }

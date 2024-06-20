@@ -146,6 +146,7 @@ namespace DocumentsQA_Backend {
 			{
 				services.AddTransient<AdminHelpers, AdminHelpers>();
 				services.AddTransient<AuthHelpers, AuthHelpers>();
+				services.AddTransient<ProjectHelpers, ProjectHelpers>();
 				services.AddTransient<DocumentHelpers, DocumentHelpers>();
 			}
 
