@@ -68,7 +68,7 @@ namespace DocumentsQA_Backend {
 					// User settings
 
 					options.User.AllowedUserNameCharacters += ':';
-					options.User.RequireUniqueEmail = true;
+					//options.User.RequireUniqueEmail = true;
 
 					// Password settings
 
