@@ -269,7 +269,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			var resetTokenCont = new PasswordResetToken {
 				UserId = user.Id,
-				Project = dto.Project ?? "",
+				Project = user.Project?.Name ?? "",
 				Token = resetToken,
 			};
 
@@ -277,7 +277,7 @@ namespace DocumentsQA_Backend.Controllers {
 				var url = $"http://localhost:4200/user/reset/pass/{resetTokenCont.ToBase64()}";
 				var composer = new MailMessageComposerResetPassword() {
 					ResetUrl = url,
-					Project = dto.Project,
+					Project = user.Project?.DisplayName,
 				};
 
 				MailData mailData = new() {
