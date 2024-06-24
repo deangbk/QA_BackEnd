@@ -267,6 +267,8 @@ namespace DocumentsQA_Backend.Controllers {
 				return BadRequest(result.Errors);
 
 			{
+				// Everyone must have user role
+				await _adminHelper.GrantUserRole(user, AppRole.User);
 				await _adminHelper.GrantUserRole(user, AppRole.Admin);
 			}
 
