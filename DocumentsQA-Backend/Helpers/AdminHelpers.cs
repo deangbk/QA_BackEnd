@@ -38,7 +38,6 @@ namespace DocumentsQA_Backend.Helpers {
 		public async Task GrantUserRole(AppUser user, AppRole role) {
 			var roleExists = await _userManager.IsInRoleAsync(user, role.Name);
 			if (!roleExists) {
-				await _userManager.AddClaimAsync(user, new Claim("role", role.Name));
 				await _userManager.AddToRoleAsync(user, role.Name);
 			}
 		}
@@ -51,7 +50,6 @@ namespace DocumentsQA_Backend.Helpers {
 				.Where(x => x.ValueType == "role")
 				.Where(x => x.Value == role.Name);
 
-			await _userManager.RemoveClaimsAsync(user, roleClaims);
 			await _userManager.RemoveFromRoleAsync(user, role.Name);
 		}
 

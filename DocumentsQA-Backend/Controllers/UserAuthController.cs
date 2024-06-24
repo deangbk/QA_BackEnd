@@ -131,6 +131,8 @@ namespace DocumentsQA_Backend.Controllers {
 			if (user == null || (!await _TrySignIn(user, uc.Password)))
 				throw new InvalidDataException("Incorrect login");
 
+			var userRoles = await _userManager.GetRolesAsync(user);
+
 			var claims = new List<Claim>();
 			{
 				claims.Add(new Claim("id", user.Id.ToString()));
@@ -140,8 +142,10 @@ namespace DocumentsQA_Backend.Controllers {
 
 				// Add role claims for the user
 				{
-					var userClaims = await _userManager.GetClaimsAsync(user);
-					claims.AddRange(userClaims.Where(x => x.Type == "role"));
+					var userRoleClaims = userRoles
+						.Select(x => new Claim("role", x))
+						.ToList();
+					claims.AddRange(userRoleClaims);
 				}
 			}
 
@@ -171,7 +175,6 @@ namespace DocumentsQA_Backend.Controllers {
 				var userRoles = await _userManager.GetRolesAsync(user);
 				if (!userRoles.Any(x => x == AppRole.Admin.Name))
 					throw new InvalidDataException("Incorrect login");
-			}
 
 			var claims = new List<Claim>();
 			{
@@ -180,8 +183,10 @@ namespace DocumentsQA_Backend.Controllers {
 
 				// Add role claims for the user
 				{
-					var userClaims = await _userManager.GetClaimsAsync(user);
-					claims.AddRange(userClaims.Where(x => x.Type == "role"));
+					var userRoleClaims = userRoles
+						.Select(x => new Claim("role", x))
+						.ToList();
+					claims.AddRange(userRoleClaims);
 				}
 			}
 

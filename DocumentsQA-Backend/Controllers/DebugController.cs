@@ -87,7 +87,6 @@ namespace DocumentsQA_Backend.Controllers {
 					var roles = rolesMap[role];
 					foreach (var iRole in roles)
 					{
-						await _userManager.AddClaimAsync(user, new Claim("role", iRole.Name));
 						await _userManager.AddToRoleAsync(user, iRole.Name);
 					}
 				}

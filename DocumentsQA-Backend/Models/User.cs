@@ -83,12 +83,5 @@ namespace DocumentsQA_Backend.Models {
 				throw new ArgumentException("obj is not AppRole", nameof(obj));
 			}
 		}
-
-		// -----------------------------------------------------
-
-		public static async Task AddRoleToUser(UserManager<AppUser> userManager, AppUser user, AppRole role) {
-			await userManager.AddClaimAsync(user, new Claim("role", role.Name));
-			await userManager.AddToRoleAsync(user, role.Name);
-		}
 	}
 }

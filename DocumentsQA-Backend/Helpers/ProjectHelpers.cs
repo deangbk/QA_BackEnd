@@ -163,7 +163,7 @@ namespace DocumentsQA_Backend.Helpers {
 						throw new Exception(u.Email);
 
 					// Set user role
-					await AppRole.AddRoleToUser(_userManager, user, AppRole.User);
+					await _adminHelper.GrantUserRole(user, AppRole.User);
 				}
 
 				await _dataContext.SaveChangesAsync();
