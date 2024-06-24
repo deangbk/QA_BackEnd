@@ -111,6 +111,7 @@ namespace DocumentsQA_Backend.Helpers {
 					.Select(x => _userManager.NormalizeEmail(x.Email))
 					.ToHashSet();
 				
+				// Maybe delete this as it's already covered by a model constraint
 				{
 					var exists = await _dataContext.Users
 						.Where(x => x.ProjectId == projectId)

@@ -91,13 +91,18 @@ namespace DocumentsQA_Backend.Data {
 			// Model: User
 			{
 				// Configure Id of AspNetUsers as identity column
-				modelBuilder.Entity<AppUser>(b => {
-					b.Property<int>("Id")
+				modelBuilder.Entity<AppUser>(e => {
+					e.Property<int>("Id")
 						.ValueGeneratedOnAdd()
 						.HasColumnType("int");
 					SqlServerPropertyBuilderExtensions.UseIdentityColumn(
-						b.Property<int>("Id"));
+						e.Property<int>("Id"));
 				});
+
+				// Enforces unique (NormalizedEmail, ProjectId)
+				modelBuilder.Entity<AppUser>()
+					.HasIndex(e => new { e.NormalizedEmail, e.ProjectId })
+					.IsUnique();
 
 				// Map User:Project as N:1
 				modelBuilder.Entity<AppUser>()
