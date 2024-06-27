@@ -201,18 +201,19 @@ namespace DocumentsQA_Backend.Controllers {
 						string email = data[0];
 						string displayName = data[1];
 
-						HashSet<int>? tranches;
+						List<int> tranches;
 
 						if (data.Length > 2) {
 							// * means all tranches, represented with a null, because this is unfortunately not Rust
 							if (data.Length == 3 && data[2] == "*") {
-								tranches = null;
+								tranches = trancheMap.Values.ToList();
 							}
 							else {
 								// Collect all tranches after as varargs-like
 								tranches = data.Skip(2)
 									.Select(x => trancheMap[x])
-									.ToHashSet();
+									.Distinct()
+									.ToList();
 							}
 						}
 						else {
@@ -275,18 +276,17 @@ namespace DocumentsQA_Backend.Controllers {
 
 				try {
 					foreach (var user in dtos) {
-						HashSet<int>? tranches;
+						List<int> tranches;
 
 						// null means all tranches
 						if (user.Tranches != null) {
-							// No access to any tranche -> empty set
-
 							tranches = user.Tranches
 								.Select(x => trancheMap[x.Trim()])
-								.ToHashSet();
+								.Distinct()
+								.ToList();
 						}
 						else {
-							tranches = null;
+							tranches = trancheMap.Values.ToList();
 						}
 
 						listUser.Add(new AddUserData {

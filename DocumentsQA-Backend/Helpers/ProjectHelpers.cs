@@ -23,7 +23,7 @@ namespace DocumentsQA_Backend.Helpers {
 		public string Password { get; set; } = string.Empty;
 		public string Name { get; set; } = string.Empty;
 		public string Company { get; set; } = string.Empty;
-		public HashSet<int>? Tranches { get; set; }
+		public List<int> Tranches { get; set; } = new();
 		public bool Staff { get; set; }
 	}
 
@@ -136,8 +136,23 @@ namespace DocumentsQA_Backend.Helpers {
 					}
 				}
 
-				if (users.Any(x => !x.Staff && x.Tranches != null && x.Tranches.Count == 0)) {
+				if (users.Any(x => !x.Staff && !x.Tranches.Any())) {
 					throw new InvalidDataException("Illegal to create a normal user with no tranche access");
+				}
+
+				{
+					var trancheIds = users
+						.SelectMany(x => x.Tranches)
+						.Distinct()
+						.ToList();
+					var validTranches = project.Tranches
+						.Select(x => x.Id)
+						.ToList();
+					var invalidTranches = trancheIds.Except(validTranches);
+					if (invalidTranches.Any()) {
+						throw new InvalidDataException("Non-existent tranches: "
+							+ invalidTranches.ToStringEx(before: "", after: ""));
+					}
 				}
 			}
 
@@ -169,16 +184,17 @@ namespace DocumentsQA_Backend.Helpers {
 				await _dataContext.SaveChangesAsync();
 
 				{
-					var normalUsers = users
-						.Where(x => !x.Staff)
+					var accesses = users
+						.SelectMany(x =>
+							x.Tranches.Select(y => new EJoinClass {
+								Id1 = y,
+								Id2 = x.User!.Id,
+							})
+						)
 						.ToList();
-					foreach (var iTranche in project.Tranches) {
-						var accesses = normalUsers
-							.Where(x => x.Tranches == null || x.Tranches.Contains(iTranche.Id))
-							.Select(x => x.User!)
-							.ToArray();
-						iTranche.UserAccesses.AddRange(accesses);
-					}
+
+					var dbsTrancheAccess = _dataContext.Set<EJoinClass>("TrancheUserAccess");
+					dbsTrancheAccess.AddRange(accesses);
 				}
 				{
 					var newStaffs = users
