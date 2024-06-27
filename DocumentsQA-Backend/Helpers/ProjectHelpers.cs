@@ -175,7 +175,8 @@ namespace DocumentsQA_Backend.Helpers {
 				foreach (var u in users) {
 					var user = new AppUser {
 						Email = u.Email,
-						UserName = u.Email,
+						UserName = $"{projectId}:{u.Email}",	// UserName in EFCore must be unique
+						//UserName = u.Email,
 						DisplayName = u.Name,
 						Company = project.CompanyName,
 						DateCreated = date,
