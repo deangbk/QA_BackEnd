@@ -31,14 +31,14 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly IFileManagerService _fileManager;
 
-		private readonly DocumentHelpers _documentHelpers;
+		private readonly DocumentHelpers _documentHelper;
 		private readonly IProjectRepository _repoProject;
 
 		public ProjectController(
 			ILogger<ProjectController> logger, 
 			DataContext dataContext, IAccessService access,
 			IFileManagerService fileManager, 
-			DocumentHelpers documentHelpers,
+			DocumentHelpers documentHelper,
 			IProjectRepository repoProject) 
 		{
 			_logger = logger;
@@ -48,7 +48,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_fileManager = fileManager;
 
-			_documentHelpers = documentHelpers;
+			_documentHelper = documentHelper;
 			_repoProject = repoProject;
 		}
 
@@ -312,7 +312,7 @@ namespace DocumentsQA_Backend.Controllers {
 				countAccountPosts = listAllowPosts
 					.Where(x => x.Type == QuestionType.Account)
 					.Count();
-				countDocuments = (await _documentHelpers.GetDocuments(new())).Count;
+				countDocuments = (await _documentHelper.GetDocuments(new())).Count;
 			}
 
 			return Ok(new JsonTable {
@@ -375,10 +375,9 @@ namespace DocumentsQA_Backend.Controllers {
 		}
 
 		[HttpPut("edit")]
+		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> EditProject([FromBody] EditProjectDTO dto) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.IsAdmin())
-				return Forbid();
 
 			if (dto.Name != null) {
 				project.Name = dto.Name;
@@ -484,11 +483,10 @@ namespace DocumentsQA_Backend.Controllers {
 			return path;
 		}
 
-		[HttpPut("logo/{type}")]
+		[HttpPost("logo/{type}")]
+		[Authorize(Policy = "Role_Admin")]
 		public async Task<IActionResult> EditLogo([FromRoute] string type, [FromForm] IFormFile file) {
 			var project = await _repoProject.GetProjectAsync();
-			if (!_access.IsAdmin())
-				return Forbid();
 
 			// TODO: Throw error if file is not an image
 
@@ -517,6 +515,31 @@ namespace DocumentsQA_Backend.Controllers {
 				}
 				default:
 					return BadRequest("Unknown type");
+			}
+
+			await _dataContext.SaveChangesAsync();
+			return Ok();
+		}
+
+		[HttpPost("logo")]
+		[Authorize(Policy = "Role_Admin")]
+		public async Task<IActionResult> EditLogos([FromForm] IFormFile[] files) {
+			var project = await _repoProject.GetProjectAsync();
+
+			// TODO: Throw error if file is not an image
+
+			if (files.Length >= 2) {
+				var pathNewLogo   = await _UploadImage(project, files[0], "logo");
+				var pathNewBanner = await _UploadImage(project, files[1], "banner");
+
+				// Remove previous images
+				if (project.LogoUrl != null)
+					await _fileManager.DeleteFile(project.LogoUrl);
+				if (project.BannerUrl != null)
+					await _fileManager.DeleteFile(project.BannerUrl);
+
+				project.LogoUrl = pathNewLogo;
+				project.BannerUrl = pathNewBanner;
 			}
 
 			await _dataContext.SaveChangesAsync();
