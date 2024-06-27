@@ -171,10 +171,9 @@ namespace DocumentsQA_Backend.Controllers {
 			if (user == null || (!await _TrySignIn(user, uc.Password)))
 				throw new InvalidDataException("Incorrect login");
 
-			{
-				var userRoles = await _userManager.GetRolesAsync(user);
-				if (!userRoles.Any(x => x == AppRole.Admin.Name))
-					throw new InvalidDataException("Incorrect login");
+			var userRoles = await _userManager.GetRolesAsync(user);
+			if (!userRoles.Any(x => x == AppRole.Admin.Name))
+				throw new InvalidDataException("Incorrect login");
 
 			var claims = new List<Claim>();
 			{
