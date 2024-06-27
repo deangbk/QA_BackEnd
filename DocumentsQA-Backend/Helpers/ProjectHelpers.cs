@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 using DocumentsQA_Backend.Services;
 using DocumentsQA_Backend.Data;
@@ -101,7 +102,7 @@ namespace DocumentsQA_Backend.Helpers {
 
 		// -----------------------------------------------------
 
-		public async Task AddUsersToProject(Project project, List<AddUserData> users) {
+		public async Task AddUsersToProject(Project project, List<AddUserData> users, IDbContextTransaction? prevTransaction = null) {
 			int projectId = project.Id;
 			DateTime date = DateTime.Now;
 
@@ -157,7 +158,16 @@ namespace DocumentsQA_Backend.Helpers {
 			}
 
 			// Wrap all operations in a transaction so failure would revert the entire thing
-			using (var transaction = _dataContext.Database.BeginTransaction()) {
+			IDbContextTransaction transaction = null!;
+			try {
+				if (prevTransaction == null) {
+					transaction = _dataContext.Database.BeginTransaction();
+				}
+				else {
+					transaction = prevTransaction;
+					transaction.CreateSavepoint("sav_AddUsersToProject");
+				}
+
 				// Warning: Inefficient
 				// If the system is to be scaled in the future, find some way to efficiently bulk-create users
 				//	rather than repeatedly awaiting CreateAsync
@@ -207,7 +217,15 @@ namespace DocumentsQA_Backend.Helpers {
 				}
 
 				await _dataContext.SaveChangesAsync();
-				await transaction.CommitAsync();
+
+				if (prevTransaction == null) {
+					await transaction.CommitAsync();
+				}
+			}
+			catch (Exception e) {
+				if (transaction != null)
+					await transaction.RollbackToSavepointAsync("sav_AddUsersToProject");
+				throw;
 			}
 		}
 	}

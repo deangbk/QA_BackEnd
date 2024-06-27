@@ -31,6 +31,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 		private readonly IFileManagerService _fileManager;
 
+		private readonly ProjectHelpers _projectHelper;
 		private readonly DocumentHelpers _documentHelper;
 		private readonly IProjectRepository _repoProject;
 
@@ -38,6 +39,7 @@ namespace DocumentsQA_Backend.Controllers {
 			ILogger<ProjectController> logger, 
 			DataContext dataContext, IAccessService access,
 			IFileManagerService fileManager, 
+			ProjectHelpers projectHelper,
 			DocumentHelpers documentHelper,
 			IProjectRepository repoProject) 
 		{
@@ -48,6 +50,7 @@ namespace DocumentsQA_Backend.Controllers {
 
 			_fileManager = fileManager;
 
+			_projectHelper = projectHelper;
 			_documentHelper = documentHelper;
 			_repoProject = repoProject;
 		}
@@ -356,22 +359,55 @@ namespace DocumentsQA_Backend.Controllers {
 			if (error != null)
 				return BadRequest(error);
 
+			var rnd = new Random(DateTime.Now.GetHashCode());
+
 			// Wrap all operations in a transaction so failure would revert the entire thing
-			using (var transaction = _dataContext.Database.BeginTransaction()) {
-				_dataContext.Projects.Add(project);
-				await _dataContext.SaveChangesAsync();
+			try {
+				using (var transaction = _dataContext.Database.BeginTransaction()) {
+					_dataContext.Projects.Add(project);
+					await _dataContext.SaveChangesAsync();
 
-				project.Tranches = dto.InitialTranches
-					.Select(x => new Tranche {
-						ProjectId = project.Id,
-						Name = x,
-					}).ToList();
-				await _dataContext.SaveChangesAsync();
+					project.Tranches = dto.InitialTranches
+						.Select(x => new Tranche {
+							ProjectId = project.Id,
+							Name = x,
+						}).ToList();
+					await _dataContext.SaveChangesAsync();
 
-				await transaction.CommitAsync();
+					if (dto.Users != null) {
+						List<AddUserData> listUser = new();
+						var tranchesMap = project.Tranches
+							.ToDictionary(x => x.Name, x => x.Id);
+
+						foreach (var user in dto.Users) {
+							var tranches = user.Tranches != null ?
+								user.Tranches
+									.Select(x => tranchesMap[x.Trim()])
+									.Distinct()
+									.ToList() :
+								tranchesMap.Values.ToList();
+
+							listUser.Add(new AddUserData {
+								Email = user.Email,
+								Password = AuthHelpers.GeneratePassword(rnd, 8),
+								Name = user.Name,
+								Company = user.Company ?? dto.Company,
+								Tranches = tranches,
+								Staff = user.Staff ?? false,
+							});
+						}
+
+						await _projectHelper.AddUsersToProject(project, listUser, transaction);
+					}
+
+					await transaction.CommitAsync();
+				}
+
+				return Ok(project.Id);
 			}
-
-			return Ok(project.Id);
+			catch (Exception e) {
+				return BadRequest(e.Message);
+			}
 		}
 
 		[HttpPut("edit")]

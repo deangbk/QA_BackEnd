@@ -29,7 +29,10 @@ namespace DocumentsQA_Backend.DTO {
 
 		[JsonPropertyName("tranches")]
 		public List<string> InitialTranches { get; set; } = new();
+
+		public List<AddUserDTO>? Users { get; set; }
 	}
+	
 
 	public class EditProjectDTO {
 		[MaxLength(256)]
