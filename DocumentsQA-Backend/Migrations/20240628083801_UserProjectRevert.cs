@@ -22,9 +22,7 @@ namespace DocumentsQA_Backend.Migrations
 					update [AspNetUsers] 
 					set
 						UserName = dd.NewUsername,
-						Email = dd.NewUsername,
-						NormalizedUserName = UPPER(dd.NewUsername),
-						NormalizedEmail = UPPER(dd.NewUsername)
+						NormalizedUserName = UPPER(dd.NewUsername)
 					from (
 						select 
 							Id,
@@ -50,9 +48,7 @@ namespace DocumentsQA_Backend.Migrations
 					update [AspNetUsers] 
 					set
 						UserName = dd.NewUsername,
-						Email = dd.NewUsername,
-						NormalizedUserName = UPPER(dd.NewUsername),
-						NormalizedEmail = UPPER(dd.NewUsername)
+						NormalizedUserName = UPPER(dd.NewUsername)
 					from (
 						select
 							u.Id as UserId,

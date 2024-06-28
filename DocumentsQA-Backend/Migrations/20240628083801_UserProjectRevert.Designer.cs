@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DocumentsQA_Backend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240627090236_UserProjectRevert")]
+    [Migration("20240628083801_UserProjectRevert")]
     partial class UserProjectRevert
     {
         /// <inheritdoc />
