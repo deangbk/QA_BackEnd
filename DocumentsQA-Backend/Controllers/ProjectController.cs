@@ -435,7 +435,7 @@ namespace DocumentsQA_Backend.Controllers {
 				project.ProjectEndDate = dto.DateEnd.Value;
 			}
 
-			var error = _ValidateProject(project);
+			var error = await _ValidateProject(project);
 			if (error != null)
 				return BadRequest(error);
 
