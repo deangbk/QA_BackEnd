@@ -410,10 +410,12 @@ namespace DocumentsQA_Backend.Controllers {
 			}
 		}
 
-		[HttpPut("edit")]
+		[HttpPut("{id}/edit/")]
 		[Authorize(Policy = "Role_Admin")]
-		public async Task<IActionResult> EditProject([FromBody] EditProjectDTO dto) {
-			var project = await _repoProject.GetProjectAsync();
+		public async Task<IActionResult> EditProject(int id, [FromBody] EditProjectDTO dto) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, id);
+			if (project == null)
+				return BadRequest("Project not found");
 
 			if (dto.Name != null) {
 				project.Name = dto.Name;
@@ -519,10 +521,12 @@ namespace DocumentsQA_Backend.Controllers {
 			return path;
 		}
 
-		[HttpPost("logo/{type}")]
+		[HttpPost("{id}/logo/{type}")]
 		[Authorize(Policy = "Role_Admin")]
-		public async Task<IActionResult> EditLogo([FromRoute] string type, [FromForm] IFormFile file) {
-			var project = await _repoProject.GetProjectAsync();
+		public async Task<IActionResult> EditLogo(int id, [FromRoute] string type, [FromForm] IFormFile file) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, id);
+			if (project == null)
+				return BadRequest("Project not found");
 
 			// TODO: Throw error if file is not an image
 
@@ -557,10 +561,12 @@ namespace DocumentsQA_Backend.Controllers {
 			return Ok();
 		}
 
-		[HttpPost("logo")]
+		[HttpPost("{id}/logo")]
 		[Authorize(Policy = "Role_Admin")]
-		public async Task<IActionResult> EditLogos([FromForm] IFormFile[] files) {
-			var project = await _repoProject.GetProjectAsync();
+		public async Task<IActionResult> EditLogos(int id, [FromForm] IFormFile[] files) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, id);
+			if (project == null)
+				return BadRequest("Project not found");
 
 			// TODO: Throw error if file is not an image
 

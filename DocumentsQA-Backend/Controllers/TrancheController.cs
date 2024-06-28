@@ -61,10 +61,12 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Adds new tranche
 		/// </summary>
-		[HttpPost("add")]
+		[HttpPost("{pid}/add")]
 		[Authorize(Policy = "Role_Admin")]
-		public async Task<IActionResult> CreateTranche([FromBody] CreateTrancheDTO dto) {
-			var project = await _repoProject.GetProjectAsync();
+		public async Task<IActionResult> CreateTranche(int pid, [FromBody] CreateTrancheDTO dto) {
+			Project? project = await Queries.GetProjectFromId(_dataContext, pid);
+			if (project == null)
+				return BadRequest("Project not found");
 
 			if (project.Tranches.Any(x => x.Name == dto.Name)) {
 				return BadRequest("Duplicated tranche name");
@@ -83,14 +85,14 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Edits tranche information
 		/// </summary>
-		[HttpPut("edit/{id}")]
+		[HttpPut("{tid}/edit")]
 		[Authorize(Policy = "Role_Admin")]
-		public async Task<IActionResult> EditTranche([FromRoute] int id, [FromBody] EditTrancheDTO dto) {
-			var project = await _repoProject.GetProjectAsync();
-
-			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, id);
+		public async Task<IActionResult> EditTranche(int tid, [FromBody] EditTrancheDTO dto) {
+			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
+
+			var project = tranche.Project;
 
 			if (dto.Name != null && dto.Name != tranche.Name) {
 				if (project.Tranches.Any(x => x.Name == dto.Name)) {
@@ -106,10 +108,10 @@ namespace DocumentsQA_Backend.Controllers {
 		/// <summary>
 		/// Deletes tranche
 		/// </summary>
-		[HttpDelete("{id}")]
+		[HttpDelete("{tid}")]
 		[Authorize(Policy = "Role_Admin")]
-		public async Task<IActionResult> DeleteTranche([FromRoute] int id) {
-			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, id);
+		public async Task<IActionResult> DeleteTranche(int tid) {
+			Tranche? tranche = await Queries.GetTrancheFromId(_dataContext, tid);
 			if (tranche == null)
 				return BadRequest("Tranche not found");
 
